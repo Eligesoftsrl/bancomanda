@@ -1,0 +1,82 @@
+{
+  "date": "2026-06-16",
+  "weekday": "martedì",
+  "published": true,
+  "updated_at": "2026-06-16T09:42:10+02:00",
+  "message": null,
+  "sections": [
+    {
+      "name": "Primi",
+      "type": "daily",
+      "items": [
+        {
+          "name": "Lasagna alla bolognese",
+          "price": 8.5,
+          "tags": ["novita"],
+          "allergens": ["glutine", "latte", "uova", "sedano"],
+          "notes": ""
+        },
+        {
+          "name": "Pasta e ceci",
+          "price": 7.0,
+          "tags": ["vegano"],
+          "allergens": ["glutine"],
+          "notes": "Con rosmarino fresco"
+        }
+      ]
+    },
+    {
+      "name": "Secondi",
+      "type": "daily",
+      "items": [
+        {
+          "name": "Pollo al limone",
+          "price": 9.0,
+          "tags": ["senza_glutine"],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Polpette al sugo",
+          "price": 9.5,
+          "tags": [],
+          "allergens": ["glutine", "uova", "latte"],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Contorni",
+      "type": "daily",
+      "items": [
+        {
+          "name": "Patate al forno",
+          "price": 3.5,
+          "tags": ["vegano", "senza_glutine"],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Piatti Freddi",
+      "type": "fixed",
+      "items": [
+        {
+          "name": "Insalata di Salmone",
+          "price": 10.0,
+          "tags": [],
+          "allergens": ["pesce"],
+          "notes": ""
+        },
+        {
+          "name": "Insalata Parmigiano e noci",
+          "price": 8.0,
+          "tags": ["vegetariano"],
+          "allergens": ["latte", "frutta_a_guscio"],
+          "notes": ""
+        }
+      ]
+    }
+  ]
+}

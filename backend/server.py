@@ -1,5 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,8 +9,12 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from bson import ObjectId
 import io
+import json
+import asyncio
+import ftplib
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)  # NON sovrascrivere le variabili di produzione
@@ -97,6 +101,8 @@ class DishBase(BaseModel):
     categoryId: Optional[str] = None
     categoryName: Optional[str] = None
     isFavorite: bool = False  # Piatti preferiti
+    tags: List[str] = []       # Es: "senza_glutine", "vegetariano", "piccante"
+    allergens: List[str] = []  # Es: "glutine", "latte", "uova" (Reg. UE 1169/2011)
 
 class DishCreate(BaseModel):
     name: str
@@ -104,6 +110,8 @@ class DishCreate(BaseModel):
     basePrice: float
     categoryId: Optional[str] = None
     isFavorite: bool = False
+    tags: List[str] = []
+    allergens: List[str] = []
 
 class DishUpdate(BaseModel):
     name: Optional[str] = None
@@ -112,6 +120,8 @@ class DishUpdate(BaseModel):
     categoryId: Optional[str] = None
     active: Optional[bool] = None
     isFavorite: Optional[bool] = None
+    tags: Optional[List[str]] = None
+    allergens: Optional[List[str]] = None
 
 class Dish(DishBase):
     id: str
@@ -141,6 +151,7 @@ class MenuItemUpdate(BaseModel):
 class DailyMenuBase(BaseModel):
     date: str  # YYYY-MM-DD format
     items: List[MenuItemBase] = []
+    isPublished: bool = False  # Visibile sul widget pubblico del sito
 
 class DailyMenuCreate(BaseModel):
     date: str
@@ -151,9 +162,13 @@ class DailyMenuAddItem(BaseModel):
     dailyPrice: float
     notes: Optional[str] = ""
 
+class DailyMenuPublishUpdate(BaseModel):
+    isPublished: bool
+
 class DailyMenu(DailyMenuBase):
     id: str
     createdAt: datetime
+    publishedAt: Optional[datetime] = None  # Ultimo cambio stato pubblicazione
 
 # Order Item
 class OrderItemBase(BaseModel):
@@ -431,6 +446,8 @@ async def create_daily_menu(menu: DailyMenuCreate):
     menu_dict = {
         "date": menu.date,
         "items": initial_items,
+        "isPublished": False,
+        "publishedAt": None,
         "createdAt": datetime.utcnow()
     }
     result = await db.daily_menus.insert_one(menu_dict)
@@ -537,6 +554,244 @@ async def remove_menu_item(menu_id: str, dish_id: str):
     
     menu = await db.daily_menus.find_one({"_id": ObjectId(menu_id)})
     return DailyMenu(id=str(menu["_id"]), **{k: v for k, v in menu.items() if k != "_id"})
+
+# ========== PUBBLICAZIONE SU SITO WEB ==========
+
+FTP_MENU_FILENAME = "menu.json"
+
+
+class FtpNotConfigured(Exception):
+    pass
+
+
+def _ftp_settings() -> dict:
+    host = (os.environ.get("FTP_HOST") or "").strip()
+    user = os.environ.get("FTP_USER") or ""
+    password = os.environ.get("FTP_PASSWORD") or ""
+    port = os.environ.get("FTP_PORT") or ""
+    folder = (os.environ.get("FTP_DIR") or "").strip().strip("/")
+    if not (host and user and password and port and folder):
+        raise FtpNotConfigured("FTP non configurato: mancano host, utente, password, porta o cartella")
+    # Accetta anche "ftp://host" o "host:porta"
+    for prefix in ("ftp://", "ftps://", "sftp://"):
+        if host.lower().startswith(prefix):
+            host = host[len(prefix):]
+    host = host.rstrip("/")
+    if ":" in host:
+        host, port = host.rsplit(":", 1)
+    return {"host": host, "port": int(port), "user": user, "password": password, "folder": folder}
+
+
+def _ftp_open(cfg: dict) -> ftplib.FTP:
+    """Prova prima FTPS (connessione cifrata), se il server non lo supporta usa FTP semplice."""
+    try:
+        ftp = ftplib.FTP_TLS(timeout=20)
+        ftp.connect(cfg["host"], cfg["port"])
+        ftp.login(cfg["user"], cfg["password"])
+        ftp.prot_p()
+        return ftp
+    except Exception as e:
+        logger.info(f"FTPS non disponibile ({e}), uso FTP semplice")
+        try:
+            ftp.close()
+        except Exception:
+            pass
+    ftp = ftplib.FTP(timeout=20)
+    ftp.connect(cfg["host"], cfg["port"])
+    ftp.login(cfg["user"], cfg["password"])
+    return ftp
+
+
+def _ftp_upload_menu_json(public_payload: dict) -> str:
+    cfg = _ftp_settings()
+    data = json.dumps(public_payload, ensure_ascii=False, indent=2).encode("utf-8")
+    ftp = _ftp_open(cfg)
+    try:
+        for part in cfg["folder"].split("/"):
+            try:
+                ftp.cwd(part)
+            except ftplib.error_perm:
+                ftp.mkd(part)
+                ftp.cwd(part)
+        # Upload su file temporaneo + rinomina: il sito non legge mai un file a metà
+        tmp_name = FTP_MENU_FILENAME + ".tmp"
+        ftp.storbinary(f"STOR {tmp_name}", io.BytesIO(data))
+        try:
+            ftp.rename(tmp_name, FTP_MENU_FILENAME)
+        except ftplib.error_perm:
+            ftp.delete(FTP_MENU_FILENAME)
+            ftp.rename(tmp_name, FTP_MENU_FILENAME)
+    finally:
+        try:
+            ftp.quit()
+        except Exception:
+            ftp.close()
+    return f"/{cfg['folder']}/{FTP_MENU_FILENAME}"
+
+
+@api_router.patch("/menus/{menu_id}/publish", response_model=DailyMenu)
+async def toggle_menu_publish(menu_id: str, payload: DailyMenuPublishUpdate):
+    """Pubblica/ritira il menu: genera menu.json e lo invia via FTP al sito."""
+    menu = await db.daily_menus.find_one({"_id": ObjectId(menu_id)})
+    if not menu:
+        raise HTTPException(status_code=404, detail="Menu non trovato")
+
+    menu["isPublished"] = payload.isPublished
+    public_payload = await _build_public_payload(menu, menu["date"])
+    try:
+        remote_path = await asyncio.to_thread(_ftp_upload_menu_json, public_payload)
+    except FtpNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Invio FTP del menu fallito")
+        raise HTTPException(status_code=502, detail=f"Invio al sito non riuscito: {e}")
+    logger.info(f"Menu {menu['date']} inviato via FTP in {remote_path} (published={payload.isPublished})")
+
+    await db.daily_menus.update_one({"_id": ObjectId(menu_id)}, {"$set": {
+        "isPublished": payload.isPublished,
+        "publishedAt": datetime.now(ZoneInfo("Europe/Rome")) if payload.isPublished else None,
+    }})
+    menu = await db.daily_menus.find_one({"_id": ObjectId(menu_id)})
+    return DailyMenu(id=str(menu["_id"]), **{k: v for k, v in menu.items() if k != "_id"})
+
+
+# Sezioni "daily" (cambiano ogni giorno) vs "fixed" (piatti fissi del locale)
+_DAILY_CATEGORIES = {"Primi", "Secondi", "Contorni"}
+
+ITALIAN_WEEKDAYS = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]
+
+
+def _rome_today_iso() -> str:
+    """Data di 'oggi' nel fuso orario Europa/Roma, formato YYYY-MM-DD."""
+    return datetime.now(ZoneInfo("Europe/Rome")).strftime("%Y-%m-%d")
+
+
+async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
+    """Costruisce il payload pubblico (JSON) a partire da un menu del DB.
+    - Espone SOLO campi pubblici: name, price, tags, allergens, notes.
+    - NON espone: id interni, costi, porzioni, note di cucina.
+    - Raggruppa per categoria e marca ogni sezione come 'daily' o 'fixed'.
+    """
+    now_rome = datetime.now(ZoneInfo("Europe/Rome"))
+    try:
+        weekday_name = ITALIAN_WEEKDAYS[datetime.strptime(target_date, "%Y-%m-%d").weekday()]
+    except Exception:
+        weekday_name = None
+
+    # Carica anagrafica dei piatti (per allergeni/tag se non presenti sull'item)
+    dish_map: dict = {}
+    if menu and menu.get("items"):
+        dish_ids = [i.get("dishId") for i in menu["items"] if i.get("dishId")]
+        obj_ids = []
+        for d in dish_ids:
+            try:
+                obj_ids.append(ObjectId(d))
+            except Exception:
+                pass
+        if obj_ids:
+            async for d in db.dishes.find({"_id": {"$in": obj_ids}}):
+                dish_map[str(d["_id"])] = d
+
+    # Ordina le categorie come configurate dall'utente
+    categories_cursor = db.categories.find().sort("order", 1)
+    categories = [c async for c in categories_cursor]
+
+    sections: List[dict] = []
+    is_published = bool(menu and menu.get("isPublished"))
+
+    for cat in categories:
+        cat_name = cat.get("name")
+        if not cat_name:
+            continue
+        if cat_name.startswith("TEST_"):
+            continue
+        sec_type = "daily" if cat_name in _DAILY_CATEGORIES else "fixed"
+
+        items: List[dict] = []
+        if is_published and menu and menu.get("items"):
+            for item in menu["items"]:
+                if item.get("categoryName") != cat_name:
+                    continue
+                portions = item.get("portions", 0)
+                if portions is None or portions <= 0:
+                    continue  # nascondi piatti esauriti
+                dish = dish_map.get(item.get("dishId") or "")
+                tags = (dish or {}).get("tags") or []
+                allergens = (dish or {}).get("allergens") or []
+                items.append({
+                    "name": item.get("dishName"),
+                    "price": round(float(item.get("dailyPrice", 0)), 2),
+                    "tags": list(tags),
+                    "allergens": list(allergens),
+                    "notes": (item.get("notes") or "").strip(),
+                })
+
+        # Per sezioni "fixed", mostra sempre tutti i piatti della categoria (anche se menu non pubblicato)
+        # purché siano "preferiti" (isFavorite=True) → policy di default per piatti fissi del locale.
+        if sec_type == "fixed" and not items:
+            async for d in db.dishes.find({
+                "categoryName": cat_name,
+                "active": True,
+                "isFavorite": True,
+            }):
+                items.append({
+                    "name": d.get("name"),
+                    "price": round(float(d.get("basePrice", 0)), 2),
+                    "tags": list(d.get("tags") or []),
+                    "allergens": list(d.get("allergens") or []),
+                    "notes": "",
+                })
+
+        if items:
+            sections.append({"name": cat_name, "type": sec_type, "items": items})
+
+    message = None
+    if not is_published:
+        is_sunday = now_rome.weekday() == 6
+        if is_sunday:
+            message = "Siamo chiusi la domenica. Torna domani per il menu."
+        else:
+            message = "Il menu del giorno arriva entro le 10:00."
+
+    return {
+        "date": target_date,
+        "weekday": weekday_name,
+        "published": is_published,
+        "updated_at": now_rome.isoformat(timespec="seconds"),
+        "message": message,
+        "sections": sections,
+    }
+
+
+def _public_json(payload: dict) -> JSONResponse:
+    """Risponde con headers CORS + cache per il widget pubblico."""
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Cache-Control": "public, max-age=60",
+    }
+    return JSONResponse(content=payload, headers=headers)
+
+
+@api_router.get("/public/menu/today")
+async def public_menu_today():
+    """Endpoint PUBBLICO per il sito web del locale.
+    Legge il menu del giorno (fuso Europa/Roma) e lo espone solo se pubblicato.
+    """
+    today = _rome_today_iso()
+    menu = await db.daily_menus.find_one({"date": today})
+    payload = await _build_public_payload(menu, today)
+    return _public_json(payload)
+
+
+@api_router.get("/public/menu/{date}")
+async def public_menu_by_date(date: str):
+    """Variante: espone un menu di una data specifica (YYYY-MM-DD)."""
+    menu = await db.daily_menus.find_one({"date": date})
+    payload = await _build_public_payload(menu, date)
+    return _public_json(payload)
+
 
 # ============ ROUTES - ORDERS ============
 
@@ -1936,6 +2191,133 @@ async def setup_status():
 
 # Include the router in the main app
 app.include_router(api_router)
+
+
+# ========== PAGINA HTML PUBBLICA (QR code al banco) ==========
+
+@app.get("/public/menu", response_class=HTMLResponse)
+async def public_menu_html():
+    """Pagina HTML standalone del menu del giorno (ideale per QR code al banco)."""
+    today = _rome_today_iso()
+    menu = await db.daily_menus.find_one({"date": today})
+    payload = await _build_public_payload(menu, today)
+
+    # Renderizza una pagina HTML elegante stile menu ristorante
+    sections_html = ""
+    for sec in payload["sections"]:
+        items_html = ""
+        for it in sec["items"]:
+            allergens_badge = ""
+            if it["allergens"]:
+                allergens_badge = f'<span class="allergens">{", ".join(it["allergens"])}</span>'
+            tags_badge = ""
+            if it["tags"]:
+                tags_html = " ".join(f'<span class="tag">{t}</span>' for t in it["tags"])
+                tags_badge = f'<span class="tags">{tags_html}</span>'
+            notes = f'<div class="notes">{it["notes"]}</div>' if it["notes"] else ""
+            price_fmt = f"€ {it['price']:.2f}".replace(".", ",")
+            items_html += f"""
+                <div class="item">
+                    <div class="item-line">
+                        <span class="item-name">{it["name"]} {tags_badge}</span>
+                        <span class="dots"></span>
+                        <span class="item-price">{price_fmt}</span>
+                    </div>
+                    {notes}
+                    {allergens_badge}
+                </div>
+            """
+        sections_html += f"""
+            <section class="section">
+                <h2>{sec["name"]}</h2>
+                {items_html}
+            </section>
+        """
+
+    banner_html = ""
+    if payload.get("message"):
+        banner_html = f'<div class="banner">{payload["message"]}</div>'
+
+    weekday = payload.get("weekday") or ""
+    date_display = payload["date"]
+    try:
+        d = datetime.strptime(payload["date"], "%Y-%m-%d")
+        months_it = ["", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+                     "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"]
+        date_display = f"{d.day} {months_it[d.month]} {d.year}"
+    except Exception:
+        pass
+
+    html = f"""<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, follow">
+    <title>Menu del giorno — {date_display}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {{ box-sizing: border-box; }}
+        body {{
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f0f10;
+            color: #ececec;
+            margin: 0;
+            padding: 24px 16px 60px;
+            min-height: 100vh;
+        }}
+        .container {{ max-width: 640px; margin: 0 auto; }}
+        header {{ text-align: center; margin-bottom: 32px; padding-top: 20px; }}
+        header h1 {{
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 36px; margin: 0 0 8px; letter-spacing: 0.5px;
+        }}
+        header .date {{ color: #a0a0a0; font-size: 15px; text-transform: capitalize; }}
+        .banner {{
+            background: #1c1c1e; border-left: 3px solid #d4a24c;
+            padding: 14px 16px; border-radius: 6px; margin-bottom: 28px;
+            font-size: 14px; color: #cfcfcf;
+        }}
+        .section {{ margin-bottom: 36px; }}
+        .section h2 {{
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 22px; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; color: #d4a24c;
+            border-bottom: 1px solid #2a2a2d;
+            padding-bottom: 10px; margin: 0 0 16px;
+        }}
+        .item {{ margin: 10px 0 14px; }}
+        .item-line {{ display: flex; align-items: baseline; gap: 8px; font-size: 16px; }}
+        .item-name {{ color: #ececec; }}
+        .dots {{ flex: 1; border-bottom: 1px dotted #4a4a4e; height: 1em; margin: 0 4px; min-width: 10px; }}
+        .item-price {{ font-variant-numeric: tabular-nums; color: #ececec; white-space: nowrap; }}
+        .tag {{
+            display: inline-block; font-size: 11px; letter-spacing: 0.3px;
+            background: #22343b; color: #7fc8db; padding: 2px 6px; border-radius: 4px;
+            margin-left: 6px;
+        }}
+        .notes {{ font-size: 13px; color: #a0a0a0; font-style: italic; margin-top: 2px; }}
+        .allergens {{ display: block; font-size: 11px; color: #a0a0a0; margin-top: 2px; }}
+        .allergens:before {{ content: "allergeni: "; color: #767676; }}
+        footer {{ text-align: center; color: #666; font-size: 12px; margin-top: 40px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Menu del giorno</h1>
+            <div class="date">{weekday} {date_display}</div>
+        </header>
+        {banner_html}
+        {sections_html}
+        <footer>Aggiornato {payload["updated_at"][11:16]}</footer>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html, headers={"Cache-Control": "public, max-age=60"})
+
 
 app.add_middleware(
     CORSMiddleware,

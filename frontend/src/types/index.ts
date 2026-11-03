@@ -35,6 +35,8 @@ export interface DailyMenu {
   date: string;
   items: MenuItem[];
   createdAt: string;
+  isPublished?: boolean;
+  publishedAt?: string | null;
 }
 
 export interface OrderItem {

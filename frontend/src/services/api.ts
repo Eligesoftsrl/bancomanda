@@ -99,6 +99,11 @@ export const menusApi = {
     const response = await api.delete(`/menus/${menuId}/items/${dishId}`);
     return response.data;
   },
+
+  togglePublish: async (menuId: string, isPublished: boolean): Promise<DailyMenu> => {
+    const response = await api.patch(`/menus/${menuId}/publish`, { isPublished });
+    return response.data;
+  },
 };
 
 // Orders API

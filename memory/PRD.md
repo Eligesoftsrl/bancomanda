@@ -64,7 +64,19 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Non sovrascrivere i colori brand
 - Lingua interfaccia: Italiano
 
+
+## Pubblicazione menu sul sito (FTP) — 2026-06
+- Toggle "Pubblica sul sito" nel tab Menu → backend genera `menu.json` e lo invia via FTP/FTPS (Aruba) in `www.giorgiobistrot.it/menu/menu.json` (upload su .tmp + rinomina)
+- Disattivando il toggle viene inviato un JSON con `published:false` e `message`
+- Pulsante "Aggiorna" (quando pubblicato) re-invia il file dopo modifiche; pulsante "Codice" mostra percorso + snippet JS da copiare
+- Endpoint: `PATCH /api/menus/{id}/publish` (503 se FTP non configurato, 502 se invio fallito: stato NON cambia)
+- Env backend: FTP_HOST, FTP_USER, FTP_PORT, FTP_DIR in .env; FTP_PASSWORD come secret
+- Formato JSON di esempio: `/app/memory/menu-esempio.json` (caricato anche online come file di prova)
+- Endpoint pubblico JSON `/api/public/menu/today` resta disponibile
+- NOTA: la preview web non carica il bundle JS (HTML SSR senza script tag, SDK 58) — Expo Go non è impattato
+
 ## Backlog / Future
+- P1: UI tag/allergeni (14 allergeni UE) nella scheda Piatto — oggi i campi esistono nel DB ma non sono modificabili
 - P2: Animazione fade-in del logo (effetto Apple/Stripe) al caricamento app
 - P2: Refactoring `index.tsx` (>4000 righe) in componenti separati
 - P3: Fix lint warnings pre-esistenti (apostrofi non escaped, chiave duplicata `orderItemsList` linee 2524/3164, import non usati)

@@ -11,7 +11,9 @@ import {
   RefreshControl,
   Animated,
   Platform,
+  Switch,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
@@ -86,6 +88,45 @@ export default function MenuScreen() {
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ visible: true, message, type });
+  };
+
+  // "Pubblica sul sito" modal + action
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
+
+  const SITE_JSON_PATH = '/menu/menu.json';
+  const SITE_JS_SNIPPET = `fetch('${SITE_JSON_PATH}?t=' + Date.now())
+  .then(r => r.json())
+  .then(menu => {
+    if (!menu.published) { /* mostra menu.message */ return; }
+    menu.sections.forEach(sec => {
+      sec.items.forEach(p => {
+        /* p.name, p.price, p.tags, p.allergens, p.notes */
+      });
+    });
+  });`;
+
+  const handleTogglePublish = async (nextValue: boolean) => {
+    if (!currentMenu) return;
+    try {
+      setPublishLoading(true);
+      const updated = await menusApi.togglePublish(currentMenu.id, nextValue);
+      setCurrentMenu(updated);
+      showToast(nextValue ? 'Menu inviato al sito' : 'Menu ritirato dal sito', 'success');
+    } catch (e: any) {
+      showToast(e?.response?.data?.detail || 'Invio al sito non riuscito', 'error');
+    } finally {
+      setPublishLoading(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await Clipboard.setStringAsync(text);
+      showToast(`${label} copiato`, 'success');
+    } catch (e) {
+      showToast('Copia non riuscita', 'error');
+    }
   };
 
   // Confirm dialog
@@ -660,6 +701,54 @@ export default function MenuScreen() {
           </View>
         ) : (
           <>
+            {/* Pubblicazione sito web */}
+            <View style={styles.publishBar} testID="publish-bar">
+              <View style={styles.publishBarLeft}>
+                <Ionicons
+                  name={currentMenu.isPublished ? 'globe' : 'globe-outline'}
+                  size={20}
+                  color={currentMenu.isPublished ? '#16a34a' : '#64748b'}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.publishBarTitle}>Pubblica sul sito</Text>
+                  <Text style={styles.publishBarSubtitle} testID="publish-status-text">
+                    {currentMenu.isPublished
+                      ? `Online sul sito${currentMenu.publishedAt ? ' · inviato alle ' + format(new Date(currentMenu.publishedAt), 'HH:mm') : ''}`
+                      : 'Attiva per inviare il menu al sito'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.publishBarRight}>
+                {publishLoading && <ActivityIndicator size="small" color="#16a34a" testID="publish-loading" />}
+                {currentMenu.isPublished && !publishLoading && (
+                  <TouchableOpacity
+                    style={styles.publishInfoButton}
+                    onPress={() => handleTogglePublish(true)}
+                    testID="publish-resend-btn"
+                  >
+                    <Ionicons name="cloud-upload-outline" size={18} color="#1a202c" />
+                    <Text style={styles.publishInfoButtonText}>Aggiorna</Text>
+                  </TouchableOpacity>
+                )}
+                <Switch
+                  testID="publish-toggle"
+                  value={!!currentMenu.isPublished}
+                  onValueChange={handleTogglePublish}
+                  disabled={publishLoading}
+                  trackColor={{ false: '#e2e8f0', true: '#86efac' }}
+                  thumbColor={currentMenu.isPublished ? '#16a34a' : '#f1f5f9'}
+                />
+                <TouchableOpacity
+                  style={styles.publishInfoButton}
+                  onPress={() => setShowPublishModal(true)}
+                  testID="publish-info-btn"
+                >
+                  <Ionicons name="code-slash-outline" size={18} color="#1a202c" />
+                  <Text style={styles.publishInfoButtonText}>Codice</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* Menu Items */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -962,6 +1051,41 @@ export default function MenuScreen() {
                 <Text style={styles.confirmButtonConfirmText}>Conferma</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Publish info Modal */}
+      <Modal visible={showPublishModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent} testID="publish-modal">
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Menu sul sito</Text>
+              <TouchableOpacity onPress={() => setShowPublishModal(false)} testID="publish-modal-close">
+                <Ionicons name="close" size={24} color="#1a202c" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.publishHelpText}>
+              Quando attivi "Pubblica sul sito", l'app crea il file menu.json e lo invia via FTP nella cartella menu del tuo sito. Premi "Aggiorna" dopo aver modificato piatti o prezzi.
+            </Text>
+
+            <Text style={styles.inputLabel}>Percorso del file sul sito</Text>
+            <View style={styles.codeBox}>
+              <Text style={styles.codeText} selectable testID="publish-json-path">{SITE_JSON_PATH}</Text>
+            </View>
+            <TouchableOpacity style={styles.copyButton} onPress={() => copyToClipboard(SITE_JSON_PATH, 'Percorso')} testID="publish-copy-path-btn">
+              <Ionicons name="copy-outline" size={16} color="#ffffff" />
+              <Text style={styles.copyButtonText}>Copia percorso</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.inputLabel}>Esempio di lettura (JavaScript)</Text>
+            <ScrollView style={styles.codeBoxScroll}>
+              <Text style={styles.codeText} selectable testID="publish-js-snippet">{SITE_JS_SNIPPET}</Text>
+            </ScrollView>
+            <TouchableOpacity style={styles.copyButton} onPress={() => copyToClipboard(SITE_JS_SNIPPET, 'Codice')} testID="publish-copy-snippet-btn">
+              <Ionicons name="copy-outline" size={16} color="#ffffff" />
+              <Text style={styles.copyButtonText}>Copia codice</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1370,6 +1494,92 @@ const styles = StyleSheet.create({
   },
   addDishButton: {
     padding: 8,
+  },
+  publishBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    gap: 12,
+    shadowColor: '#5423E7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  publishBarLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  publishBarTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1a202c',
+  },
+  publishBarSubtitle: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  publishBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  publishInfoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#f5f7fa',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  publishInfoButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1a202c',
+  },
+  publishHelpText: {
+    fontSize: 14,
+    color: '#64748b',
+    lineHeight: 20,
+  },
+  codeBox: {
+    backgroundColor: '#1a202c',
+    borderRadius: 10,
+    padding: 12,
+  },
+  codeBoxScroll: {
+    backgroundColor: '#1a202c',
+    borderRadius: 10,
+    padding: 12,
+    maxHeight: 200,
+  },
+  codeText: {
+    color: '#FFBC0D',
+    fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#00754A',
+    borderRadius: 8,
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  copyButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   confirmOverlay: {
     flex: 1,
