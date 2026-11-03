@@ -72,7 +72,8 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Endpoint: `PATCH /api/menus/{id}/publish` (503 se FTP non configurato, 502 se invio fallito: stato NON cambia)
 - Env backend: FTP_HOST, FTP_USER, FTP_PORT, FTP_DIR in .env; FTP_PASSWORD come secret
 - Formato JSON di esempio: `/app/memory/menu-esempio.json` (caricato anche online come file di prova)
-- Endpoint pubblico JSON `/api/public/menu/today` resta disponibile
+- Endpoint pubblico JSON `/api/public/menu/today` resta disponibile (NON ancora deployato in produzione: 404)
+- Generato JSON reale dal DB di produzione (lettura via API GET di bancos-receipt.emergent.host) per il 2026-11-03: 64 piatti, 7 sezioni → `/app/memory/menu-reale-2026-11-03.json`, caricato online su www.giorgiobistrot.it/menu/menu.json
 - NOTA: la preview web non carica il bundle JS (HTML SSR senza script tag, SDK 58) — Expo Go non è impattato
 
 ## Backlog / Future

@@ -1,0 +1,499 @@
+{
+  "date": "2026-11-03",
+  "weekday": "martedì",
+  "published": true,
+  "updated_at": "2026-11-03T13:15:38+01:00",
+  "message": null,
+  "sections": [
+    {
+      "name": "Primi",
+      "type": "daily",
+      "items": [
+        {
+          "name": "Scarpariello al pomodorino giallo",
+          "price": 7.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Riso con zucca speck",
+          "price": 6.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Secondi",
+      "type": "daily",
+      "items": [
+        {
+          "name": "Bistecca di pollo ai ferri",
+          "price": 8.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Polpettone di tonno",
+          "price": 9.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Burger con funghi",
+          "price": 8.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Tortino di zucca",
+          "price": 7.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Contorni",
+      "type": "daily",
+      "items": [
+        {
+          "name": "Funghi",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Zucca",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Scarola",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Broccoli",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Spinaci",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Zucchine",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Patate al forno",
+          "price": 3.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Patate fritte",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Piatti Freddi",
+      "type": "fixed",
+      "items": [
+        {
+          "name": "Bresaola rucola e grana",
+          "price": 7.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Salmone stracchino e rucola",
+          "price": 9.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Insalata Mista",
+          "price": 5.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Insalata di Pollo",
+          "price": 8.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Insalata di Tonno",
+          "price": 8.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Insalata Salmone",
+          "price": 10.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Insalata parmigiano e noci",
+          "price": 8.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Insalata Uova sode",
+          "price": 8.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Crudo e Mozzarella",
+          "price": 6.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Caponata",
+          "price": 8.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Fuori Menù",
+      "type": "fixed",
+      "items": [
+        {
+          "name": "Cotoletta con Patate",
+          "price": 7.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Pollo ai ferri con patate",
+          "price": 7.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Salsiccia con patate",
+          "price": 6.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Hamburger ai ferri",
+          "price": 6.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Provola Piastrata",
+          "price": 4.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Tagliata di frutta",
+          "price": 5.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Gateau di patate",
+          "price": 5.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Parmigiana di melanzane",
+          "price": 5.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Pollo ai ferri",
+          "price": 6.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Panino napoletano",
+          "price": 2.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Rustica",
+          "price": 3.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Box light",
+          "price": 7.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Box light 2",
+          "price": 8.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Box light 3",
+          "price": 8.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Club Sandwich",
+          "price": 7.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Uova sode",
+          "price": 1.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Box Cous cous",
+          "price": 5.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Bibite",
+      "type": "fixed",
+      "items": [
+        {
+          "name": "Acqua naturale piccola",
+          "price": 1.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Acqua gassata",
+          "price": 1.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Coca cola",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Coca cola 0",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Fanta",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Aprite",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Thè pesca",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Thè limone",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Birra nastro",
+          "price": 2.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Birra heineken",
+          "price": 2.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Birra ichnusa",
+          "price": 3.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Birra tennet’s",
+          "price": 3.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Coca cola grande",
+          "price": 4.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Coca cola 0 grande",
+          "price": 4.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Acqua naturale grande",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "name": "Pane",
+      "type": "fixed",
+      "items": [
+        {
+          "name": "Panini integrali",
+          "price": 0.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Frusta tipo 1",
+          "price": 1.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Cereali antichi",
+          "price": 2.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Malto d’orzo",
+          "price": 4.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Pane speciale a tavolo",
+          "price": 1.0,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Rosetta",
+          "price": 0.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Panini ad olio",
+          "price": 0.5,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        },
+        {
+          "name": "Rusticone",
+          "price": 0.75,
+          "tags": [],
+          "allergens": [],
+          "notes": ""
+        }
+      ]
+    }
+  ]
+}
