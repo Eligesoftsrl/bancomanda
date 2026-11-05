@@ -557,6 +557,7 @@ def get_dashboard_html() -> str:
                                 <th>Locale</th>
                                 <th>Contatto</th>
                                 <th>Email</th>
+                                <th>Telefono</th>
                                 <th>Stato</th>
                                 <th>Data</th>
                                 <th>Azioni</th>
@@ -720,6 +721,10 @@ def get_dashboard_html() -> str:
                 const resp = await fetch('/api/superadmin/stats', {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
+                if (!resp.ok) {
+                    if (resp.status === 401) { logout(); return; }
+                    throw new Error('Stats load failed');
+                }
                 const data = await resp.json();
 
                 document.getElementById('statTotal').textContent = data.total_tenants;
@@ -727,17 +732,34 @@ def get_dashboard_html() -> str:
                 document.getElementById('statPending').textContent = data.pending_tenants;
                 document.getElementById('statDemoNew').textContent = data.new_demo_requests;
 
+                // Show/hide badges based on count
+                const pendingBadge = document.getElementById('pendingBadge');
+                const demoBadge = document.getElementById('demoBadge');
+                
                 if (data.pending_tenants > 0) {
-                    document.getElementById('pendingBadge').textContent = data.pending_tenants;
-                    document.getElementById('pendingBadge').style.display = 'block';
+                    pendingBadge.textContent = data.pending_tenants;
+                    pendingBadge.style.display = 'block';
+                } else {
+                    pendingBadge.style.display = 'none';
                 }
+                
                 if (data.new_demo_requests > 0) {
-                    document.getElementById('demoBadge').textContent = data.new_demo_requests;
-                    document.getElementById('demoBadge').style.display = 'block';
+                    demoBadge.textContent = data.new_demo_requests;
+                    demoBadge.style.display = 'block';
+                } else {
+                    demoBadge.style.display = 'none';
                 }
             } catch (err) {
                 console.error('Failed to load stats:', err);
             }
+        }
+
+        // XSS protection - escape HTML special characters
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Load Tenants
@@ -750,6 +772,10 @@ def get_dashboard_html() -> str:
                 const resp = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
+                if (!resp.ok) {
+                    if (resp.status === 401) { logout(); return; }
+                    throw new Error('Tenants load failed');
+                }
                 const data = await resp.json();
 
                 const tbody = document.getElementById('tenantsTableBody');
@@ -768,12 +794,12 @@ def get_dashboard_html() -> str:
                 tbody.innerHTML = data.tenants.map(t => `
                     <tr>
                         <td>
-                            <strong style="color: var(--text-primary)">${t.name}</strong>
-                            <div style="color: var(--text-muted); font-size: 0.8rem;">${t.slug}</div>
+                            <strong style="color: var(--text-primary)">${escapeHtml(t.name)}</strong>
+                            <div style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(t.slug)}</div>
                         </td>
                         <td>
-                            ${t.owner_name || '-'}
-                            <div style="color: var(--text-muted); font-size: 0.8rem;">${t.owner_email || ''}</div>
+                            ${escapeHtml(t.owner_name) || '-'}
+                            <div style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(t.owner_email) || ''}</div>
                         </td>
                         <td>
                             <span class="badge badge-${t.status === 'attivo' ? 'active' : t.status === 'in_attesa' ? 'pending' : 'suspended'}">
@@ -782,9 +808,9 @@ def get_dashboard_html() -> str:
                         </td>
                         <td>${new Date(t.created_at).toLocaleDateString('it-IT')}</td>
                         <td>
-                            ${t.status === 'in_attesa' ? `<button class="btn btn-success btn-sm" onclick="updateTenantStatus('${t.id}', 'attivo')"><i class="fas fa-check"></i> Attiva</button>` : ''}
-                            ${t.status === 'attivo' ? `<button class="btn btn-danger btn-sm" onclick="updateTenantStatus('${t.id}', 'sospeso')"><i class="fas fa-ban"></i> Sospendi</button>` : ''}
-                            ${t.status === 'sospeso' ? `<button class="btn btn-success btn-sm" onclick="updateTenantStatus('${t.id}', 'attivo')"><i class="fas fa-redo"></i> Riattiva</button>` : ''}
+                            ${t.status === 'in_attesa' ? `<button class="btn btn-success btn-sm" onclick="updateTenantStatus('${escapeHtml(t.id)}', 'attivo')"><i class="fas fa-check"></i> Attiva</button>` : ''}
+                            ${t.status === 'attivo' ? `<button class="btn btn-danger btn-sm" onclick="updateTenantStatus('${escapeHtml(t.id)}', 'sospeso')"><i class="fas fa-ban"></i> Sospendi</button>` : ''}
+                            ${t.status === 'sospeso' ? `<button class="btn btn-success btn-sm" onclick="updateTenantStatus('${escapeHtml(t.id)}', 'attivo')"><i class="fas fa-redo"></i> Riattiva</button>` : ''}
                         </td>
                     </tr>
                 `).join('');
@@ -831,13 +857,17 @@ def get_dashboard_html() -> str:
                 const resp = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
+                if (!resp.ok) {
+                    if (resp.status === 401) { logout(); return; }
+                    throw new Error('Demo requests load failed');
+                }
                 const data = await resp.json();
 
                 const tbody = document.getElementById('demoRequestsTableBody');
                 if (data.requests.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 <i class="fas fa-envelope"></i>
                                 <p>Nessuna richiesta trovata</p>
                             </td>
@@ -848,9 +878,10 @@ def get_dashboard_html() -> str:
 
                 tbody.innerHTML = data.requests.map(r => `
                     <tr>
-                        <td style="color: var(--text-primary)">${r.restaurant_name}</td>
-                        <td>${r.contact_name}</td>
-                        <td>${r.email}</td>
+                        <td style="color: var(--text-primary)">${escapeHtml(r.restaurant_name)}</td>
+                        <td>${escapeHtml(r.contact_name)}</td>
+                        <td>${escapeHtml(r.email)}</td>
+                        <td>${escapeHtml(r.phone) || '-'}</td>
                         <td>
                             <span class="badge badge-${r.status === 'nuova' ? 'new' : r.status === 'contattata' ? 'active' : 'suspended'}">
                                 ${r.status === 'nuova' ? 'Nuova' : r.status === 'contattata' ? 'Contattata' : 'Archiviata'}
@@ -858,8 +889,8 @@ def get_dashboard_html() -> str:
                         </td>
                         <td>${new Date(r.created_at).toLocaleDateString('it-IT')}</td>
                         <td>
-                            ${r.status === 'nuova' ? `<button class="btn btn-success btn-sm" onclick="updateDemoStatus('${r.id}', 'contattata')"><i class="fas fa-phone"></i></button>` : ''}
-                            ${r.status !== 'archiviata' ? `<button class="btn btn-outline btn-sm" onclick="updateDemoStatus('${r.id}', 'archiviata')"><i class="fas fa-archive"></i></button>` : ''}
+                            ${r.status === 'nuova' ? `<button class="btn btn-success btn-sm" onclick="updateDemoStatus('${escapeHtml(r.id)}', 'contattata')"><i class="fas fa-phone"></i></button>` : ''}
+                            ${r.status !== 'archiviata' ? `<button class="btn btn-outline btn-sm" onclick="updateDemoStatus('${escapeHtml(r.id)}', 'archiviata')"><i class="fas fa-archive"></i></button>` : ''}
                         </td>
                     </tr>
                 `).join('');

@@ -1,0 +1,48 @@
+{
+  "summary": "Multi-tenant SaaS iteration (auth, superadmin, landing, dashboard). Backend: 17/19 pytest passed (tests/test_multitenant_auth.py). Superadmin and tenant login work. Tokens include role and tenant_id. Refresh is single-use, logout revokes the token, /me works, and RBAC returns 403 for a tenant calling superadmin routes. Register sets the tenant to in_attesa and login is blocked (403) until approval. Activate, suspend and reactivate all work with matching login results. Superadmin create-tenant works. Demo-request create, 24h duplicate check (429), list/filter, status and notes update, and stats all work. The 2 failures: an invalid ObjectId returns 500. Frontend (Playwright, 1920x1080): the landing page uses the light warm theme (#FAF9F6) and shows the hero, features, FAQ accordion and demo form. The demo form submits and shows a success alert. The self-register modal creates a pending tenant and shows a success message. Dashboard: login (including the invalid-credentials error), stats cards, sidebar badges, tenant tabs (Tutti/Attivi/In Attesa/Sospesi), Attiva/Sospendi/Riattiva buttons, demo request tabs, the contacted and archive actions, the Nuovo Ristorante modal and session persistence after reload all work. A tenant registered through the UI could log in after a superadmin activated it from the dashboard. Found 1 UI bug (stale pending badge) and 1 critical security issue (stored XSS).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/superadmin/tenants/{tenant_id}/status", "issue": "A non-ObjectId tenant_id returns 500 (bson.errors.InvalidId). It should return 400 or 404."},
+      {"endpoint": "PATCH /api/superadmin/demo-requests/{request_id}", "issue": "A non-ObjectId request_id returns 500 (bson.errors.InvalidId). It should return 400 or 404."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Admin dashboard sidebar badges", "issue": "loadStats() only shows #pendingBadge and #demoBadge when the count is above 0 and never hides them. After the last pending tenant was activated, the badge still showed '1' while statPending was 0. The same happens with demoBadge.", "selector": "#pendingBadge, #demoBadge", "priority": "MEDIUM"},
+      {"component": "Admin dashboard tables (SECURITY)", "issue": "Stored XSS. tenantsTableBody and demoRequestsTableBody are built with innerHTML using unescaped values that anyone can submit (restaurant_name, contact_name and email from the public demo form, tenant name and owner name from self-registration). The superadmin JWT is kept in localStorage, so a malicious demo request could take over the superadmin account. Escape every value (an escapeHtml helper or textContent).", "selector": "#tenantsTableBody, #demoRequestsTableBody", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [
+      {"flow": "Dashboard session expiry", "issue": "The dashboard never uses the refresh token. After 1h the access token expires, the API returns 401, and the code reads data.tenants on the error body, which throws an uncaught error. The tables stay stale or empty with no logout or message. updateTenantStatus and updateDemoStatus do not check resp.ok either.", "affected_selectors": ["#tenantsTableBody", "#demoRequestsTableBody"]},
+      {"flow": "Demo requests view", "issue": "The phone and message from demo requests are stored and returned by the API but never shown in the dashboard, so the superadmin cannot read the prospect's message.", "affected_selectors": ["#demoRequestsTableBody"]}
+    ],
+    "design_issues": [
+      {"screen": "Landing / Dashboard", "issues": ["No data-testid on the dashboard elements (login inputs, nav items, tabs, table action buttons, create-tenant form) or on the landing register-form inputs and submit button (#reg_*). Add them for future testing.", "The Panoramica stats grid has no card for suspended tenants, even though the API returns suspended_tenants."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_multitenant_auth.py", "/app/test_reports/pytest/multitenant_results.xml"],
+  "action_items": [
+    "CRITICAL: Escape all user-provided fields before inserting them with innerHTML in admin_dashboard.py (loadTenants and loadDemoRequests).",
+    "Hide #pendingBadge and #demoBadge when their counts are 0 in loadStats().",
+    "Validate ObjectId in superadmin PATCH routes (ObjectId.is_valid, return 404) to avoid 500s.",
+    "Dashboard: handle 401 by refreshing the token or logging out, check resp.ok on PATCH calls, and show phone and message for demo requests.",
+    "Add data-testid attributes to the dashboard and the landing register form."
+  ],
+  "critical_code_review_comments": [
+    "jwt_handler.py: JWT_SECRET falls back to secrets.token_hex(32) if the env var is missing. All tokens would then be invalidated on every restart, and a missing config would fail silently. Fail fast instead. It is set in .env today.",
+    "auth.py /register returns a valid access_token and refresh_token for an in_attesa tenant, which goes around the approval gate that login enforces. Once tenant-scoped routes exist, a pending tenant could use the app straight away. Return no tokens, or check tenant status in get_current_user.",
+    "get_current_user only checks the JWT and never checks tenant status or the user's disabled flag. A suspended tenant's access token keeps working for up to 60 minutes, and suspending a tenant does not revoke its refresh tokens.",
+    "There is no rate limiting or lockout on /api/auth/login or /api/auth/register, so brute force and mass sign-up spam are possible. Demo-request dedupe is per email only.",
+    "superadmin /stats loads up to 1000 tenant documents into memory to count them. Use count_documents or an aggregation. list_tenants runs N+1 queries (3 per tenant).",
+    "admin_dashboard.py (953 lines) and landing.py (913 lines) are over 700 lines with HTML, CSS and JS inlined in Python strings. Consider static template files.",
+    "Existing order and menu routes in server.py are not tenant-scoped yet (expected, since the Expo app is not integrated)."
+  ],
+  "updated_files": ["/app/backend/tests/test_multitenant_auth.py"],
+  "success_rate": {"backend": "89% (17/19)", "frontend": "95% (all flows work; stale badge bug plus XSS from code review)"},
+  "test_credentials": "From /app/memory/test_credentials.md: admin@banco.app / BancoAdmin2024!, titolare@pizzeria-napoli.it / Password123!. Both work.",
+  "seed_data_creation": "Created TEST_ tenants test-locale-*, test-sa-* and test-ui-b7030e, all left in 'sospeso'. Created TEST_ demo requests test_demo_*@example.com and test_ui_demo_b7030e@example.com, left 'archiviata'. Nothing deleted because there is no delete endpoint. Seed data was not changed. The demo request 'Ristorante Test' (test@example.com, pre-existing) was left untouched.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: EXPO_PUBLIC_BACKEND_URL=<url> pytest tests/test_multitenant_auth.py -p no:xdist (frontend/.env uses EXPO_PUBLIC_BACKEND_URL, not REACT_APP_BACKEND_URL). Tests use uuid-suffixed emails because demo requests are deduped per email for 24h. Dashboard selectors: #email, #password, #loginForm, .nav-item[data-view=tenants|demo-requests], .tab[data-filter=...], .tab[data-demo-filter=...], row buttons by text (Attiva/Sospendi/Riattiva). Landing has data-testids for the demo form but the register modal only has #reg_* ids.",
+  "rca of the issue": "Stale badge: loadStats sets style.display='block' only when count>0 and has no else branch. 500s: ObjectId(id) is called on unvalidated path params and raises InvalidId. XSS: the template literals in innerHTML interpolate raw API strings."
+}

@@ -238,6 +238,13 @@ async def update_tenant_status(
     """Update tenant status (activate, suspend, etc.)."""
     db = request.app.state.db
     
+    # Validate ObjectId format
+    if not ObjectId.is_valid(tenant_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant non trovato"
+        )
+    
     tenant = await db.tenants.find_one({"_id": ObjectId(tenant_id)})
     if not tenant:
         raise HTTPException(
@@ -317,6 +324,13 @@ async def update_demo_request(
 ):
     """Update a demo request (status, notes)."""
     db = request.app.state.db
+    
+    # Validate ObjectId format
+    if not ObjectId.is_valid(request_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Richiesta non trovata"
+        )
     
     demo_req = await db.demo_requests.find_one({"_id": ObjectId(request_id)})
     if not demo_req:
