@@ -16,13 +16,13 @@ export default function Root({ children }: PropsWithChildren) {
         {/* PWA Meta Tags */}
         <meta name="theme-color" content="#DB0007" />
         <meta name="background-color" content="#f5f7fa" />
-        <meta name="application-name" content="Bancó" />
+        <meta name="application-name" content="Bancomanda" />
         <meta name="description" content="Sistema gestione ordini ristorante" />
         
         {/* iOS PWA Meta Tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Bancó" />
+        <meta name="apple-mobile-web-app-title" content="Bancomanda" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         
         {/* Android/Chrome PWA */}
@@ -32,7 +32,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
         
-        <title>Bancó</title>
+        <title>Bancomanda</title>
         
         <ScrollViewStyleReset />
         <style

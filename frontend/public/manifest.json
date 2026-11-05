@@ -1,6 +1,6 @@
 {
-  "name": "Bancó",
-  "short_name": "Bancó",
+  "name": "Bancomanda",
+  "short_name": "Bancomanda",
   "description": "Sistema gestione ordini ristorante",
   "start_url": "/",
   "scope": "/",

@@ -4,7 +4,7 @@ Authentication routes: login, register, refresh, logout.
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 
 from auth.jwt_handler import (
@@ -70,6 +70,22 @@ def user_to_response(user: dict, tenant_name: Optional[str] = None) -> dict:
         "tenant_id": user.get("tenant_id"),
         "tenant_name": tenant_name,
     }
+
+
+async def _register_failed_attempt(db, identifier: str):
+    """5 tentativi errati = blocco di 15 minuti."""
+    now = datetime.now(timezone.utc)
+    doc = await db.login_attempts.find_one_and_update(
+        {"identifier": identifier},
+        {"$inc": {"count": 1}, "$set": {"last_attempt": now}},
+        upsert=True,
+        return_document=True,
+    )
+    if doc and doc.get("count", 0) >= 5:
+        await db.login_attempts.update_one(
+            {"identifier": identifier},
+            {"$set": {"locked_until": now + timedelta(minutes=15), "count": 0}}
+        )
 
 
 # ============ ROUTES ============
@@ -176,9 +192,20 @@ async def login(body: LoginRequest, request: Request):
     db = request.app.state.db
     email = body.email.lower()
     
+    identifier = f"{request.client.host if request.client else 'unknown'}:{email}"
+    attempts = await db.login_attempts.find_one({"identifier": identifier})
+    now_check = datetime.now(timezone.utc)
+    locked_until = attempts.get("locked_until") if attempts else None
+    if locked_until and locked_until.replace(tzinfo=timezone.utc) > now_check:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Troppi tentativi errati. Riprova tra 15 minuti."
+        )
+
     # Find user
     user = await db.users.find_one({"email": email})
     if not user:
+        await _register_failed_attempt(db, identifier)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o password non validi"
@@ -193,17 +220,22 @@ async def login(body: LoginRequest, request: Request):
     
     # Verify password
     if not verify_password(body.password, user["password_hash"]):
+        await _register_failed_attempt(db, identifier)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o password non validi"
         )
     
+    await db.login_attempts.delete_one({"identifier": identifier})
+
     # Check tenant status (if not superadmin)
     tenant_name = None
+    legacy = False
     if user.get("tenant_id"):
         tenant = await db.tenants.find_one({"_id": ObjectId(user["tenant_id"])})
         if tenant:
             tenant_name = tenant["name"]
+            legacy = bool(tenant.get("legacy_data"))
             if tenant["status"] == "sospeso":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -228,7 +260,8 @@ async def login(body: LoginRequest, request: Request):
         user_id=str(user["_id"]),
         email=user["email"],
         role=user["role"],
-        tenant_id=user.get("tenant_id")
+        tenant_id=user.get("tenant_id"),
+        extra_claims={"legacy": legacy}
     )
     refresh_token = create_refresh_token()
     
@@ -282,10 +315,12 @@ async def refresh(body: RefreshRequest, request: Request):
     
     # Check tenant status
     tenant_name = None
+    legacy = False
     if user.get("tenant_id"):
         tenant = await db.tenants.find_one({"_id": ObjectId(user["tenant_id"])})
         if tenant:
             tenant_name = tenant["name"]
+            legacy = bool(tenant.get("legacy_data"))
             if tenant["status"] in ("sospeso", "in_attesa"):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -297,7 +332,8 @@ async def refresh(body: RefreshRequest, request: Request):
         user_id=str(user["_id"]),
         email=user["email"],
         role=user["role"],
-        tenant_id=user.get("tenant_id")
+        tenant_id=user.get("tenant_id"),
+        extra_claims={"legacy": legacy}
     )
     new_refresh_token = create_refresh_token()
     

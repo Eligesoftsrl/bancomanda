@@ -510,6 +510,16 @@ def get_landing_html() -> str:
             margin-top: 3rem;
         }
         .showcase-item { margin: 0; }
+        .showcase-item.wide {
+            grid-column: span 2;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+        .showcase-item.wide figcaption { margin-top: 0; }
+        .showcase-item.wide figcaption strong { font-size: 1.5rem; }
+        .showcase-item.wide figcaption span { font-size: 1.05rem; }
         .showcase-item .ipad-frame {
             transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
@@ -762,6 +772,7 @@ def get_landing_html() -> str:
             .bento-card.large, .bento-card.medium, .bento-card.small { grid-column: span 12; }
             nav { display: none; }
             .showcase-grid { grid-template-columns: 1fr; }
+            .showcase-item.wide { grid-column: span 1; grid-template-columns: 1fr; gap: 1.5rem; }
         }
         @media (max-width: 640px) {
             .form-grid { grid-template-columns: 1fr; }
@@ -909,6 +920,7 @@ def get_landing_html() -> str:
                     <div class="bento-icon"><i class="fas fa-fire-burner"></i></div>
                     <h3>Vista Cucina</h3>
                     <p>La cucina vede tutti i piatti da preparare aggregati per tipo. Ogni porzione ha il suo stato.</p>
+                    <img src="/api/landing/assets/app-kitchen.webp" alt="Vista cucina con piatti raggruppati" class="bento-card-image" style="object-position: center 28%;" loading="lazy">
                 </div>
                 <div class="bento-card small">
                     <div class="bento-icon"><i class="fas fa-users"></i></div>
@@ -954,6 +966,15 @@ def get_landing_html() -> str:
                     <figcaption>
                         <strong>Menu del giorno</strong>
                         <span>Prezzi del giorno e porzioni rimaste per ogni piatto, filtrabili per categoria e pubblicabili sul sito.</span>
+                    </figcaption>
+                </figure>
+                <figure class="showcase-item wide" data-testid="showcase-kitchen">
+                    <div class="ipad-frame">
+                        <img src="/api/landing/assets/app-kitchen.webp" alt="Schermata Vista Cucina" loading="lazy" width="1366" height="1024">
+                    </div>
+                    <figcaption>
+                        <strong>Vista cucina</strong>
+                        <span>I piatti da preparare raggruppati per tipo: la cucina vede quante porzioni servono, per quale ordine e per che ora. Un tocco su "Completa" e il banco sa che è pronto.</span>
                     </figcaption>
                 </figure>
             </div>

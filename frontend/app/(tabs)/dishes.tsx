@@ -17,6 +17,8 @@ import { useAppStore } from '../../src/store/appStore';
 import { dishesApi, categoriesApi } from '../../src/services/api';
 import { Dish, Category } from '../../src/types';
 import { sortCategoriesByFixedOrder, sortDishesByCategory } from '../../src/utils/categoryOrder';
+import { DishLabelsPicker } from '../../src/components/DishLabelsPicker';
+import { DishLabelsSummary } from '../../src/components/DishLabelsSummary';
 
 // Toast notification component
 const Toast = ({ visible, message, type, onHide }: { visible: boolean; message: string; type: 'success' | 'error'; onHide: () => void }) => {
@@ -73,6 +75,8 @@ export default function DishesScreen() {
   const [basePrice, setBasePrice] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [allergens, setAllergens] = useState<string[]>([]);
   
   // Category form state
   const [categoryName, setCategoryName] = useState('');
@@ -117,6 +121,8 @@ export default function DishesScreen() {
     setBasePrice('');
     setSelectedCategoryId(null);
     setIsFavorite(false);
+    setTags([]);
+    setAllergens([]);
     setEditingDish(null);
   };
 
@@ -138,6 +144,8 @@ export default function DishesScreen() {
     setBasePrice(dish.basePrice.toString());
     setSelectedCategoryId(dish.categoryId || null);
     setIsFavorite(dish.isFavorite || false);
+    setTags(dish.tags || []);
+    setAllergens(dish.allergens || []);
     setShowDishModal(true);
   };
 
@@ -174,6 +182,8 @@ export default function DishesScreen() {
           basePrice: price,
           categoryId: selectedCategoryId || undefined,
           isFavorite,
+          tags,
+          allergens,
         });
         setDishes(dishes.map(d => d.id === updated.id ? updated : d));
         showToast('Piatto aggiornato');
@@ -184,6 +194,8 @@ export default function DishesScreen() {
           basePrice: price,
           categoryId: selectedCategoryId || undefined,
           isFavorite,
+          tags,
+          allergens,
         });
         setDishes([newDish, ...dishes]);
         showToast('Piatto creato');
@@ -425,9 +437,11 @@ export default function DishesScreen() {
                     )}
                   </View>
                   
-                  {dish.description && (
+                  {!!dish.description && (
                     <Text style={styles.dishDescription}>{dish.description}</Text>
                   )}
+
+                  <DishLabelsSummary tags={dish.tags} allergens={dish.allergens} dishId={dish.id} />
                   
                   <View style={styles.dishPriceRow}>
                     <Text style={styles.dishPrice}>{dish.basePrice.toFixed(2)} €</Text>
@@ -440,6 +454,7 @@ export default function DishesScreen() {
                     <TouchableOpacity
                       style={[styles.dishActionButton, styles.editButton]}
                       onPress={() => openEditDishModal(dish)}
+                      testID={`dish-edit-${dish.id}`}
                     >
                       <Ionicons name="create-outline" size={18} color="#ffffff" />
                       <Text style={styles.dishActionText}>Modifica</Text>
@@ -580,7 +595,14 @@ export default function DishesScreen() {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.primaryButton} onPress={handleSaveDish}>
+              <DishLabelsPicker
+                tags={tags}
+                allergens={allergens}
+                onChangeTags={setTags}
+                onChangeAllergens={setAllergens}
+              />
+
+              <TouchableOpacity style={styles.primaryButton} onPress={handleSaveDish} testID="dish-save-button">
                 <Text style={styles.primaryButtonText}>
                   {editingDish ? 'Salva Modifiche' : 'Crea Piatto'}
                 </Text>

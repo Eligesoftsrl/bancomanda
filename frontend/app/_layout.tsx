@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { LogBox, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, LogBox, Platform, View } from 'react-native';
+import { useAuthStore } from '../src/store/authStore';
 
 // Silenzia warning noti dopo upgrade a SDK 57 (RN 0.86):
 // - "Unexpected text node: ." è generato da react-navigation/expo-router internamente
@@ -27,6 +28,23 @@ if (Platform.OS === 'web' && typeof console !== 'undefined') {
 }
 
 export default function RootLayout() {
+  const status = useAuthStore((s) => s.status);
+  const init = useAuthStore((s) => s.init);
+
+  useEffect(() => {
+    init();
+  }, [init]);
+
+  if (status === 'loading') {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f7fa' }}>
+        <ActivityIndicator size="large" color="#DB0007" />
+      </View>
+    );
+  }
+
+  const authed = status === 'authed';
+
   return (
     <>
       <StatusBar style="light" />
@@ -36,7 +54,13 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: '#f5f7fa' },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Protected guard={authed}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="unpaid-orders" />
+        </Stack.Protected>
+        <Stack.Protected guard={!authed}>
+          <Stack.Screen name="login" />
+        </Stack.Protected>
       </Stack>
     </>
   );

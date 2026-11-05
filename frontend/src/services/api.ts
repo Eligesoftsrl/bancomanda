@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, Category } from '../types';
+import { useAuthStore } from '../store/authStore';
 
 // Backend URL - use environment variable
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -10,6 +11,27 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status === 401 && original && !original._retry) {
+      original._retry = true;
+      if (await useAuthStore.getState().refresh()) {
+        original.headers.Authorization = `Bearer ${useAuthStore.getState().accessToken}`;
+        return api(original);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Categories API
 export const categoriesApi = {
@@ -48,7 +70,7 @@ export const dishesApi = {
     return response.data;
   },
   
-  create: async (data: { name: string; description?: string; basePrice: number; categoryId?: string }): Promise<Dish> => {
+  create: async (data: { name: string; description?: string; basePrice: number; categoryId?: string; isFavorite?: boolean; tags?: string[]; allergens?: string[] }): Promise<Dish> => {
     const response = await api.post('/dishes', data);
     return response.data;
   },

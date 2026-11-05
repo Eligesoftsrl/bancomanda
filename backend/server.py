@@ -31,20 +31,26 @@ print(f"DB_NAME: {DB_NAME}")
 
 try:
     client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
-    db = client[DB_NAME]
+    raw_db = client[DB_NAME]
     print(f"MongoDB client initialized successfully")
 except Exception as e:
     print(f"ERROR connecting to MongoDB: {e}")
     # Fallback to localhost if Atlas fails
     client = AsyncIOMotorClient('mongodb://localhost:27017')
-    db = client[DB_NAME]
+    raw_db = client[DB_NAME]
     print(f"Fallback to localhost")
+
+from tenancy import ScopedDatabase, TenantContextMiddleware, get_tenant
+from auth.jwt_handler import hash_password
+
+# Collezioni dati filtrate automaticamente per locale (vedi tenancy.py)
+db = ScopedDatabase(raw_db)
 
 # Create the main app
 app = FastAPI(title="Sistema Gestione Ordini Ristorazione - Multi-Tenant")
 
-# Store db in app.state for access in route handlers
-app.state.db = db
+# Store db in app.state for access in route handlers (auth/superadmin: non filtrato)
+app.state.db = raw_db
 app.state.client = client
 
 # Create a router with the /api prefix
@@ -653,6 +659,8 @@ def _ftp_upload_menu_json(public_payload: dict) -> str:
 @api_router.patch("/menus/{menu_id}/publish", response_model=DailyMenu)
 async def toggle_menu_publish(menu_id: str, payload: DailyMenuPublishUpdate):
     """Pubblica/ritira il menu: genera menu.json e lo invia via FTP al sito."""
+    if not get_tenant().legacy:
+        raise HTTPException(status_code=503, detail="Pubblicazione sul sito non ancora configurata per questo locale")
     menu = await db.daily_menus.find_one({"_id": ObjectId(menu_id)})
     if not menu:
         raise HTTPException(status_code=404, detail="Menu non trovato")
@@ -2127,7 +2135,7 @@ async def setup_database():
         await db.orders.create_index([("status", 1)])
         await db.dishes.create_index([("categoryId", 1)])
         await db.dishes.create_index([("active", 1)])
-        await db.daily_menus.create_index([("date", 1)], unique=True)
+        await db.daily_menus.create_index([("tenant_id", 1), ("date", 1)], unique=True)
         logger.info("[SETUP] Indici creati/verificati")
     except Exception as e:
         logger.warning(f"[SETUP] Errore creazione indici: {e}")
@@ -2340,6 +2348,8 @@ async def public_menu_html():
     return HTMLResponse(content=html, headers={"Cache-Control": "public, max-age=60"})
 
 
+app.add_middleware(TenantContextMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -2347,6 +2357,50 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def seed_legacy_tenant():
+    """Crea (solo se mancanti) il locale storico e il suo accesso. Non modifica mai dati esistenti."""
+    email = (os.environ.get("LEGACY_TENANT_EMAIL") or "").strip().lower()
+    password = os.environ.get("LEGACY_TENANT_PASSWORD") or ""
+    name = (os.environ.get("LEGACY_TENANT_NAME") or "").strip()
+    await raw_db.login_attempts.create_index("identifier")
+    if not (email and password and name):
+        logger.warning("[SEED] LEGACY_TENANT_* non configurati: nessun locale storico creato")
+        return
+    now = datetime.now(ZoneInfo("UTC"))
+    tenant = await raw_db.tenants.find_one({"legacy_data": True})
+    if not tenant:
+        doc = {
+            "name": name,
+            "slug": "giorgio-bistrot",
+            "status": "attivo",
+            "legacy_data": True,
+            "settings": {
+                "timezone": "Europe/Rome", "closing_days": [], "closing_message": "",
+                "daily_categories": ["Primi", "Secondi", "Contorni"], "site_url": None,
+                "ftp": {"host": None, "user": None, "port": 21, "directory": None, "has_password": False},
+            },
+            "order_counter": 0,
+            "created_at": now,
+            "updated_at": None,
+        }
+        res = await raw_db.tenants.insert_one(doc)
+        tenant = {**doc, "_id": res.inserted_id}
+        logger.info(f"[SEED] Creato locale storico '{name}'")
+    if not await raw_db.users.find_one({"email": email}):
+        await raw_db.users.insert_one({
+            "email": email,
+            "name": name,
+            "password_hash": hash_password(password),
+            "role": "tenant_admin",
+            "tenant_id": str(tenant["_id"]),
+            "disabled": False,
+            "created_at": now,
+            "last_login": None,
+        })
+        logger.info(f"[SEED] Creato accesso {email}")
+
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

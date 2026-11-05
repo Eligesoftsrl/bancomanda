@@ -16,6 +16,8 @@ export interface Dish {
   categoryName?: string;
   active: boolean;
   isFavorite: boolean;
+  tags?: string[];
+  allergens?: string[];
   createdAt: string;
 }
 

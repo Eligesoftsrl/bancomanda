@@ -19,6 +19,7 @@ import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { useAppStore } from '../../src/store/appStore';
 import { reportsApi, missedSalesApi, setupApi, ordersApi, kitchenApi, porzionaturApi, KitchenGroup } from '../../src/services/api';
 import { DailySummary, MissedSale, Order } from '../../src/types';
+import { AccountButton } from '../../src/components/AccountButton';
 
 // Configure Italian locale for react-native-calendars
 LocaleConfig.locales['it'] = {
@@ -549,12 +550,15 @@ export default function ReportsScreen() {
               ]}>{reportFreshnessLabel}</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => setShowPasswordModal(true)}
-          >
-            <Ionicons name="settings-outline" size={24} color="#64748b" />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <AccountButton />
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => setShowPasswordModal(true)}
+            >
+              <Ionicons name="settings-outline" size={24} color="#64748b" />
+            </TouchableOpacity>
+          </View>
         </View>
         
         {/* Mode Selector */}
@@ -1863,6 +1867,11 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     padding: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   // Range mode - preset shortcuts + clickable calendar trigger
   presetRow: {

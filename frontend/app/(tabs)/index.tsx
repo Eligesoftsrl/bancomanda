@@ -995,7 +995,7 @@ export default function OrdersScreen() {
             style={styles.headerLogo}
             resizeMode="contain"
           />
-          <Text style={styles.headerTitle}>Bancó</Text>
+          <Text style={styles.headerTitle}>Bancomanda</Text>
           <TouchableOpacity
             style={styles.syncIndicator}
             onPress={silentSync}

@@ -1,4 +1,4 @@
-// Service Worker for Bancó PWA
+// Service Worker for Bancomanda PWA
 const CACHE_NAME = 'banco-v1';
 
 // Install event

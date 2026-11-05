@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Bancó",
+    "name": "Bancomanda",
     "slug": "banco",
     "version": "1.0.0",
     "orientation": "default",
@@ -22,8 +22,8 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-      "name": "Bancó",
-      "shortName": "Bancó",
+      "name": "Bancomanda",
+      "shortName": "Bancomanda",
       "description": "Sistema gestione ordini ristorante",
       "backgroundColor": "#1a1a2e",
       "themeColor": "#e94560",
@@ -49,7 +49,8 @@
       "expo-font",
       "expo-image",
       "expo-sharing",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
