@@ -23,6 +23,7 @@ Crea un database MongoDB (consigliato MongoDB Atlas) e copia la stringa di conne
    - `RAILWAY_DOCKERFILE_PATH=Dockerfile.railway` (obbligatoria)
    - `JWT_SECRET`: stringa casuale nuova e lunga (non riusare quella di prova)
    - `CORS_ORIGINS`: l'indirizzo Vercel (dopo il punto 3), es. `https://bancomanda.vercel.app`
+   - `BANCOMANDA_APP_URL`: lo stesso indirizzo Vercel: è dove portano i pulsanti "Accedi" della landing
    - `FTP_*`: solo se vuoi pubblicare il menu sul sito
 4. Settings → Networking → **Generate Domain**. Annota l'indirizzo (es. `https://bancomanda-api.up.railway.app`).
 5. Settings → Healthcheck Path: `/api/`

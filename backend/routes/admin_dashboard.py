@@ -2,7 +2,7 @@
 Superadmin Dashboard HTML page.
 """
 from fastapi import APIRouter, Request, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from auth.dependencies import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
@@ -982,3 +982,9 @@ def get_dashboard_html() -> str:
 async def admin_dashboard():
     """Serve the superadmin dashboard (authentication handled client-side)."""
     return HTMLResponse(content=get_dashboard_html())
+
+
+@router.get("", include_in_schema=False)
+@router.get("/", include_in_schema=False)
+async def admin_root():
+    return RedirectResponse(url="/api/admin/dashboard", status_code=307)

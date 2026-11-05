@@ -2,6 +2,8 @@
 Landing page HTML per Bancomanda SaaS.
 Pagina pubblica con animazioni e immagini.
 """
+import os
+from html import escape
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
@@ -762,8 +764,185 @@ def get_landing_html() -> str:
             color: white;
         }
 
+        /* Accedi */
+        .btn-login {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid transparent;
+        }
+        .btn-login:hover {
+            background: var(--primary);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        .hero-login {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+        .hero-login strong { color: var(--primary); }
+        .hero-login i { color: var(--accent); transition: transform 0.25s ease; }
+        .hero-login:hover i { transform: translateX(4px); }
+
+        /* Scroll reveal (attivo solo con JS) */
+        .reveal-ready .reveal {
+            opacity: 0;
+            transform: translateY(32px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-ready .reveal.is-visible { opacity: 1; transform: none; }
+        .reveal-ready .reveal.reveal-d1 { transition-delay: 0.1s; }
+        .reveal-ready .reveal.reveal-d2 { transition-delay: 0.2s; }
+        .reveal-ready .reveal.reveal-d3 { transition-delay: 0.3s; }
+        .reveal-ready .reveal.is-visible.bento-card { transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
+
+        /* Bento con foto reali */
+        .bento-card.photo-bg {
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            border-color: transparent;
+            background: #1a1a1a;
+        }
+        .bento-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .bento-card.photo-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(20, 18, 16, 0.1) 0%, rgba(20, 18, 16, 0.88) 100%);
+        }
+        .bento-card.featured.photo-bg::after {
+            background: linear-gradient(180deg, rgba(45, 90, 39, 0.25) 0%, rgba(26, 54, 23, 0.94) 100%);
+        }
+        .bento-card.photo-bg > *:not(.bento-bg) { position: relative; z-index: 1; }
+        .bento-card.photo-bg:hover .bento-bg { transform: scale(1.07); }
+        .bento-card.photo-bg h3 { color: #fff; }
+        .bento-card.photo-bg p { color: rgba(255, 255, 255, 0.88); }
+        .bento-card.photo-bg .bento-icon { background: rgba(255, 255, 255, 0.18); color: #fff; backdrop-filter: blur(8px); }
+        .bento-card-image.photo { object-position: center; border: none; }
+        .mini-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            height: 72px;
+            margin-top: 1.5rem;
+        }
+        .mini-chart span {
+            flex: 1;
+            height: var(--h);
+            background: linear-gradient(180deg, var(--accent), #e8946a);
+            border-radius: 6px 6px 2px 2px;
+            transform-origin: bottom;
+        }
+        .reveal-ready .mini-chart span { transform: scaleY(0.08); transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-ready .is-visible .mini-chart span { transform: scaleY(1); }
+        .mini-chart span:nth-child(2) { transition-delay: 0.1s; }
+        .mini-chart span:nth-child(3) { transition-delay: 0.2s; }
+        .mini-chart span:nth-child(4) { transition-delay: 0.3s; }
+        .mini-chart span:nth-child(5) { transition-delay: 0.4s; }
+        .mini-chart span:nth-child(6) { transition-delay: 0.5s; }
+
+        /* Fascia fotografica */
+        .photo-band {
+            position: relative;
+            padding: 7rem 2rem;
+            background: #1a1a1a url('/api/landing/assets/photo-kitchen.webp') center / cover no-repeat;
+            color: #fff;
+            overflow: hidden;
+        }
+        .photo-band::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(100deg, rgba(20, 18, 16, 0.94) 0%, rgba(20, 18, 16, 0.78) 55%, rgba(20, 18, 16, 0.45) 100%);
+        }
+        .photo-band-inner {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+        .section-badge.light { color: #f3c9b4; }
+        .photo-band h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: #fff;
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+        }
+        .photo-band p { color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; max-width: 520px; }
+        .band-points { list-style: none; margin-top: 2rem; display: grid; gap: 1rem; }
+        .band-points li { display: flex; align-items: center; gap: 0.875rem; color: #fff; font-weight: 500; }
+        .band-points i {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(196, 80, 28, 0.9);
+            flex-shrink: 0;
+        }
+        .photo-band-visual { position: relative; justify-self: center; }
+        .band-photo {
+            display: block;
+            width: min(380px, 80vw);
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            border-radius: 28px;
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
+            transform: rotate(2.5deg);
+            border: 6px solid rgba(255, 255, 255, 0.9);
+        }
+        .band-chip {
+            position: absolute;
+            left: -2rem;
+            bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text-primary);
+            padding: 0.875rem 1.25rem;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
+        }
+        .band-chip i { color: var(--accent); font-size: 1.1rem; }
+
+        /* Demo con foto di sfondo */
+        .demo-section.photo {
+            background: linear-gradient(rgba(18, 16, 14, 0.8), rgba(18, 16, 14, 0.9)), url('/api/landing/assets/photo-interior.webp') center / cover no-repeat;
+        }
+        .demo-section.photo::before { display: none; }
+        .demo-section.photo .section-header h2 { color: #fff; }
+        .demo-section.photo .section-header p { color: rgba(255, 255, 255, 0.85); }
+        .demo-section.photo .demo-form-card { box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.55); border-color: transparent; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal-ready .reveal, .reveal-ready .mini-chart span { opacity: 1; transform: none; transition: none; }
+            .bento-bg { transition: none; }
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
+            .photo-band-inner { grid-template-columns: 1fr; gap: 3rem; }
+            .band-chip { left: 0; }
             .hero-inner { grid-template-columns: 1fr; text-align: center; }
             .hero-desc { margin: 0 auto 2rem; }
             .hero-buttons { justify-content: center; }
@@ -775,6 +954,10 @@ def get_landing_html() -> str:
             .showcase-item.wide { grid-column: span 1; grid-template-columns: 1fr; gap: 1.5rem; }
         }
         @media (max-width: 640px) {
+            .nav-demo { display: none; }
+            .nav-buttons { gap: 0.5rem; }
+            .nav-buttons .btn { padding: 0.55rem 0.9rem; font-size: 0.85rem; }
+            .photo-band { padding: 5rem 1.5rem; }
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
             .footer-inner { flex-direction: column; text-align: center; }
@@ -783,6 +966,7 @@ def get_landing_html() -> str:
     </style>
 </head>
 <body>
+    <script>document.documentElement.classList.add('reveal-ready');</script>
     <!-- Header -->
     <header>
         <div class="header-inner">
@@ -797,8 +981,9 @@ def get_landing_html() -> str:
                 <a href="#faq">FAQ</a>
             </nav>
             <div class="nav-buttons">
-                <a href="#demo" class="btn btn-outline">Richiedi Demo</a>
-                <button class="btn btn-primary" onclick="openRegisterModal()">Registrati</button>
+                <a href="__APP_URL__" class="btn btn-login" data-testid="header-login-button"><i class="fas fa-right-to-bracket"></i> Accedi</a>
+                <a href="#demo" class="btn btn-outline nav-demo">Richiedi Demo</a>
+                <button class="btn btn-primary" onclick="openRegisterModal()" data-testid="header-register-button">Registrati</button>
             </div>
         </div>
     </header>
@@ -831,6 +1016,9 @@ def get_landing_html() -> str:
                         <i class="fas fa-rocket"></i> Inizia Gratis
                     </button>
                 </div>
+                <a href="__APP_URL__" class="hero-login fade-in fade-in-delay-4" data-testid="hero-login-link">
+                    Hai già un account? <strong>Accedi al tuo locale</strong> <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
             <div class="hero-visual fade-in fade-in-delay-4">
                 <div class="ipad-frame hero-image float-slow" data-testid="hero-app-screenshot">
@@ -894,49 +1082,76 @@ def get_landing_html() -> str:
     <!-- Features -->
     <section class="features" id="features">
         <div class="section-inner">
-            <div class="section-header">
+            <div class="section-header reveal">
                 <div class="section-badge"><span></span> Funzionalità</div>
                 <h2 class="serif">Tutto quello che serve al tuo locale</h2>
                 <p>Gestisci ordini, menu e cucina da un'unica piattaforma pensata per la ristorazione italiana.</p>
             </div>
             <div class="bento-grid">
-                <div class="bento-card large">
+                <div class="bento-card large reveal" data-testid="bento-orders">
                     <div class="bento-icon"><i class="fas fa-clipboard-list"></i></div>
                     <h3>Ordini in Tempo Reale</h3>
                     <p>Prendi ordini al banco, per telefono o WhatsApp. Ogni ordine è visibile su tutti i tablet del locale, con stato aggiornato in tempo reale.</p>
                     <img src="/api/landing/assets/app-orders.webp" alt="Stato ordini in tempo reale" class="bento-card-image" loading="lazy">
                 </div>
-                <div class="bento-card small featured">
+                <div class="bento-card small featured photo-bg reveal reveal-d1" data-testid="bento-print">
+                    <img src="/api/landing/assets/photo-chefs.webp" alt="Cuochi che impiattano in una cucina professionale" class="bento-bg" loading="lazy">
                     <div class="bento-icon"><i class="fas fa-print"></i></div>
                     <h3>Stampa 62mm</h3>
                     <p>Stampa comande e scontrini su stampanti termiche ESC/POS con layout ottimizzato.</p>
                 </div>
-                <div class="bento-card medium">
+                <div class="bento-card medium reveal" data-testid="bento-menu">
                     <div class="bento-icon"><i class="fas fa-utensils"></i></div>
                     <h3>Menu del Giorno</h3>
                     <p>Pubblica il menu del giorno sul tuo sito web con un click. I clienti vedono sempre i piatti disponibili.</p>
+                    <img src="/api/landing/assets/photo-plating.webp" alt="Impiattamento di pasta fresca" class="bento-card-image photo" loading="lazy">
                 </div>
-                <div class="bento-card medium">
+                <div class="bento-card medium reveal reveal-d1" data-testid="bento-kitchen">
                     <div class="bento-icon"><i class="fas fa-fire-burner"></i></div>
                     <h3>Vista Cucina</h3>
                     <p>La cucina vede tutti i piatti da preparare aggregati per tipo. Ogni porzione ha il suo stato.</p>
                     <img src="/api/landing/assets/app-kitchen.webp" alt="Vista cucina con piatti raggruppati" class="bento-card-image" style="object-position: center 28%;" loading="lazy">
                 </div>
-                <div class="bento-card small">
+                <div class="bento-card small photo-bg reveal" data-testid="bento-customers">
+                    <img src="/api/landing/assets/photo-table.webp" alt="Tavolo con aperitivo e spaghetti alle vongole" class="bento-bg" loading="lazy">
                     <div class="bento-icon"><i class="fas fa-users"></i></div>
                     <h3>Anagrafica Clienti</h3>
                     <p>Registra i clienti abituali con storico ordini.</p>
                 </div>
-                <div class="bento-card small">
+                <div class="bento-card small photo-bg reveal reveal-d1" data-testid="bento-tablets">
+                    <img src="/api/landing/assets/photo-chef.webp" alt="Cuoco al lavoro in cucina" class="bento-bg" loading="lazy">
                     <div class="bento-icon"><i class="fas fa-tablet-alt"></i></div>
                     <h3>Multi-tablet</h3>
                     <p>Usa più tablet, iPad o Android: banco, cucina, sala.</p>
                 </div>
-                <div class="bento-card small">
-                    <div class="bento-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="bento-card small reveal reveal-d2" data-testid="bento-report">
+                    <div class="bento-icon" style="background: var(--accent-light); color: var(--accent);"><i class="fas fa-chart-pie"></i></div>
                     <h3>Report</h3>
                     <p>Vendite, piatti più richiesti, incassi.</p>
+                    <div class="mini-chart" aria-hidden="true">
+                        <span style="--h: 38%"></span><span style="--h: 62%"></span><span style="--h: 48%"></span><span style="--h: 80%"></span><span style="--h: 66%"></span><span style="--h: 100%"></span>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fascia fotografica -->
+    <section class="photo-band" data-testid="photo-band">
+        <div class="photo-band-inner">
+            <div class="reveal">
+                <div class="section-badge light"><span></span> Dal banco alla cucina</div>
+                <h2 class="serif">Niente più foglietti volanti.</h2>
+                <p>L'ordine preso al banco arriva subito in cucina: piatti raggruppati, porzioni contate, comanda stampata. Tu pensi ai clienti.</p>
+                <ul class="band-points">
+                    <li class="reveal reveal-d1"><i class="fas fa-bolt"></i> Ordini sincronizzati su tutti i tablet</li>
+                    <li class="reveal reveal-d2"><i class="fas fa-print"></i> Comanda su stampante termica 62mm</li>
+                    <li class="reveal reveal-d3"><i class="fas fa-check-double"></i> Stato di ogni porzione, dal fuoco al banco</li>
+                </ul>
+            </div>
+            <div class="photo-band-visual reveal reveal-d2">
+                <img src="/api/landing/assets/photo-pasta.webp" alt="Pasta fresca fatta a mano" class="band-photo" loading="lazy">
+                <div class="band-chip"><i class="fas fa-fire-burner"></i><span>12 porzioni in preparazione</span></div>
             </div>
         </div>
     </section>
@@ -944,13 +1159,13 @@ def get_landing_html() -> str:
     <!-- Gallery Section -->
     <section class="gallery-section" id="gallery">
         <div class="section-inner">
-            <div class="section-header">
+            <div class="section-header reveal">
                 <div class="section-badge"><span></span> L'app</div>
                 <h2 class="serif">Pensato per chi lavora ogni giorno</h2>
                 <p>Le vere schermate di Bancomanda su tablet: dal bancone alla cucina, ogni passaggio è sotto controllo.</p>
             </div>
             <div class="showcase-grid">
-                <figure class="showcase-item" data-testid="showcase-orders">
+                <figure class="showcase-item reveal" data-testid="showcase-orders">
                     <div class="ipad-frame">
                         <img src="/api/landing/assets/app-orders.webp" alt="Schermata Ordini del giorno" loading="lazy" width="1366" height="1024">
                     </div>
@@ -959,7 +1174,7 @@ def get_landing_html() -> str:
                         <span>Canale, servizio, orario di consegna, note e stato di ogni ordine, con i contatori sempre in vista.</span>
                     </figcaption>
                 </figure>
-                <figure class="showcase-item" data-testid="showcase-menu">
+                <figure class="showcase-item reveal reveal-d1" data-testid="showcase-menu">
                     <div class="ipad-frame">
                         <img src="/api/landing/assets/app-menu.webp" alt="Schermata Menu del giorno" loading="lazy" width="1366" height="1024">
                     </div>
@@ -968,7 +1183,7 @@ def get_landing_html() -> str:
                         <span>Prezzi del giorno e porzioni rimaste per ogni piatto, filtrabili per categoria e pubblicabili sul sito.</span>
                     </figcaption>
                 </figure>
-                <figure class="showcase-item wide" data-testid="showcase-kitchen">
+                <figure class="showcase-item wide reveal" data-testid="showcase-kitchen">
                     <div class="ipad-frame">
                         <img src="/api/landing/assets/app-kitchen.webp" alt="Schermata Vista Cucina" loading="lazy" width="1366" height="1024">
                     </div>
@@ -982,14 +1197,14 @@ def get_landing_html() -> str:
     </section>
 
     <!-- Demo Request -->
-    <section class="demo-section" id="demo">
+    <section class="demo-section photo" id="demo" data-testid="demo-section">
         <div class="demo-inner">
-            <div class="section-header">
-                <div class="section-badge"><span></span> Contattaci</div>
+            <div class="section-header reveal">
+                <div class="section-badge light"><span></span> Contattaci</div>
                 <h2 class="serif">Richiedi una Demo</h2>
                 <p>Compila il modulo e ti contatteremo per mostrarti Bancomanda in azione.</p>
             </div>
-            <div class="demo-form-card">
+            <div class="demo-form-card reveal reveal-d1">
                 <form id="demoForm">
                     <div class="form-grid">
                         <div class="form-group">
@@ -1027,11 +1242,11 @@ def get_landing_html() -> str:
     <!-- FAQ -->
     <section class="faq-section" id="faq">
         <div class="section-inner">
-            <div class="section-header">
+            <div class="section-header reveal">
                 <div class="section-badge"><span></span> Domande Frequenti</div>
                 <h2 class="serif">Tutto quello che vuoi sapere</h2>
             </div>
-            <div class="faq-list">
+            <div class="faq-list reveal reveal-d1">
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">
                         <span>Quali stampanti termiche sono compatibili?</span>
@@ -1087,6 +1302,7 @@ def get_landing_html() -> str:
                 <p>© 2026 Bancomanda. Sistema gestionale per la ristorazione italiana.</p>
             </div>
             <div class="footer-links">
+                <a href="__APP_URL__" data-testid="footer-login-link"><i class="fas fa-right-to-bracket"></i> Accedi</a>
                 <a href="#features">Funzionalità</a>
                 <a href="#demo">Richiedi Demo</a>
                 <a href="#faq">FAQ</a>
@@ -1237,18 +1453,39 @@ def get_landing_html() -> str:
                 if (target) target.scrollIntoView({ behavior: 'smooth' });
             });
         });
+
+        // Sezioni che compaiono scorrendo
+        if ('IntersectionObserver' in window) {
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+            document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+        } else {
+            document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+        }
     </script>
 </body>
 </html>'''
 
 
+def render_landing() -> HTMLResponse:
+    # BANCOMANDA_APP_URL = indirizzo dell'app (es. dominio Vercel); in anteprima stessa origine
+    app_url = escape(os.environ.get("BANCOMANDA_APP_URL") or "/", quote=True)
+    return HTMLResponse(content=get_landing_html().replace("__APP_URL__", app_url))
+
+
 @router.get("/", response_class=HTMLResponse)
 async def landing_page():
     """Serve the public landing page."""
-    return HTMLResponse(content=get_landing_html())
+    return render_landing()
 
 
 @router.get("/landing", response_class=HTMLResponse)
 async def landing_page_alt():
     """Alternative route for landing page."""
-    return HTMLResponse(content=get_landing_html())
+    return render_landing()
