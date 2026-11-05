@@ -19,6 +19,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const toSession = (data: any): StoredSession => ({
@@ -94,6 +95,24 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
       })();
       return refreshing;
+    },
+
+    // Il server scollega tutti gli altri dispositivi e restituisce una nuova sessione per questo
+    changePassword: async (currentPassword, newPassword) => {
+      const send = () =>
+        authHttp.post(
+          '/change-password',
+          { current_password: currentPassword, new_password: newPassword },
+          { headers: { Authorization: `Bearer ${get().accessToken}` } }
+        );
+      let response;
+      try {
+        response = await send();
+      } catch (error: any) {
+        if (error?.response?.status !== 401 || !(await get().refresh())) throw error;
+        response = await send();
+      }
+      await applySession(toSession(response.data));
     },
   };
 });

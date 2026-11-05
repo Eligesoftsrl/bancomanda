@@ -26,7 +26,7 @@ def get_landing_html() -> str:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bancomanda — Sistema Gestione Ordini per Ristoranti</title>
-    <meta name="description" content="Bancomanda è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad.">
+    <meta name="description" content="Bancomanda è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad e tablet Android.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -821,7 +821,7 @@ def get_landing_html() -> str:
                 <p class="hero-desc fade-in fade-in-delay-2">
                     Bancomanda è il gestionale pensato per ristoranti, pizzerie e bistrot. 
                     Ordini al banco, menu del giorno, stampa termica 62mm, vista cucina e porzionatura. 
-                    Tutto su iPad, sincronizzato in tempo reale.
+                    Tutto su iPad e tablet Android, sincronizzato in tempo reale.
                 </p>
                 <div class="hero-buttons fade-in fade-in-delay-3">
                     <a href="#demo" class="btn btn-primary">
@@ -877,7 +877,7 @@ def get_landing_html() -> str:
             <span class="marquee-item"><i class="fas fa-utensils"></i> Menu del Giorno</span>
             <span class="marquee-item"><i class="fas fa-fire-burner"></i> Vista Cucina</span>
             <span class="marquee-item"><i class="fas fa-users"></i> Clienti</span>
-            <span class="marquee-item"><i class="fas fa-tablet-alt"></i> Multi-iPad</span>
+            <span class="marquee-item"><i class="fas fa-tablet-alt"></i> Multi-tablet</span>
             <span class="marquee-item"><i class="fas fa-chart-pie"></i> Report</span>
             <span class="marquee-item"><i class="fas fa-globe"></i> Pubblica Online</span>
             <span class="marquee-item"><i class="fas fa-clipboard-list"></i> Ordini</span>
@@ -885,7 +885,7 @@ def get_landing_html() -> str:
             <span class="marquee-item"><i class="fas fa-utensils"></i> Menu del Giorno</span>
             <span class="marquee-item"><i class="fas fa-fire-burner"></i> Vista Cucina</span>
             <span class="marquee-item"><i class="fas fa-users"></i> Clienti</span>
-            <span class="marquee-item"><i class="fas fa-tablet-alt"></i> Multi-iPad</span>
+            <span class="marquee-item"><i class="fas fa-tablet-alt"></i> Multi-tablet</span>
             <span class="marquee-item"><i class="fas fa-chart-pie"></i> Report</span>
             <span class="marquee-item"><i class="fas fa-globe"></i> Pubblica Online</span>
         </div>
@@ -903,7 +903,7 @@ def get_landing_html() -> str:
                 <div class="bento-card large">
                     <div class="bento-icon"><i class="fas fa-clipboard-list"></i></div>
                     <h3>Ordini in Tempo Reale</h3>
-                    <p>Prendi ordini al banco, per telefono o WhatsApp. Ogni ordine è visibile su tutti gli iPad del locale, con stato aggiornato in tempo reale.</p>
+                    <p>Prendi ordini al banco, per telefono o WhatsApp. Ogni ordine è visibile su tutti i tablet del locale, con stato aggiornato in tempo reale.</p>
                     <img src="/api/landing/assets/app-orders.webp" alt="Stato ordini in tempo reale" class="bento-card-image" loading="lazy">
                 </div>
                 <div class="bento-card small featured">
@@ -929,8 +929,8 @@ def get_landing_html() -> str:
                 </div>
                 <div class="bento-card small">
                     <div class="bento-icon"><i class="fas fa-tablet-alt"></i></div>
-                    <h3>Multi-iPad</h3>
-                    <p>Usa più iPad: banco, cucina, sala.</p>
+                    <h3>Multi-tablet</h3>
+                    <p>Usa più tablet, iPad o Android: banco, cucina, sala.</p>
                 </div>
                 <div class="bento-card small">
                     <div class="bento-icon"><i class="fas fa-chart-pie"></i></div>
@@ -947,7 +947,7 @@ def get_landing_html() -> str:
             <div class="section-header">
                 <div class="section-badge"><span></span> L'app</div>
                 <h2 class="serif">Pensato per chi lavora ogni giorno</h2>
-                <p>Le vere schermate di Bancomanda su iPad: dal bancone alla cucina, ogni passaggio è sotto controllo.</p>
+                <p>Le vere schermate di Bancomanda su tablet: dal bancone alla cucina, ogni passaggio è sotto controllo.</p>
             </div>
             <div class="showcase-grid">
                 <figure class="showcase-item" data-testid="showcase-orders">
@@ -1048,7 +1048,7 @@ def get_landing_html() -> str:
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
-                        Sì! Bancomanda è ottimizzato per iPad (consigliato) ma funziona anche su tablet Android. 
+                        Sì. Bancomanda si usa dal browser su qualsiasi tablet, iPad o Android, e si aggiunge alla schermata Home come una normale app. 
                         Puoi usare più dispositivi contemporaneamente.
                     </div>
                 </div>

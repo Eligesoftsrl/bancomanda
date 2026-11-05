@@ -2361,12 +2361,12 @@ async def public_menu_html():
     return HTMLResponse(content=html, headers={"Cache-Control": "public, max-age=60"})
 
 
-app.add_middleware(TenantContextMiddleware)
+app.add_middleware(TenantContextMiddleware, db=raw_db)
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )

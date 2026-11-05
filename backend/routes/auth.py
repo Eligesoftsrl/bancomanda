@@ -17,6 +17,7 @@ from auth.jwt_handler import (
 )
 from auth.dependencies import get_current_user, CurrentUser
 from models.user import UserRole
+from tenancy import invalidate_password_version
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -39,6 +40,11 @@ class LoginRequest(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8, max_length=72)
 
 
 class TokenResponse(BaseModel):
@@ -263,7 +269,7 @@ async def login(body: LoginRequest, request: Request):
         email=user["email"],
         role=user["role"],
         tenant_id=user.get("tenant_id"),
-        extra_claims={"legacy": legacy}
+        extra_claims={"legacy": legacy, "pv": user.get("password_version", 0)}
     )
     refresh_token = create_refresh_token()
     
@@ -335,7 +341,7 @@ async def refresh(body: RefreshRequest, request: Request):
         email=user["email"],
         role=user["role"],
         tenant_id=user.get("tenant_id"),
-        extra_claims={"legacy": legacy}
+        extra_claims={"legacy": legacy, "pv": user.get("password_version", 0)}
     )
     new_refresh_token = create_refresh_token()
     
@@ -392,3 +398,63 @@ async def get_me(
             tenant_name = tenant["name"]
     
     return UserResponse(**user_to_response(user, tenant_name))
+
+
+@router.post("/change-password", response_model=TokenResponse)
+async def change_password(
+    body: ChangePasswordRequest,
+    request: Request,
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    """Cambia password, scollega tutti gli altri dispositivi e restituisce una nuova sessione per questo."""
+    db = request.app.state.db
+    user = await db.users.find_one({"_id": ObjectId(current_user.id)})
+    if not user or user.get("disabled", False):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utente non trovato o disabilitato")
+    if not verify_password(body.current_password, user["password_hash"]):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La password attuale non è corretta")
+    if body.new_password == body.current_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La nuova password deve essere diversa da quella attuale")
+
+    now = datetime.now(timezone.utc)
+    version = user.get("password_version", 0) + 1
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password_hash": hash_password(body.new_password), "password_version": version, "password_changed_at": now}}
+    )
+    await db.refresh_tokens.update_many(
+        {"user_id": str(user["_id"]), "revoked": False},
+        {"$set": {"revoked": True}}
+    )
+    invalidate_password_version(str(user["_id"]))
+
+    tenant_name = None
+    legacy = False
+    if user.get("tenant_id"):
+        tenant = await db.tenants.find_one({"_id": ObjectId(user["tenant_id"])})
+        if tenant:
+            tenant_name = tenant["name"]
+            legacy = bool(tenant.get("legacy_data"))
+
+    access_token = create_access_token(
+        user_id=str(user["_id"]),
+        email=user["email"],
+        role=user["role"],
+        tenant_id=user.get("tenant_id"),
+        extra_claims={"legacy": legacy, "pv": version}
+    )
+    new_refresh_token = create_refresh_token()
+    await db.refresh_tokens.insert_one({
+        "token_hash": token_hash(new_refresh_token),
+        "user_id": str(user["_id"]),
+        "tenant_id": user.get("tenant_id"),
+        "created_at": now,
+        "expires_at": get_refresh_token_expiry(),
+        "revoked": False,
+    })
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=new_refresh_token,
+        expires_in=3600,
+        user=user_to_response(user, tenant_name)
+    )

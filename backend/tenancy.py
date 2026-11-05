@@ -4,12 +4,31 @@ Il locale "storico" (legacy) usa i documenti SENZA campo tenant_id: i dati esist
 non vengono mai modificati né migrati. Gli altri locali scrivono sempre tenant_id.
 """
 import contextvars
+import time
 from dataclasses import dataclass
 from typing import Optional
 
+from bson import ObjectId
 from starlette.responses import JSONResponse
 
 from auth.jwt_handler import verify_access_token
+
+PV_CACHE_SECONDS = 30
+_pv_cache: dict = {}
+
+
+def invalidate_password_version(user_id: str) -> None:
+    _pv_cache.pop(user_id, None)
+
+
+async def _password_version(db, user_id: str) -> Optional[int]:
+    cached = _pv_cache.get(user_id)
+    if cached and cached[1] > time.monotonic():
+        return cached[0]
+    user = await db.users.find_one({"_id": ObjectId(user_id)}, {"password_version": 1, "disabled": 1})
+    version = None if not user or user.get("disabled") else user.get("password_version", 0)
+    _pv_cache[user_id] = (version, time.monotonic() + PV_CACHE_SECONDS)
+    return version
 
 SCOPED_COLLECTIONS = {"categories", "dishes", "daily_menus", "orders", "customers", "missed_sales"}
 
@@ -91,10 +110,12 @@ def _bearer(scope) -> Optional[str]:
 
 
 class TenantContextMiddleware:
-    """Imposta il locale corrente dal token JWT; blocca le API dati senza login."""
+    """Imposta il locale corrente dal token JWT; blocca le API dati senza login
+    e i token emessi prima di un cambio password."""
 
-    def __init__(self, app):
+    def __init__(self, app, db):
         self.app = app
+        self.db = db
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -107,7 +128,10 @@ class TenantContextMiddleware:
         else:
             token = _bearer(scope)
             claims = verify_access_token(token) if token else None
-            if not claims or not claims.get("tenant_id"):
+            valid = bool(claims and claims.get("tenant_id"))
+            if valid:
+                valid = await _password_version(self.db, claims["sub"]) == claims.get("pv", 0)
+            if not valid:
                 response = JSONResponse({"detail": "Accesso richiesto"}, status_code=401)
                 return await response(scope, receive, send)
             ctx = TenantContext(claims["tenant_id"], bool(claims.get("legacy")))

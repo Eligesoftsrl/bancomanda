@@ -19,7 +19,7 @@ const BrandPanel = ({ wide }: { wide: boolean }) => (
   <View style={[styles.brand, wide ? styles.brandWide : styles.brandNarrow]}>
     <Image source={require('../assets/images/icon.png')} style={styles.brandLogo} resizeMode="contain" />
     <Text style={styles.brandName}>Bancomanda</Text>
-    <Text style={styles.brandTagline}>Ordini, menu del giorno e cucina del tuo locale, su ogni iPad.</Text>
+    <Text style={styles.brandTagline}>Ordini, menu del giorno e cucina del tuo locale, su ogni tablet.</Text>
   </View>
 );
 
@@ -55,7 +55,7 @@ export default function LoginScreen() {
         <View style={styles.formWrap}>
           <View style={styles.form}>
             <Text style={styles.title}>Accedi al tuo locale</Text>
-            <Text style={styles.subtitle}>Resterai collegato su questo iPad finché non premi Esci.</Text>
+            <Text style={styles.subtitle}>Resterai collegato su questo tablet finché non premi Esci.</Text>
 
             <Text style={styles.label}>Email</Text>
             <TextInput

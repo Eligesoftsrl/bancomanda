@@ -1,10 +1,12 @@
 // @ts-nocheck
-import { ScrollViewStyleReset } from "expo-router/html";
+import { ScrollViewStyleReset, useServerDocumentContext } from "expo-router/html";
 import type { PropsWithChildren } from "react";
 
+// SDK 58: headNodes/bodyNodes portano gli script dell'app, senza la pagina resta bianca
 export default function Root({ children }: PropsWithChildren) {
+  const { headNodes, bodyNodes, htmlAttributes, bodyAttributes } = useServerDocumentContext();
   return (
-    <html lang="it" style={{ height: "100%" }}>
+    <html lang="it" {...htmlAttributes} style={{ height: "100%" }}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -33,6 +35,7 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
         
         <title>Bancomanda</title>
+        {headNodes}
         
         <ScrollViewStyleReset />
         <style
@@ -50,6 +53,7 @@ export default function Root({ children }: PropsWithChildren) {
         />
       </head>
       <body
+        {...bodyAttributes}
         style={{
           margin: 0,
           height: "100%",
@@ -60,6 +64,7 @@ export default function Root({ children }: PropsWithChildren) {
         }}
       >
         {children}
+        {bodyNodes}
       </body>
     </html>
   );
