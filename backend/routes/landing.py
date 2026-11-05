@@ -1,6 +1,6 @@
 """
 Landing page HTML per Bancó SaaS.
-Pagina pubblica per presentare il prodotto e raccogliere richieste demo.
+Pagina pubblica con animazioni e immagini.
 """
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -9,7 +9,7 @@ router = APIRouter(tags=["Landing Page"])
 
 
 def get_landing_html() -> str:
-    """Generate the landing page HTML."""
+    """Generate the landing page HTML with animations."""
     return '''<!DOCTYPE html>
 <html lang="it">
 <head>
@@ -17,14 +17,12 @@ def get_landing_html() -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bancó — Sistema Gestione Ordini per Ristoranti</title>
     <meta name="description" content="Bancó è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad.">
-    <meta name="keywords" content="gestionale ristorante, software ristorante, ordini ristorante, menu del giorno, stampa termica, iPad ristorante, POS ristorante">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            /* Light warm theme inspired by giorgiobistrot.it */
             --bg-main: #faf9f6;
             --bg-surface: #f5f3ef;
             --bg-elevated: #ffffff;
@@ -38,7 +36,6 @@ def get_landing_html() -> str:
             --text-secondary: #555555;
             --text-muted: #888888;
             --border-subtle: #e5e2dc;
-            --border-dark: #d1cdc4;
             --success: #2d5a27;
             --danger: #c4501c;
         }
@@ -49,10 +46,46 @@ def get_landing_html() -> str:
             background: var(--bg-main);
             color: var(--text-secondary);
             line-height: 1.6;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
         .serif { font-family: 'Playfair Display', Georgia, serif; }
         .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Animations */
+        @keyframes blob-drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.05); }
+            66% { transform: translate(-20px, 20px) scale(0.95); }
+        }
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .blob-drift { animation: blob-drift 20s ease-in-out infinite; }
+        .float-slow { animation: float-slow 6s ease-in-out infinite; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        .fade-in { animation: fade-in-up 0.8s ease-out forwards; opacity: 0; }
+        .fade-in-delay-1 { animation-delay: 0.1s; }
+        .fade-in-delay-2 { animation-delay: 0.2s; }
+        .fade-in-delay-3 { animation-delay: 0.3s; }
+        .fade-in-delay-4 { animation-delay: 0.4s; }
+        .marquee { animation: marquee 30s linear infinite; }
 
         /* Header */
         header {
@@ -61,7 +94,7 @@ def get_landing_html() -> str:
             left: 0;
             right: 0;
             z-index: 100;
-            background: rgba(250, 249, 246, 0.95);
+            background: rgba(250, 249, 246, 0.9);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-subtle);
             padding: 1rem 2rem;
@@ -108,8 +141,8 @@ def get_landing_html() -> str:
         .nav-buttons { display: flex; gap: 1rem; }
         .btn {
             padding: 0.6rem 1.25rem;
-            border-radius: 8px;
-            font-weight: 500;
+            border-radius: 9999px;
+            font-weight: 600;
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -121,19 +154,25 @@ def get_landing_html() -> str:
         }
         .btn-outline {
             background: transparent;
-            border: 1px solid var(--border-dark);
+            border: 1px solid var(--border-subtle);
             color: var(--text-primary);
         }
         .btn-outline:hover {
             background: var(--bg-surface);
             border-color: var(--primary);
             color: var(--primary);
+            transform: translateY(-2px);
         }
         .btn-primary {
             background: var(--primary);
             color: white;
+            box-shadow: 0 10px 25px -5px rgba(45, 90, 39, 0.3);
         }
-        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-primary:hover { 
+            background: var(--primary-hover); 
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(45, 90, 39, 0.4);
+        }
 
         /* Hero */
         .hero {
@@ -144,15 +183,35 @@ def get_landing_html() -> str:
             position: relative;
             overflow: hidden;
         }
-        .hero::before {
-            content: '';
+        /* Animated blobs */
+        .hero-blob {
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 60%;
-            height: 100%;
-            background: radial-gradient(ellipse at top right, rgba(45, 90, 39, 0.05) 0%, transparent 60%);
+            border-radius: 50%;
+            filter: blur(80px);
             pointer-events: none;
+        }
+        .hero-blob-1 {
+            top: -100px;
+            left: -100px;
+            width: 400px;
+            height: 400px;
+            background: rgba(45, 90, 39, 0.12);
+        }
+        .hero-blob-2 {
+            top: 20%;
+            right: -150px;
+            width: 500px;
+            height: 500px;
+            background: rgba(196, 80, 28, 0.08);
+            animation-delay: -7s;
+        }
+        .hero-blob-3 {
+            bottom: -100px;
+            left: 30%;
+            width: 350px;
+            height: 350px;
+            background: rgba(251, 235, 168, 0.4);
+            animation-delay: -14s;
         }
         .hero-inner {
             max-width: 1200px;
@@ -161,25 +220,45 @@ def get_landing_html() -> str:
             grid-template-columns: 1fr 1fr;
             gap: 4rem;
             align-items: center;
+            position: relative;
+            z-index: 1;
         }
         .hero-badge {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
-            background: var(--primary-light);
-            border: 1px solid rgba(45, 90, 39, 0.2);
+            background: white;
+            border: 1px solid var(--border-subtle);
             border-radius: 9999px;
             color: var(--primary);
             font-size: 0.8rem;
-            font-weight: 500;
+            font-weight: 600;
             margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px -3px rgba(0,0,0,0.08);
+        }
+        .hero-badge .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
         }
         .hero h1 {
             font-size: clamp(2.5rem, 5vw, 3.5rem);
             color: var(--text-primary);
             line-height: 1.1;
             margin-bottom: 1.5rem;
+        }
+        .hero h1 .highlight {
+            position: relative;
+            color: var(--primary);
+        }
+        .hero h1 .highlight svg {
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 100%;
+            height: 12px;
         }
         .hero-desc {
             font-size: 1.125rem;
@@ -190,51 +269,108 @@ def get_landing_html() -> str:
         .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
         .hero-buttons .btn { padding: 0.875rem 1.75rem; font-size: 1rem; }
 
-        /* Thermal Receipt Simulator */
-        .thermal-receipt {
-            background: #fffef8;
-            color: #1a1a1a;
-            padding: 1.5rem;
-            border-radius: 4px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            max-width: 280px;
-            margin-left: auto;
-            transform: rotate(2deg);
-            border: 1px solid var(--border-subtle);
+        /* Hero Image Section */
+        .hero-visual {
+            position: relative;
         }
-        .receipt-header {
-            text-align: center;
-            border-bottom: 1px dashed #ccc;
-            padding-bottom: 0.75rem;
-            margin-bottom: 0.75rem;
+        .hero-image {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.2);
         }
-        .receipt-header h3 { font-size: 1rem; font-weight: 600; }
-        .receipt-header p { font-size: 0.65rem; color: #666; margin-top: 0.25rem; }
-        .receipt-item {
+        /* Floating cards around hero image */
+        .floating-card {
+            position: absolute;
+            background: white;
+            border-radius: 16px;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.15);
             display: flex;
-            justify-content: space-between;
-            padding: 0.25rem 0;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid white;
+            backdrop-filter: blur(10px);
         }
-        .receipt-item span:first-child { flex: 1; }
-        .receipt-total {
-            border-top: 1px dashed #ccc;
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
+        .floating-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .floating-card-text {
+            font-size: 0.75rem;
+        }
+        .floating-card-text span:first-child {
+            display: block;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-size: 0.65rem;
+        }
+        .floating-card-text span:last-child {
+            display: block;
             font-weight: 600;
+            color: var(--text-primary);
         }
-        .receipt-footer {
-            text-align: center;
-            margin-top: 1rem;
-            font-size: 0.6rem;
-            color: #888;
+        .floating-card-1 {
+            top: 10%;
+            left: -20px;
+            animation: float-slow 5s ease-in-out infinite;
+        }
+        .floating-card-2 {
+            top: 40%;
+            right: -30px;
+            animation: float-slow 6s ease-in-out infinite;
+            animation-delay: -2s;
+        }
+        .floating-card-3 {
+            bottom: 15%;
+            left: 10%;
+            animation: float-slow 7s ease-in-out infinite;
+            animation-delay: -4s;
+        }
+
+        /* Marquee Section */
+        .marquee-section {
+            padding: 1.5rem 0;
+            background: white;
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            overflow: hidden;
+        }
+        .marquee-track {
+            display: flex;
+            width: max-content;
+            gap: 1rem;
+        }
+        .marquee-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .marquee-item i {
+            color: var(--primary);
         }
 
         /* Features Section */
         .features {
             padding: 6rem 2rem;
             background: var(--bg-surface);
+            position: relative;
         }
         .section-inner {
             max-width: 1200px;
@@ -243,6 +379,23 @@ def get_landing_html() -> str:
         .section-header {
             text-align: center;
             margin-bottom: 4rem;
+        }
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        .section-badge span {
+            width: 24px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 2px;
         }
         .section-header h2 {
             font-size: clamp(2rem, 4vw, 2.75rem);
@@ -262,55 +415,139 @@ def get_landing_html() -> str:
         .bento-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 2rem;
             transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
         }
         .bento-card:hover {
             border-color: var(--primary);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 40px -10px rgba(45, 90, 39, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px -15px rgba(45, 90, 39, 0.2);
         }
         .bento-card.large { grid-column: span 8; }
         .bento-card.medium { grid-column: span 6; }
         .bento-card.small { grid-column: span 4; }
+        .bento-card.featured {
+            background: var(--primary);
+            color: white;
+            border-color: transparent;
+        }
+        .bento-card.featured:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px -15px rgba(45, 90, 39, 0.4);
+        }
         .bento-icon {
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             background: var(--primary-light);
-            border-radius: 12px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--primary);
-            font-size: 1.25rem;
-            margin-bottom: 1.25rem;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .bento-card.featured .bento-icon {
+            background: rgba(255,255,255,0.2);
+            color: white;
         }
         .bento-card h3 {
             font-size: 1.25rem;
             color: var(--text-primary);
             margin-bottom: 0.75rem;
         }
+        .bento-card.featured h3 { color: white; }
         .bento-card p {
             font-size: 0.95rem;
             color: var(--text-secondary);
+        }
+        .bento-card.featured p { color: rgba(255,255,255,0.85); }
+        .bento-card-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+        }
+
+        /* Gallery Section */
+        .gallery-section {
+            padding: 6rem 2rem;
+            background: var(--bg-main);
+        }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        .gallery-item {
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/3;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .gallery-item:hover img {
+            transform: scale(1.08);
+        }
+        .gallery-item-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
+            display: flex;
+            align-items: flex-end;
+            padding: 1.5rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .gallery-item:hover .gallery-item-overlay {
+            opacity: 1;
+        }
+        .gallery-item-overlay span {
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
         }
 
         /* Demo Form Section */
         .demo-section {
             padding: 6rem 2rem;
-            background: var(--bg-main);
+            background: var(--bg-surface);
+            position: relative;
+        }
+        .demo-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 400px;
+            background: rgba(45, 90, 39, 0.06);
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
         }
         .demo-inner {
             max-width: 800px;
             margin: 0 auto;
+            position: relative;
         }
         .demo-form-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 3rem;
-            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+            box-shadow: 0 20px 50px -15px rgba(0,0,0,0.1);
         }
         .form-grid {
             display: grid;
@@ -327,16 +564,17 @@ def get_landing_html() -> str:
         .form-group input, .form-group textarea {
             background: var(--bg-surface);
             border: 1px solid var(--border-subtle);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 0.875rem 1rem;
             color: var(--text-primary);
             font-size: 1rem;
             font-family: inherit;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
         }
         .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(45, 90, 39, 0.1);
         }
         .form-group textarea { resize: vertical; min-height: 100px; }
         .form-submit {
@@ -348,7 +586,7 @@ def get_landing_html() -> str:
         .form-alert {
             margin-top: 1.5rem;
             padding: 1rem;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
             display: none;
         }
@@ -366,12 +604,19 @@ def get_landing_html() -> str:
         /* FAQ Section */
         .faq-section {
             padding: 6rem 2rem;
-            background: var(--bg-surface);
+            background: var(--bg-main);
         }
         .faq-list { max-width: 800px; margin: 0 auto; }
         .faq-item {
-            border-bottom: 1px solid var(--border-subtle);
-            padding: 1.5rem 0;
+            background: white;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .faq-item:hover {
+            border-color: var(--primary);
         }
         .faq-question {
             display: flex;
@@ -379,20 +624,36 @@ def get_landing_html() -> str:
             align-items: center;
             cursor: pointer;
             color: var(--text-primary);
-            font-size: 1.1rem;
-            font-weight: 500;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 1.25rem 1.5rem;
         }
-        .faq-question i { color: var(--primary); transition: transform 0.3s; }
-        .faq-item.active .faq-question i { transform: rotate(180deg); }
+        .faq-question i { 
+            color: var(--primary); 
+            transition: transform 0.3s;
+            width: 36px;
+            height: 36px;
+            background: var(--bg-surface);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .faq-item.active .faq-question i { 
+            transform: rotate(180deg);
+            background: var(--primary);
+            color: white;
+        }
         .faq-answer {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease, padding 0.3s;
             color: var(--text-secondary);
+            padding: 0 1.5rem;
         }
         .faq-item.active .faq-answer {
             max-height: 500px;
-            padding-top: 1rem;
+            padding: 0 1.5rem 1.5rem;
         }
 
         /* Footer */
@@ -420,7 +681,7 @@ def get_landing_html() -> str:
         }
         .footer-links a:hover { color: var(--primary); }
 
-        /* Register Modal */
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -433,18 +694,20 @@ def get_landing_html() -> str:
             justify-content: center;
             z-index: 200;
             padding: 2rem;
+            backdrop-filter: blur(4px);
         }
         .modal-overlay.active { display: flex; }
         .modal-content {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: 20px;
+            border-radius: 24px;
             padding: 2.5rem;
             width: 100%;
             max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            animation: fade-in-up 0.3s ease-out;
         }
         .modal-header {
             display: flex;
@@ -457,28 +720,40 @@ def get_landing_html() -> str:
             color: var(--text-primary);
         }
         .modal-close {
-            background: none;
+            background: var(--bg-surface);
             border: none;
             color: var(--text-muted);
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             cursor: pointer;
-            transition: color 0.2s;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
-        .modal-close:hover { color: var(--text-primary); }
+        .modal-close:hover { 
+            background: var(--danger);
+            color: white;
+        }
 
         /* Responsive */
         @media (max-width: 1024px) {
             .hero-inner { grid-template-columns: 1fr; text-align: center; }
             .hero-desc { margin: 0 auto 2rem; }
             .hero-buttons { justify-content: center; }
-            .thermal-receipt { margin: 2rem auto 0; transform: rotate(0); }
+            .hero-visual { margin-top: 3rem; }
+            .floating-card { display: none; }
             .bento-card.large, .bento-card.medium, .bento-card.small { grid-column: span 12; }
             nav { display: none; }
+            .gallery-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 640px) {
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
             .footer-inner { flex-direction: column; text-align: center; }
+            .hero-image { max-width: 100%; }
         }
     </style>
 </head>
@@ -486,82 +761,114 @@ def get_landing_html() -> str:
     <!-- Header -->
     <header>
         <div class="header-inner">
-            <a href="/" class="logo" data-testid="landing-header-logo">
+            <a href="/api/landing" class="logo">
                 <div class="logo-icon">B</div>
                 <span class="logo-text">Bancó</span>
             </a>
             <nav>
-                <a href="#features" data-testid="nav-link-features">Funzionalità</a>
-                <a href="#thermal" data-testid="nav-link-thermal">Stampa 62mm</a>
-                <a href="#demo" data-testid="nav-link-demo">Demo</a>
-                <a href="#faq" data-testid="nav-link-faq">FAQ</a>
+                <a href="#features">Funzionalità</a>
+                <a href="#gallery">Galleria</a>
+                <a href="#demo">Demo</a>
+                <a href="#faq">FAQ</a>
             </nav>
             <div class="nav-buttons">
-                <a href="#demo" class="btn btn-outline" data-testid="cta-button-demo-header">Richiedi Demo</a>
-                <button class="btn btn-primary" onclick="openRegisterModal()" data-testid="cta-button-register-header">Registrati</button>
+                <a href="#demo" class="btn btn-outline">Richiedi Demo</a>
+                <button class="btn btn-primary" onclick="openRegisterModal()">Registrati</button>
             </div>
         </div>
     </header>
 
     <!-- Hero -->
     <section class="hero">
+        <div class="hero-blob hero-blob-1 blob-drift"></div>
+        <div class="hero-blob hero-blob-2 blob-drift"></div>
+        <div class="hero-blob hero-blob-3 blob-drift"></div>
+        
         <div class="hero-inner">
             <div class="hero-content">
-                <div class="hero-badge">
-                    <i class="fas fa-utensils"></i>
+                <div class="hero-badge fade-in">
+                    <span class="pulse-dot"></span>
                     SaaS per Ristoranti Italiani
                 </div>
-                <h1 class="serif" data-testid="hero-title">La gestione ordini che il tuo bistrot meritava.</h1>
-                <p class="hero-desc">
+                <h1 class="serif fade-in fade-in-delay-1">
+                    La gestione ordini che il tuo <span class="highlight">bistrot meritava.<svg viewBox="0 0 200 12" preserveAspectRatio="none"><path d="M2 8 C 40 2, 100 12, 198 4" fill="none" stroke="#c4501c" stroke-width="4" stroke-linecap="round"/></svg></span>
+                </h1>
+                <p class="hero-desc fade-in fade-in-delay-2">
                     Bancó è il gestionale pensato per ristoranti, pizzerie e bistrot. 
                     Ordini al banco, menu del giorno, stampa termica 62mm, vista cucina e porzionatura. 
                     Tutto su iPad, sincronizzato in tempo reale.
                 </p>
-                <div class="hero-buttons">
-                    <a href="#demo" class="btn btn-primary" data-testid="hero-cta-demo">
+                <div class="hero-buttons fade-in fade-in-delay-3">
+                    <a href="#demo" class="btn btn-primary">
                         <i class="fas fa-calendar-check"></i> Richiedi una Demo
                     </a>
-                    <button class="btn btn-outline" onclick="openRegisterModal()" data-testid="hero-cta-register">
+                    <button class="btn btn-outline" onclick="openRegisterModal()">
                         <i class="fas fa-rocket"></i> Inizia Gratis
                     </button>
                 </div>
             </div>
-            <div class="hero-visual">
-                <div class="thermal-receipt" data-testid="thermal-simulator-box">
-                    <div class="receipt-header">
-                        <h3>ORDINE #127</h3>
-                        <p>Banco • Da Ritirare • 13:30</p>
+            <div class="hero-visual fade-in fade-in-delay-4">
+                <img src="https://images.unsplash.com/photo-1556742393-d75f468bfcb0?w=600&q=80" alt="Gestionale su tablet" class="hero-image float-slow">
+                
+                <!-- Floating Cards -->
+                <div class="floating-card floating-card-1">
+                    <div class="floating-card-icon" style="background: #c4501c;">
+                        <i class="fas fa-clipboard-list"></i>
                     </div>
-                    <div class="receipt-body">
-                        <div class="receipt-item">
-                            <span>2x Risotto alla zucca</span>
-                            <span>€14.00</span>
-                        </div>
-                        <div class="receipt-item">
-                            <span>1x Tagliata di manzo</span>
-                            <span>€16.00</span>
-                        </div>
-                        <div class="receipt-item">
-                            <span>1x Tiramisu</span>
-                            <span>€5.00</span>
-                        </div>
-                        <div class="receipt-item receipt-total">
-                            <span>TOTALE</span>
-                            <span>€35.00</span>
-                        </div>
+                    <div class="floating-card-text">
+                        <span>Ordine #127</span>
+                        <span>3 piatti • €45.00</span>
                     </div>
-                    <div class="receipt-footer">
-                        Stampato da Bancó • 05/11/2026 13:15
+                </div>
+                <div class="floating-card floating-card-2">
+                    <div class="floating-card-icon" style="background: var(--primary);">
+                        <i class="fas fa-print"></i>
+                    </div>
+                    <div class="floating-card-text">
+                        <span>Stampato</span>
+                        <span>Comanda cucina</span>
+                    </div>
+                </div>
+                <div class="floating-card floating-card-3">
+                    <div class="floating-card-icon" style="background: #8b7fd4;">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <div class="floating-card-text">
+                        <span>Menu del giorno</span>
+                        <span>12 piatti online</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- Marquee -->
+    <div class="marquee-section" aria-hidden="true">
+        <div class="marquee-track marquee">
+            <span class="marquee-item"><i class="fas fa-clipboard-list"></i> Ordini</span>
+            <span class="marquee-item"><i class="fas fa-print"></i> Stampa 62mm</span>
+            <span class="marquee-item"><i class="fas fa-utensils"></i> Menu del Giorno</span>
+            <span class="marquee-item"><i class="fas fa-fire-burner"></i> Vista Cucina</span>
+            <span class="marquee-item"><i class="fas fa-users"></i> Clienti</span>
+            <span class="marquee-item"><i class="fas fa-tablet-alt"></i> Multi-iPad</span>
+            <span class="marquee-item"><i class="fas fa-chart-pie"></i> Report</span>
+            <span class="marquee-item"><i class="fas fa-globe"></i> Pubblica Online</span>
+            <span class="marquee-item"><i class="fas fa-clipboard-list"></i> Ordini</span>
+            <span class="marquee-item"><i class="fas fa-print"></i> Stampa 62mm</span>
+            <span class="marquee-item"><i class="fas fa-utensils"></i> Menu del Giorno</span>
+            <span class="marquee-item"><i class="fas fa-fire-burner"></i> Vista Cucina</span>
+            <span class="marquee-item"><i class="fas fa-users"></i> Clienti</span>
+            <span class="marquee-item"><i class="fas fa-tablet-alt"></i> Multi-iPad</span>
+            <span class="marquee-item"><i class="fas fa-chart-pie"></i> Report</span>
+            <span class="marquee-item"><i class="fas fa-globe"></i> Pubblica Online</span>
+        </div>
+    </div>
+
     <!-- Features -->
     <section class="features" id="features">
         <div class="section-inner">
             <div class="section-header">
+                <div class="section-badge"><span></span> Funzionalità</div>
                 <h2 class="serif">Tutto quello che serve al tuo locale</h2>
                 <p>Gestisci ordini, menu e cucina da un'unica piattaforma pensata per la ristorazione italiana.</p>
             </div>
@@ -569,37 +876,63 @@ def get_landing_html() -> str:
                 <div class="bento-card large">
                     <div class="bento-icon"><i class="fas fa-clipboard-list"></i></div>
                     <h3>Ordini in Tempo Reale</h3>
-                    <p>Prendi ordini al banco, per telefono o WhatsApp. Ogni ordine è visibile su tutti gli iPad del locale, con stato aggiornato in tempo reale. Gestisci consegne, ritiri e servizio in sala da un'unica interfaccia.</p>
+                    <p>Prendi ordini al banco, per telefono o WhatsApp. Ogni ordine è visibile su tutti gli iPad del locale, con stato aggiornato in tempo reale.</p>
+                    <img src="https://images.unsplash.com/photo-1728044849280-10a1a75cff83?w=400&q=80" alt="Tablet con ordini" class="bento-card-image">
                 </div>
-                <div class="bento-card small" id="thermal">
+                <div class="bento-card small featured">
                     <div class="bento-icon"><i class="fas fa-print"></i></div>
                     <h3>Stampa 62mm</h3>
-                    <p>Stampa comande e scontrini su stampanti termiche ESC/POS con layout ottimizzato per etichette 62mm.</p>
+                    <p>Stampa comande e scontrini su stampanti termiche ESC/POS con layout ottimizzato.</p>
                 </div>
                 <div class="bento-card medium">
                     <div class="bento-icon"><i class="fas fa-utensils"></i></div>
                     <h3>Menu del Giorno</h3>
-                    <p>Pubblica il menu del giorno sul tuo sito web con un click. I clienti vedono sempre i piatti disponibili e le porzioni rimanenti.</p>
+                    <p>Pubblica il menu del giorno sul tuo sito web con un click. I clienti vedono sempre i piatti disponibili.</p>
                 </div>
                 <div class="bento-card medium">
                     <div class="bento-icon"><i class="fas fa-fire-burner"></i></div>
                     <h3>Vista Cucina</h3>
-                    <p>La cucina vede tutti i piatti da preparare aggregati per tipo. Ogni porzione ha il suo stato: in attesa, in preparazione, pronto.</p>
+                    <p>La cucina vede tutti i piatti da preparare aggregati per tipo. Ogni porzione ha il suo stato.</p>
                 </div>
                 <div class="bento-card small">
                     <div class="bento-icon"><i class="fas fa-users"></i></div>
                     <h3>Anagrafica Clienti</h3>
-                    <p>Registra i clienti abituali con storico ordini e preferenze.</p>
+                    <p>Registra i clienti abituali con storico ordini.</p>
                 </div>
                 <div class="bento-card small">
                     <div class="bento-icon"><i class="fas fa-tablet-alt"></i></div>
                     <h3>Multi-iPad</h3>
-                    <p>Usa più iPad contemporaneamente: banco, cucina, sala. Tutto sincronizzato.</p>
+                    <p>Usa più iPad: banco, cucina, sala.</p>
                 </div>
                 <div class="bento-card small">
                     <div class="bento-icon"><i class="fas fa-chart-pie"></i></div>
-                    <h3>Report & Incassi</h3>
-                    <p>Vendite giornaliere, piatti più richiesti, vendite mancate.</p>
+                    <h3>Report</h3>
+                    <p>Vendite, piatti più richiesti, incassi.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="gallery-section" id="gallery">
+        <div class="section-inner">
+            <div class="section-header">
+                <div class="section-badge"><span></span> In Cucina</div>
+                <h2 class="serif">Pensato per chi lavora ogni giorno</h2>
+                <p>Dalla cucina al bancone, Bancó semplifica ogni passaggio.</p>
+            </div>
+            <div class="gallery-grid">
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1621494547944-5ddbc84514b2?w=600&q=80" alt="Cucina professionale">
+                    <div class="gallery-item-overlay"><span>Cucina in azione</span></div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1713971346208-70d5eff36787?w=600&q=80" alt="Impiattamento pasta">
+                    <div class="gallery-item-overlay"><span>Piatti pronti</span></div>
+                </div>
+                <div class="gallery-item">
+                    <img src="https://images.unsplash.com/photo-1570054054068-0ad5c3f5136e?w=600&q=80" alt="Pasta fresca">
+                    <div class="gallery-item-overlay"><span>Tradizione italiana</span></div>
                 </div>
             </div>
         </div>
@@ -609,46 +942,41 @@ def get_landing_html() -> str:
     <section class="demo-section" id="demo">
         <div class="demo-inner">
             <div class="section-header">
+                <div class="section-badge"><span></span> Contattaci</div>
                 <h2 class="serif">Richiedi una Demo</h2>
-                <p>Compila il modulo e ti contatteremo per mostrarti Bancó in azione nel tuo locale.</p>
+                <p>Compila il modulo e ti contatteremo per mostrarti Bancó in azione.</p>
             </div>
             <div class="demo-form-card">
-                <form id="demoForm" data-testid="demo-request-form">
+                <form id="demoForm">
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="restaurant_name">Nome del Locale *</label>
-                            <input type="text" id="restaurant_name" name="restaurant_name" required 
-                                   placeholder="Es. Trattoria da Mario" data-testid="input-restaurant-name">
+                            <input type="text" id="restaurant_name" name="restaurant_name" required placeholder="Es. Trattoria da Mario">
                         </div>
                         <div class="form-group">
                             <label for="contact_name">Nome Referente *</label>
-                            <input type="text" id="contact_name" name="contact_name" required 
-                                   placeholder="Es. Mario Rossi" data-testid="input-contact-name">
+                            <input type="text" id="contact_name" name="contact_name" required placeholder="Es. Mario Rossi">
                         </div>
                         <div class="form-group">
                             <label for="email">Email *</label>
-                            <input type="email" id="email" name="email" required 
-                                   placeholder="email@esempio.it" data-testid="input-email">
+                            <input type="email" id="email" name="email" required placeholder="email@esempio.it">
                         </div>
                         <div class="form-group">
                             <label for="phone">Telefono</label>
-                            <input type="tel" id="phone" name="phone" 
-                                   placeholder="333 123 4567" data-testid="input-phone">
+                            <input type="tel" id="phone" name="phone" placeholder="333 123 4567">
                         </div>
                         <div class="form-group full">
                             <label for="message">Messaggio</label>
-                            <textarea id="message" name="message" 
-                                      placeholder="Raccontaci del tuo locale e cosa vorresti migliorare..." 
-                                      data-testid="input-message"></textarea>
+                            <textarea id="message" name="message" placeholder="Raccontaci del tuo locale..."></textarea>
                         </div>
                     </div>
                     <div class="form-submit">
-                        <button type="submit" class="btn btn-primary" data-testid="demo-form-submit-button">
+                        <button type="submit" class="btn btn-primary">
                             <i class="fas fa-paper-plane"></i> Invia Richiesta
                         </button>
                     </div>
                 </form>
-                <div id="formAlert" class="form-alert" data-testid="demo-form-success-alert"></div>
+                <div id="formAlert" class="form-alert"></div>
             </div>
         </div>
     </section>
@@ -657,48 +985,38 @@ def get_landing_html() -> str:
     <section class="faq-section" id="faq">
         <div class="section-inner">
             <div class="section-header">
-                <h2 class="serif">Domande Frequenti</h2>
+                <div class="section-badge"><span></span> Domande Frequenti</div>
+                <h2 class="serif">Tutto quello che vuoi sapere</h2>
             </div>
             <div class="faq-list">
-                <div class="faq-item" data-testid="faq-accordion-item-0">
+                <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">
                         <span>Quali stampanti termiche sono compatibili?</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
                         Bancó funziona con tutte le stampanti termiche ESC/POS che supportano rotoli da 62mm. 
-                        Abbiamo testato con successo Brother QL-820NWB, Epson TM-T20III e molte altre. 
-                        La stampa avviene via browser, senza bisogno di driver speciali.
+                        Abbiamo testato con successo Brother QL-820NWB, Epson TM-T20III e molte altre.
                     </div>
                 </div>
-                <div class="faq-item" data-testid="faq-accordion-item-1">
+                <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">
                         <span>Funziona su iPad e tablet Android?</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
                         Sì! Bancó è ottimizzato per iPad (consigliato) ma funziona anche su tablet Android. 
-                        Puoi usare più dispositivi contemporaneamente: uno al banco, uno in cucina, uno per le consegne.
-                    </div>
-                </div>
-                <div class="faq-item" data-testid="faq-accordion-item-2">
-                    <div class="faq-question" onclick="toggleFaq(this)">
-                        <span>E se la connessione cade?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        Il sistema si sincronizza automaticamente quando la connessione torna attiva. 
-                        Gli ordini già inseriti restano visibili e la coda di stampa riprende da sola.
+                        Puoi usare più dispositivi contemporaneamente.
                     </div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <span>Come funziona la pubblicazione del menu sul sito?</span>
+                        <span>Come funziona la pubblicazione del menu?</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
                         Bancó genera un file JSON con il menu del giorno e lo pubblica sul tuo sito via FTP. 
-                        Il tuo sito web può leggere questo file e mostrare sempre il menu aggiornato con prezzi e disponibilità.
+                        Il tuo sito mostra sempre il menu aggiornato con prezzi e disponibilità.
                     </div>
                 </div>
                 <div class="faq-item">
@@ -735,7 +1053,7 @@ def get_landing_html() -> str:
     </footer>
 
     <!-- Register Modal -->
-    <div class="modal-overlay" id="registerModal" data-testid="modal-self-register">
+    <div class="modal-overlay" id="registerModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="serif">Registra il tuo Ristorante</h2>
@@ -743,30 +1061,27 @@ def get_landing_html() -> str:
             </div>
             <form id="registerForm">
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="reg_tenant_name">Nome del Locale *</label>
+                    <label>Nome del Locale *</label>
                     <input type="text" id="reg_tenant_name" required placeholder="Es. Trattoria da Mario">
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="reg_tenant_slug">Identificativo (slug) *</label>
-                    <input type="text" id="reg_tenant_slug" required placeholder="es. trattoria-mario" 
-                           pattern="[a-z0-9-]+" title="Solo lettere minuscole, numeri e trattini">
-                    <small style="color: var(--text-muted); font-size: 0.75rem;">
-                        Usato per l'URL del tuo locale (solo lettere minuscole, numeri, trattini)
-                    </small>
+                    <label>Identificativo (slug) *</label>
+                    <input type="text" id="reg_tenant_slug" required placeholder="trattoria-mario" pattern="[a-z0-9-]+">
+                    <small style="color: var(--text-muted); font-size: 0.75rem;">Solo lettere minuscole, numeri, trattini</small>
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="reg_name">Il tuo Nome *</label>
+                    <label>Il tuo Nome *</label>
                     <input type="text" id="reg_name" required placeholder="Mario Rossi">
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="reg_email">Email *</label>
+                    <label>Email *</label>
                     <input type="email" id="reg_email" required placeholder="email@esempio.it">
                 </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <label for="reg_password">Password *</label>
+                    <label>Password *</label>
                     <input type="password" id="reg_password" required minlength="8" placeholder="Minimo 8 caratteri">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
                     <i class="fas fa-rocket"></i> Crea Account
                 </button>
             </form>
@@ -775,15 +1090,13 @@ def get_landing_html() -> str:
     </div>
 
     <script>
-        // Demo form submission
+        // Demo form
         document.getElementById('demoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = this.querySelector('button[type="submit"]');
             const alert = document.getElementById('formAlert');
-            
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Invio...';
-            
             const data = {
                 restaurant_name: this.restaurant_name.value,
                 contact_name: this.contact_name.value,
@@ -791,17 +1104,15 @@ def get_landing_html() -> str:
                 phone: this.phone.value || null,
                 message: this.message.value || null
             };
-            
             try {
                 const resp = await fetch('/api/public/demo-request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
                 if (resp.ok) {
                     alert.className = 'form-alert success';
-                    alert.textContent = 'Richiesta inviata con successo! Ti contatteremo presto.';
+                    alert.textContent = 'Richiesta inviata! Ti contatteremo presto.';
                     alert.style.display = 'block';
                     this.reset();
                 } else if (resp.status === 429) {
@@ -809,14 +1120,13 @@ def get_landing_html() -> str:
                     alert.textContent = 'Hai già inviato una richiesta nelle ultime 24 ore.';
                     alert.style.display = 'block';
                 } else {
-                    throw new Error('Errore server');
+                    throw new Error();
                 }
             } catch (err) {
                 alert.className = 'form-alert error';
-                alert.textContent = 'Si è verificato un errore. Riprova più tardi.';
+                alert.textContent = 'Errore. Riprova più tardi.';
                 alert.style.display = 'block';
             }
-            
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane"></i> Invia Richiesta';
         });
@@ -826,10 +1136,8 @@ def get_landing_html() -> str:
             e.preventDefault();
             const btn = this.querySelector('button[type="submit"]');
             const alert = document.getElementById('registerAlert');
-            
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrazione...';
-            
             const data = {
                 tenant_name: document.getElementById('reg_tenant_name').value,
                 tenant_slug: document.getElementById('reg_tenant_slug').value.toLowerCase(),
@@ -837,19 +1145,16 @@ def get_landing_html() -> str:
                 email: document.getElementById('reg_email').value,
                 password: document.getElementById('reg_password').value
             };
-            
             try {
                 const resp = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
                 const result = await resp.json();
-                
                 if (resp.ok) {
                     alert.className = 'form-alert success';
-                    alert.innerHTML = '<strong>Account creato!</strong><br>Il tuo locale è in attesa di approvazione. Ti invieremo una email quando sarà attivo.';
+                    alert.innerHTML = '<strong>Account creato!</strong><br>Il tuo locale è in attesa di approvazione.';
                     alert.style.display = 'block';
                     this.reset();
                 } else {
@@ -859,21 +1164,17 @@ def get_landing_html() -> str:
                 }
             } catch (err) {
                 alert.className = 'form-alert error';
-                alert.textContent = 'Si è verificato un errore. Riprova più tardi.';
+                alert.textContent = 'Errore. Riprova più tardi.';
                 alert.style.display = 'block';
             }
-            
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-rocket"></i> Crea Account';
         });
 
-        // FAQ toggle
         function toggleFaq(el) {
-            const item = el.parentElement;
-            item.classList.toggle('active');
+            el.parentElement.classList.toggle('active');
         }
 
-        // Modal functions
         function openRegisterModal() {
             document.getElementById('registerModal').classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -886,14 +1187,11 @@ def get_landing_html() -> str:
             if (e.target === this) closeRegisterModal();
         });
 
-        // Smooth scroll for nav links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
             });
         });
     </script>
