@@ -38,12 +38,13 @@
 Logiche sensibili al locale: `orderNumber` (oggi `max+1` globale, ~riga 808), categorie "del giorno" fisse `{"Primi","Secondi","Contorni"}` (`_DAILY_CATEGORIES`), fuso orario `Europe/Rome`, messaggi pubblici ("Siamo chiusi la domenica…"), `/setup` (seed iniziale).
 
 ## 5. Piano multi-locale suggerito (da confermare con l'utente)
-1. **Collezione `tenants`**: nome, slug, fuso orario, giorni di chiusura, messaggi sito, impostazioni FTP (host, utente, cartella, password cifrata), categorie "del giorno".
+1. **Collezione `tenants`**: nome, slug, stato (`attivo` | `in_attesa` | `sospeso`), fuso orario, giorni di chiusura, messaggi sito, impostazioni FTP (host, utente, cartella, password cifrata), categorie "del giorno". Ogni richiesta API di un locale sospeso/in attesa va rifiutata.
 2. **Login personale** (passare da `integration_expert` per l'auth): utenti legati a un `tenantId`, ruoli (admin locale / staff). Super-admin per creare locali.
 3. **`tenantId` su ogni documento** e su **ogni query** backend (dipendenza FastAPI che ricava il tenant dal token). Indici `(tenantId, date)`, `(tenantId, orderNumber)`.
 4. **Numerazione ordini per locale** (contatore atomico per tenant).
 5. **Pubblicazione sito per locale**: FTP preso dalle impostazioni del tenant; endpoint pubblico `/api/public/{slug}/menu/today`.
 6. **Pannello impostazioni locale** al posto della password hardcoded.
+6b. **Pagina pubblica + area superadmin**: vedi sezioni 9 e 10.
 7. **Script di migrazione** (da usare SOLO quando l'utente decide): importa i dati esportati dall'app originale e assegna tutto a un tenant "Giorgio Bistrot" (incluso ricalcolo contatore ordini). Mai lanciarlo contro il DB dell'originale.
 
 ## 6. Regole imparate sul campo (non violare)
@@ -63,3 +64,23 @@ Esempio reale: `/app/memory/menu-reale-2026-11-03.json`; esempio con allergeni: 
 - UI tag + 14 allergeni UE nella scheda piatto (campi già nel DB).
 - Animazione fade-in logo all'avvio.
 - Spezzare `index.tsx` in componenti.
+
+## 9. Pagina pubblica di presentazione (richiesta utente)
+- **Scopo:** far conoscere Bancó ad **altri ristoranti** (pagina commerciale online, in italiano).
+- **Contenuti:** cosa fa Bancó (ordini, menu del giorno, cucina e porzionatura, clienti e non pagati, stampa etichette 62mm, report, menu pubblicato sul sito del locale, uso su iPad in più postazioni), schermate reali dell'app, vantaggi, domande frequenti.
+- **Azioni:**
+  - **"Richiedi una demo"** → modulo (nome locale, referente, email, telefono, messaggio) salvato nel DB e visibile nell'area superadmin.
+  - **"Iscriviti"** → il ristorante crea da solo il proprio locale + account titolare.
+- Usare il `design_agent` per lo stile (colori brand Bancó), responsive mobile/desktop, SEO base (titolo, descrizione, contenuto testuale indicizzabile).
+
+## 10. Area superadmin (richiesta utente)
+- Accesso riservato al **superadmin** (l'utente proprietario di Bancó), separato dai login dei locali.
+- **Funzioni richieste:**
+  - **Creare un locale** (nome, slug, titolare con email/password iniziale).
+  - **Sospendere** un locale → i suoi utenti non possono più entrare, i dati restano intatti; anche il menu pubblico smette di aggiornarsi.
+  - **Riattivare** un locale sospeso.
+  - Elenco locali con stato (attivo / in attesa / sospeso) + elenco richieste demo ricevute.
+- **Ingresso dei nuovi ristoranti:** entrambe le strade:
+  1. creati dal superadmin (attivi subito);
+  2. iscrizione autonoma dalla pagina pubblica → il locale nasce **"in attesa"** e diventa attivo quando il superadmin lo attiva (default sicuro; confermare con l'utente se preferisce attivazione immediata).
+- NON richiesti per ora: gestione utenti dei locali da superadmin, statistiche per locale, accesso "come il locale", abbonamenti a pagamento.
