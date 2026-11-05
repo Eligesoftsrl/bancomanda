@@ -77,6 +77,7 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - NOTA: la preview web non carica il bundle JS (HTML SSR senza script tag, SDK 58) — Expo Go non è impattato
 
 ## Backlog / Future
+- **Versione multi-locale (fork):** vedi `/app/memory/MULTITENANT_GUIDE.md` (cautele, schema dati, piano, regole)
 - P1: UI tag/allergeni (14 allergeni UE) nella scheda Piatto — oggi i campi esistono nel DB ma non sono modificabili
 - P2: Animazione fade-in del logo (effetto Apple/Stripe) al caricamento app
 - P2: Refactoring `index.tsx` (>4000 righe) in componenti separati
