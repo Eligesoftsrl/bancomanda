@@ -106,6 +106,15 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - Creazione nuovo tenant con owner
   - Gestione richieste demo: lista, filtri, aggiorna stato
 
+### Landing "wow" + Accedi + fix /api/admin (2026-11-05)
+- Foto reali (Unsplash/Pexels, scaricate in `backend/static/landing/photo-*.webp`): bento Stampa 62mm (cuochi, overlay verde), Anagrafica Clienti (tavolo), Multi-tablet (cuoco), Menu del Giorno (impiattamento); Report con mini grafico a barre animato
+- Nuova fascia fotografica "Niente più foglietti volanti." (sfondo cucina statico + foto pasta inclinata); sezione Demo con sfondo foto interno bistrot
+- Effetto scelto dall'utente: SOLO "sezioni che compaiono scorrendo" (IntersectionObserver, classe `reveal`, attivo solo con JS `html.reveal-ready`, rispetta prefers-reduced-motion). NO galleria scorrevole/parallax/sfondo animato
+- Pulsanti "Accedi": header, hero ("Hai già un account? Accedi al tuo locale"), footer → `__APP_URL__` sostituito da env `BANCOMANDA_APP_URL` (default "/" = stessa origine in anteprima). ATTENZIONE: la variabile `APP_URL` è già usata dalla piattaforma, non usarla
+- `/api/admin` e `/api/admin/` → redirect 307 a `/api/admin/dashboard`; brand admin "Bancomanda", testid login admin
+- Mobile: niente overflow (footer-links a capo, logo-text nascosto ≤480px, "Richiedi Demo" nascosto ≤640px); hero iPad centrato ≤1024px; Esc chiude modale registrazione
+- Test: iteration_12 + iteration_13 (frontend 100%)
+
 ### Anteprima web, cambio password, file Vercel + Railway (2026-11-05)
 - **Fix anteprima bianca**: SDK 58 richiede `useServerDocumentContext()` in `app/+html.tsx` (`headNodes`/`bodyNodes` = script dell'app). Ora preview ed export web caricano l'app (vale anche per Vercel)
 - **Cambio password** (`POST /api/auth/change-password`): verifica password attuale, min 8, diversa; incrementa `users.password_version`, revoca TUTTI i refresh token e restituisce nuova sessione per il dispositivo corrente. Claim JWT `pv` verificato sia nel middleware dati sia in `get_current_user` (cache 30 s per processo, `auth/dependencies.py`) → gli altri tablet vengono scollegati subito

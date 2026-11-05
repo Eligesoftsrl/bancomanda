@@ -1,0 +1,20 @@
+{
+  "summary": "Retested the iteration_12 fixes on the Bancomanda landing (/api/landing) and the superadmin dashboard, then ran a quick desktop regression. Everything requested passes. Mobile 390x844 and 360x740: scrollWidth equals the viewport width; logo text is hidden; the header Accedi and Registrati buttons are fully inside the viewport; footer links wrap centered on 2 rows (Accedi, Funzionalità, Richiedi Demo / FAQ, Contatti) and the Accedi footer link is visible. The hero iPad frame is centered at 1024x768 and 768x1024 (left and right margins equal). Escape closes #registerModal, including when an input has focus. /api/admin redirects to /api/admin/dashboard; title and brand read 'Bancomanda'; the admin-login-* testids are present; superadmin login shows the Panoramica dashboard (5 restaurants, 2 active, 0 pending, 1 demo request). Desktop regression: the header, hero and footer Accedi links all open the Expo /login (login-screen); 21/21 .reveal elements become visible; 11 images, 0 broken. Found and fixed 1 small issue: the admin sidebar logo icon was squished because flex-shrink was missing. After that fix, the 'Admin' badge overflows the sidebar edge and is partly cut off (minor).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin dashboard sidebar (/api/admin/dashboard, 1920x1080)", "issues": ["Logo row (40px icon + 'Bancomanda' + 'Admin' badge) is wider than the 240px sidebar's content box. The badge pokes past the sidebar's right border and is partly cut off. Before my fix the icon was squished to a thin pill instead. Suggested fix: smaller logo-text font or gap, put the badge on its own line, or use flex-wrap on .sidebar .logo."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": ["Admin sidebar: make the logo row fit the sidebar width so the 'Admin' badge is not cut off (e.g. .sidebar .logo-text{font-size:1.1rem} plus a smaller gap, or move the badge below)."],
+  "critical_code_review_comments": ["admin_dashboard.py .logo-icon was missing flex-shrink:0, so the icon got squished in the narrow sidebar (fixed). The admin_dashboard.py and landing.py files are about 990 and 1450+ lines of inline HTML; consider splitting them into template/static files."],
+  "updated_files": ["/app/backend/routes/admin_dashboard.py (added flex-shrink:0 to .logo-icon)"],
+  "success_rate": {"backend": "N/A", "frontend": "100% of requested retests"},
+  "seed_data_creation": "None. No forms were submitted.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Landing at /api/landing. The Accedi links have href '/' and route to the Expo /login (data-testid=login-screen). html uses scroll-behavior:smooth, so wait about 1.5s after scrolling. The admin login used admin@banco.app with no wrong-password attempts. The only open item is the cosmetic overflow of the admin sidebar badge."
+}

@@ -79,6 +79,7 @@ def get_dashboard_html() -> str:
         .logo-icon {
             width: 40px;
             height: 40px;
+            flex-shrink: 0;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
             border-radius: 10px;
             display: flex;
@@ -89,13 +90,14 @@ def get_dashboard_html() -> str:
             font-size: 1.25rem;
         }
         .logo-text { font-size: 1.25rem; color: var(--text-primary); font-weight: 600; }
+        .sidebar .logo { gap: 0.6rem; flex-wrap: wrap; }
+        .sidebar .logo-text { font-size: 1.05rem; }
         .logo-badge {
             font-size: 0.65rem;
             background: var(--primary-light);
             color: var(--primary);
             padding: 0.2rem 0.5rem;
             border-radius: 4px;
-            margin-left: 0.5rem;
         }
 
         /* Sidebar Nav */
