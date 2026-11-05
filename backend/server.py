@@ -79,8 +79,14 @@ api_router.include_router(auth_router)
 api_router.include_router(superadmin_router)
 api_router.include_router(public_router)
 
-# Landing page is served under /api/landing
+# Landing page is served under /api/landing (e alla radice del dominio del server)
 api_router.include_router(landing_router)
+from routes.landing import render_landing
+
+
+@app.get("/", include_in_schema=False)
+async def root_landing():
+    return render_landing()
 
 # Admin dashboard
 from routes.admin_dashboard import router as admin_dashboard_router

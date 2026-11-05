@@ -106,6 +106,14 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - Creazione nuovo tenant con owner
   - Gestione richieste demo: lista, filtri, aggiorna stato
 
+### Landing sul dominio principale bancomanda.com (2026-11-05)
+- Architettura scelta: `bancomanda.com` (+www) = progetto Vercel **landing-site** (solo `vercel.json` con rewrite proxy: `/`→`https://api.bancomanda.com/api/landing`, `/admin`→`/api/admin/dashboard`, `/api/:path*`→server; redirect `/login` e `/accedi` → app); `app.bancomanda.com` = progetto Vercel `frontend`; `api.bancomanda.com` = Railway `backend`
+- Superadmin su `bancomanda.com/admin` (scelta utente); robots.txt esclude /admin
+- Backend: `GET /` (app, non /api) serve la landing → api.bancomanda.com/ mostra la landing (in anteprima Emergent "/" resta l'app)
+- Logo landing → `#top`; favicon `/api/landing/assets/favicon.png`
+- `.env.example` aggiornati (CORS_ORIGINS/BANCOMANDA_APP_URL = https://app.bancomanda.com, EXPO_PUBLIC_BACKEND_URL = https://api.bancomanda.com); guida `/app/DEPLOY_VERCEL_RAILWAY.md` riscritta con tabella DNS
+- Il proxy Vercel si può verificare solo dopo il deploy reale
+
 ### Landing "wow" + Accedi + fix /api/admin (2026-11-05)
 - Foto reali (Unsplash/Pexels, scaricate in `backend/static/landing/photo-*.webp`): bento Stampa 62mm (cuochi, overlay verde), Anagrafica Clienti (tavolo), Multi-tablet (cuoco), Menu del Giorno (impiattamento); Report con mini grafico a barre animato
 - Nuova fascia fotografica "Niente più foglietti volanti." (sfondo cucina statico + foto pasta inclinata); sezione Demo con sfondo foto interno bistrot

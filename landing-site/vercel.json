@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/", "destination": "https://api.bancomanda.com/api/landing" },
+    { "source": "/admin", "destination": "https://api.bancomanda.com/api/admin/dashboard" },
+    { "source": "/api/:path*", "destination": "https://api.bancomanda.com/api/:path*" }
+  ],
+  "redirects": [
+    { "source": "/login", "destination": "https://app.bancomanda.com/login", "permanent": false },
+    { "source": "/accedi", "destination": "https://app.bancomanda.com/", "permanent": false }
+  ]
+}

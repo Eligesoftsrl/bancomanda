@@ -29,6 +29,8 @@ def get_landing_html() -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bancomanda — Sistema Gestione Ordini per Ristoranti</title>
     <meta name="description" content="Bancomanda è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad e tablet Android.">
+    <link rel="icon" type="image/png" href="/api/landing/assets/favicon.png">
+    <link rel="apple-touch-icon" href="/api/landing/assets/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -973,9 +975,9 @@ def get_landing_html() -> str:
 <body>
     <script>document.documentElement.classList.add('reveal-ready');</script>
     <!-- Header -->
-    <header>
+    <header id="top">
         <div class="header-inner">
-            <a href="/api/landing" class="logo">
+            <a href="#top" class="logo" data-testid="landing-logo">
                 <div class="logo-icon">B</div>
                 <span class="logo-text">Bancomanda</span>
             </a>
