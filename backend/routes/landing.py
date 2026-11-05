@@ -941,6 +941,7 @@ def get_landing_html() -> str:
 
         /* Responsive */
         @media (max-width: 1024px) {
+            .hero-visual { display: flex; justify-content: center; }
             .photo-band-inner { grid-template-columns: 1fr; gap: 3rem; }
             .band-chip { left: 0; }
             .hero-inner { grid-template-columns: 1fr; text-align: center; }
@@ -961,7 +962,11 @@ def get_landing_html() -> str:
             .form-grid { grid-template-columns: 1fr; }
             .form-group.full { grid-column: span 1; }
             .footer-inner { flex-direction: column; text-align: center; }
+            .footer-links { flex-wrap: wrap; justify-content: center; gap: 0.75rem 1.5rem; }
             .hero-image { max-width: 100%; }
+        }
+        @media (max-width: 480px) {
+            .logo-text { display: none; }
         }
     </style>
 </head>
@@ -1444,6 +1449,9 @@ def get_landing_html() -> str:
         }
         document.getElementById('registerModal').addEventListener('click', function(e) {
             if (e.target === this) closeRegisterModal();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeRegisterModal();
         });
 
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

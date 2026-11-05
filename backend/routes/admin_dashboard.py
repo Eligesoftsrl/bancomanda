@@ -15,7 +15,7 @@ def get_dashboard_html() -> str:
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bancó Admin — Dashboard Superadmin</title>
+    <title>Bancomanda Admin — Dashboard Superadmin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -399,7 +399,7 @@ def get_dashboard_html() -> str:
         <div class="login-card">
             <div class="logo">
                 <div class="logo-icon">B</div>
-                <span class="logo-text">Bancó</span>
+                <span class="logo-text">Bancomanda</span>
                 <span class="logo-badge">Admin</span>
             </div>
             <h1 class="serif">Area Superadmin</h1>
@@ -408,13 +408,13 @@ def get_dashboard_html() -> str:
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" required placeholder="admin@banco.app">
+                    <input type="email" id="email" required placeholder="admin@banco.app" data-testid="admin-login-email">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="••••••••">
+                    <input type="password" id="password" required placeholder="••••••••" data-testid="admin-login-password">
                 </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;" data-testid="admin-login-submit">
                     <i class="fas fa-sign-in-alt"></i> Accedi
                 </button>
             </form>
@@ -427,7 +427,7 @@ def get_dashboard_html() -> str:
         <aside class="sidebar">
             <div class="logo">
                 <div class="logo-icon">B</div>
-                <span class="logo-text">Bancó</span>
+                <span class="logo-text">Bancomanda</span>
                 <span class="logo-badge">Admin</span>
             </div>
 

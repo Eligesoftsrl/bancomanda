@@ -1,0 +1,31 @@
+{
+  "summary": "Tested the Bancomanda landing at /api/landing (desktop 1920x1080, tablet 1024x768, mobile 390x844), the Accedi links going to the Expo login, and the /api/admin redirect fix. Passing: /api/admin and /api/admin/ return 307 to /api/admin/dashboard, which returns 200. The superadmin login works and the Panoramica dashboard shows. This was a read-only check. All 10 webp assets return 200 and every image loads (naturalWidth>0). The two CSS background photos (photo-band kitchen, demo-section interior with overlay) are applied. The 3 Accedi links (header/hero/footer) have href='/' and open /login with data-testid=login-screen. Logging in as titolare@pizzeria-napoli.it reaches the Orders home. The bento photo cards (print/customers/tablets) have readable white text, the bento-menu card has the pasta photo and the bento-report card has its bar chart. The photo-band shows the heading, 3 bullets, the tilted photo and the chip. Scroll reveal works: 21/21 .reveal start hidden and 21/21 are visible after scrolling, at every viewport. Hover zoom on photo cards is scale(1.07). The hero/showcase tablet screenshots are still there. The FAQ opens and closes, and the register modal opens and closes with the X. Problem found: at mobile 390px the header overflows.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Landing header (mobile 390px)", "issue": "Horizontal overflow: document scrollWidth=415 at a 390px viewport. .logo spans 32-228 and .nav-buttons spans 228-426. The 'Registrati' button (header-register-button) is cut off at the right edge, and the Accedi button touches the 'Bancomanda' logo text. Fix: in @media (max-width: 640px) or ~420px, hide or shrink .logo-text, make Accedi icon-only, or reduce the header-inner padding.", "selector": ".nav-buttons, [data-testid=header-register-button]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Landing hero at tablet 1024x768", "issues": ["The hero iPad frame (hero-app-screenshot) is left-aligned (x 26-598 of 1024) while the hero text above it is centered. Add justify-self:center or margin:auto to .hero-visual inside @media (max-width:1024px)."]},
+      {"screen": "Register modal", "issues": ["The Escape key does not close the modal; only the X button and an overlay click do (minor a11y issue)."]},
+      {"screen": "Superadmin dashboard", "issues": ["The brand reads 'Bancó' instead of 'Bancomanda' (inconsistent). The login inputs have no data-testid."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix mobile header overflow at 390px (Registrati cut off, scrollWidth 415)",
+    "Center the hero iPad frame at <=1024px",
+    "Optional: close the register modal on Escape; add data-testids to the admin login; make the dashboard brand name consistent"
+  ],
+  "critical_code_review_comments": [
+    "landing.py is ~1490 lines of inline HTML/CSS/JS in one Python string. Consider moving it to a static template file.",
+    "Reveal is gated by the html.reveal-ready class and has an IntersectionObserver fallback plus prefers-reduced-motion handling. Implemented well."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (redirect + assets curl)", "frontend": "92%"},
+  "seed_data_creation": "None. No forms were submitted and nothing was modified in the admin.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Landing at /api/landing and the Expo app at / (Accedi redirects to /login). /api/admin returns 307 to /api/admin/dashboard. The mobile header overflow at 390px is the only real bug. Did not submit the register or demo forms."
+}
