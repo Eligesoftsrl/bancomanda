@@ -4,11 +4,11 @@ import requests, datetime
 from pymongo import MongoClient
 
 B = "http://127.0.0.1:8002/api"
-info = requests.get(f"{B}/debug/db-info").json()
-assert info["database_name"] == "bancomanda_demo_screens", info
 tok = requests.post(f"{B}/auth/login", json={"email": "demo@bancomanda.it", "password": "DemoBancomanda1"}).json()["access_token"]
 S = requests.Session()
 S.headers["Authorization"] = f"Bearer {tok}"
+info = S.get(f"{B}/debug/db-info").json()
+assert info["database_name"] == "bancomanda_demo_screens", info
 today = datetime.date.today().isoformat()
 
 cats = {}

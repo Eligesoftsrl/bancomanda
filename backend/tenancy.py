@@ -13,7 +13,7 @@ from auth.jwt_handler import verify_access_token
 
 SCOPED_COLLECTIONS = {"categories", "dishes", "daily_menus", "orders", "customers", "missed_sales"}
 
-PUBLIC_PREFIXES = ("/api/auth", "/api/superadmin", "/api/public", "/api/landing", "/api/admin", "/api/debug")
+PUBLIC_PREFIXES = ("/api/auth", "/api/superadmin", "/api/public", "/api/landing", "/api/admin")
 LEGACY_PUBLIC_PREFIXES = ("/api/public/menu", "/public/menu")
 
 

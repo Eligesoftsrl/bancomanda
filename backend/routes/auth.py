@@ -192,7 +192,9 @@ async def login(body: LoginRequest, request: Request):
     db = request.app.state.db
     email = body.email.lower()
     
-    identifier = f"{request.client.host if request.client else 'unknown'}:{email}"
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_ip = forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+    identifier = f"{client_ip}:{email}"
     attempts = await db.login_attempts.find_one({"identifier": identifier})
     now_check = datetime.now(timezone.utc)
     locked_until = attempts.get("locked_until") if attempts else None

@@ -1,0 +1,36 @@
+{
+  "summary": "Tested the multi-tenant isolation on the backend only. The new file tests/test_tenant_isolation.py passed 32/32 against the public URL. Calling the data APIs without a login returns 401 'Accesso richiesto'. The same happens with an invalid token and with the superadmin token. The public menu (today and a given date), the landing page (including showcase-kitchen) and the 3 webp assets all load without a login. Path traversal returns 404. The legacy Giorgio account was only read: 55 orders, 30 active dishes, and menus, customers, categories, kitchen and reports all return 200. With Napoli, the full write flow works: category, a dish with tags and allergens, clearing allergens to [] (tags kept), a menu for 2027-05-25, adding a menu item, an order with orderNumber 1, adding an item (total 20), status, payment and kitchen. In the DB every new Napoli doc has tenant_id. Napoli gets 404 on GET, PUT and DELETE of a legacy dish and order, and those legacy docs are unchanged when read back with the Giorgio token. Giorgio gets 404 on Napoli's dish, order and menu. Publishing with Napoli returns 503 and the menu stays unpublished. Refresh rotation and logout revocation work, and the legacy claim survives a refresh. Brute force: 5 wrong passwords, then a 429 'Troppi tentativi errati'. I deleted the lock in login_attempts afterwards and the Napoli login works again. I compared an md5 snapshot of all legacy documents (tenant_id null) in 6 collections taken before and after: identical. Extra probes found 3 problems: a 500 on a duplicate date because of the old unique index date_1, a 500 on an invalid ObjectId, and /api/debug/db-info being public.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/menus (non-legacy tenant)", "issue": "daily_menus still has the old unique index date_1 (on date only). The new compound index (tenant_id, date) is only created by POST /setup. Any new tenant creating a menu for a date the legacy restaurant already has gets a 500 (DuplicateKeyError E11000 on date_1). Tenants are not really isolated on menu dates. Reproduced: Napoli POST /api/menus {date:'2026-03-21'} -> 500.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET/PUT/DELETE /api/dishes/{id}, /api/orders/{id}, etc.", "issue": "A non-ObjectId id (for example 'abc') returns 500 bson InvalidId instead of 400 or 404."},
+      {"endpoint": "GET /api/debug/db-info", "issue": "Public (under PUBLIC_PREFIXES '/api/debug') and exposes the DB name, the Mongo URL and the collection list without auth. Remove it or put it behind superadmin."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_tenant_isolation.py", "/app/test_reports/pytest/tenant_isolation_results.xml"],
+  "action_items": [
+    "Fix the daily_menus unique index without touching the data. The index date_1 cannot simply be replaced by a unique (tenant_id, date) index: legacy docs have no tenant_id, so the compound index treats them all as null+date, which still works for legacy. Dropping date_1 and creating the compound index changes indexes only, not documents. Confirm with the user that this is allowed. Otherwise create_daily_menu must catch DuplicateKeyError and return 400/409.",
+    "Validate ObjectId path params (ObjectId.is_valid, return 404) in the dish, order, menu, category and customer routes.",
+    "Remove /api/debug from PUBLIC_PREFIXES or delete the debug endpoint."
+  ],
+  "critical_code_review_comments": [
+    "POST /api/setup run by the legacy account would insert default categories and backfill fields into legacy documents (update_one per doc). This goes against the user's 'non toccare nulla' constraint. Consider blocking /setup for the legacy tenant or removing it. NOT executed in this test.",
+    "Brute-force identifier = client IP + email. Behind the k8s ingress, request.client.host is the proxy IP, so every user shares the same IP. One attacker can lock out a restaurant's shared iPad account for 15 minutes (a DoS on the staff login). Rotating the source IP gets around the lock if the real IP is ever used. Consider a per-email lock with backoff.",
+    "_register_failed_attempt resets count to 0 when it sets the lock. The count is never reset after a successful login following an expired lock unless the login succeeds, which is fine. login_attempts docs have no TTL index, so they pile up.",
+    "Access tokens are not checked against tenant status or revocation. A suspended tenant keeps data access for up to 60 minutes (carried over from iteration 9).",
+    "The /public/menu HTML page interpolates dish names and custom free-text tags without escaping. Custom tags are free text, so HTML injection is possible on the public page (only the legacy owner can write them today).",
+    "server.py is 2408 lines. Split it into route modules (dishes, menus, orders, reports).",
+    "Mongo fallback in server.py silently switches to localhost, and DB_NAME has a default. That goes against the fail-fast env guideline."
+  ],
+  "updated_files": ["/app/backend/tests/test_tenant_isolation.py"],
+  "success_rate": {"backend": "100% (32/32 requested checks); 3 extra issues found by probing", "frontend": "not tested (skipped as requested)"},
+  "test_credentials": "From /app/memory/test_credentials.md. All 3 accounts work. Giorgio was used read-only.",
+  "seed_data_creation": "Napoli tenant only (tenant_id 6aec83f079163e42b25d0680): category TEST_Cat_*, dish TEST_Pizza_* (now deactivated), daily menu 2027-05-25 with 1 item (there is no menu delete endpoint, so it stays). The test order was deleted. The login_attempts lock for Napoli was deleted. No legacy data was touched; the md5 snapshot of the legacy docs is identical before and after.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && EXPO_PUBLIC_BACKEND_URL=<url from frontend/.env> python -m pytest tests/test_tenant_isolation.py -p no:xdist. The test picks a random 2027 date, so a repeat run may rarely collide with 2027-05-25 already used by Napoli. The test cleans up the brute-force lock itself. A legacy integrity check script is in the summary: md5 of the find({tenant_id:null}) docs per collection, using mongosh.",
+  "rca of the issue": "Menu 500: the legacy DB has a unique index {date:1} (date_1). ScopedCollection.insert_one adds tenant_id, but Mongo still enforces date_1 across all tenants, so the insert raises DuplicateKeyError, which is unhandled and returns 500. The (tenant_id, date) index only gets created by POST /setup, and it would not remove date_1 anyway."
+}

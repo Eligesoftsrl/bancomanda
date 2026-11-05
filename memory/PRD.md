@@ -106,9 +106,28 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - Creazione nuovo tenant con owner
   - Gestione richieste demo: lista, filtri, aggiorna stato
 
+### Login iPad + dati separati per locale + allergeni + nome Bancomanda (2026-11-05)
+- **Isolamento dati** (`/app/backend/tenancy.py`): middleware ASGI legge il JWT e imposta il locale; `ScopedDatabase` filtra in automatico categories/dishes/daily_menus/orders/customers/missed_sales
+  - Locale storico **Giorgio Bistrot** (`tenants.legacy_data: true`) = documenti SENZA `tenant_id` → nessuna migrazione, dati esistenti intatti; i suoi nuovi documenti restano senza tenant_id
+  - Altri locali: `tenant_id` scritto su ogni insert; accesso cross-tenant → 404
+  - API dati senza token → 401; pubbliche: /api/auth, /api/superadmin (auth propria), /api/public (menu = locale storico), /api/landing, /api/admin. /api/debug ora richiede login
+  - Pubblicazione FTP sul sito solo per il locale storico (altri → 503)
+  - Seed all'avvio (idempotente, mai reset password): env LEGACY_TENANT_NAME/EMAIL/PASSWORD
+  - Brute force: 5 errori = blocco 15 min (IP da X-Forwarded-For + email), TTL 24h su login_attempts
+  - JWT claim `legacy`; refresh token rotante 365 giorni (REFRESH_DAYS)
+  - InvalidId → 404, DuplicateKeyError → 409; HTML /public/menu con escape
+- **Indice daily_menus**: utente ha autorizzato SOLO il DB di prova → in preview `date_1` sostituito da unique `(tenant_id, date)`. **In produzione resta `date_1`**: un nuovo locale non può creare il menu in una data già usata da Giorgio Bistrot (409). Chiedere di nuovo il permesso prima di attivare altri locali in produzione.
+- **Frontend**: `app/login.tsx` (split brand/form), `src/store/authStore.ts` (zustand), `src/services/authStorage.ts` (SecureStore native / localStorage web), interceptor axios Bearer + refresh single-flight (esce solo se server rifiuta, non offline), `Stack.Protected` in `app/_layout.tsx`, `AccountButton` (nome locale + Esci a doppio tocco) nell'header Report
+- **Allergeni/tag**: `src/utils/dishLabels.ts` (14 allergeni UE + 6 tag pronti, id = slug del menu.json), `DishLabelsPicker` nella scheda piatto (+ tag personalizzati testo libero), `DishLabelsSummary` nella lista piatti. Già inclusi nel menu.json/endpoint pubblico (slug; tag personalizzati come testo)
+- **Nome**: Bancomanda in header Ordini, app.json (name/web), +html.tsx, manifest.json. Icona "B" invariata
+- **Landing**: aggiunto screenshot Vista Cucina (sezione "L'app" wide + card bento). Screenshot rigenerati con login su DB demo separato (script in `/app/memory/landing-screenshots/`)
+- Test: testing agent iteration_10 backend 32/32 (`backend/tests/test_tenant_isolation.py`), verifica md5 dati storici invariati; UI verificata con Playwright locale (export web + script iniettati)
+
 ### Da completare:
 - ⏳ Refactoring backend esistente per filtrare per `tenant_id` — **NON toccare il DB attuale (catering-dashboard-3): il personale ci lavora. Nessuna migrazione/inserimento senza conferma esplicita dell'utente.**
-- ⏳ Integrazione auth nel frontend Expo esistente (utente ha scelto: login rimandato per ora)
+- ⏳ Integrazione auth nel frontend Expo esistente — ✅ FATTO 2026-11-05
+- ⏳ Indice daily_menus in produzione (serve ok utente) prima di attivare un secondo locale
+- P1: Cambio password dall'app (oggi la password provvisoria si cambia solo a mano)
 - ⏳ Configurazioni tenant-specific (FTP, timezone, numerazione ordini)
 
 ### Landing con screenshot reali + nome "Bancomanda" (2026-11-05)

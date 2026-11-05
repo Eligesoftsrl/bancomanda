@@ -15,6 +15,9 @@ import io
 import json
 import asyncio
 import ftplib
+from html import escape as esc
+from bson.errors import InvalidId
+from pymongo.errors import DuplicateKeyError
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)  # NON sovrascrivere le variabili di produzione
@@ -51,6 +54,16 @@ app = FastAPI(title="Sistema Gestione Ordini Ristorazione - Multi-Tenant")
 
 # Store db in app.state for access in route handlers (auth/superadmin: non filtrato)
 app.state.db = raw_db
+
+
+@app.exception_handler(InvalidId)
+async def invalid_id_handler(request, exc):
+    return JSONResponse(status_code=404, content={"detail": "Elemento non trovato"})
+
+
+@app.exception_handler(DuplicateKeyError)
+async def duplicate_key_handler(request, exc):
+    return JSONResponse(status_code=409, content={"detail": "Elemento già esistente per questa data"})
 app.state.client = client
 
 # Create a router with the /api prefix
@@ -2135,7 +2148,7 @@ async def setup_database():
         await db.orders.create_index([("status", 1)])
         await db.dishes.create_index([("categoryId", 1)])
         await db.dishes.create_index([("active", 1)])
-        await db.daily_menus.create_index([("tenant_id", 1), ("date", 1)], unique=True)
+        await db.daily_menus.create_index([("date", 1)], unique=True)
         logger.info("[SETUP] Indici creati/verificati")
     except Exception as e:
         logger.warning(f"[SETUP] Errore creazione indici: {e}")
@@ -2238,17 +2251,17 @@ async def public_menu_html():
         for it in sec["items"]:
             allergens_badge = ""
             if it["allergens"]:
-                allergens_badge = f'<span class="allergens">{", ".join(it["allergens"])}</span>'
+                allergens_badge = f'<span class="allergens">{esc(", ".join(it["allergens"]))}</span>'
             tags_badge = ""
             if it["tags"]:
-                tags_html = " ".join(f'<span class="tag">{t}</span>' for t in it["tags"])
+                tags_html = " ".join(f'<span class="tag">{esc(t)}</span>' for t in it["tags"])
                 tags_badge = f'<span class="tags">{tags_html}</span>'
-            notes = f'<div class="notes">{it["notes"]}</div>' if it["notes"] else ""
+            notes = f'<div class="notes">{esc(it["notes"])}</div>' if it["notes"] else ""
             price_fmt = f"€ {it['price']:.2f}".replace(".", ",")
             items_html += f"""
                 <div class="item">
                     <div class="item-line">
-                        <span class="item-name">{it["name"]} {tags_badge}</span>
+                        <span class="item-name">{esc(it["name"] or "")} {tags_badge}</span>
                         <span class="dots"></span>
                         <span class="item-price">{price_fmt}</span>
                     </div>
@@ -2258,14 +2271,14 @@ async def public_menu_html():
             """
         sections_html += f"""
             <section class="section">
-                <h2>{sec["name"]}</h2>
+                <h2>{esc(sec["name"])}</h2>
                 {items_html}
             </section>
         """
 
     banner_html = ""
     if payload.get("message"):
-        banner_html = f'<div class="banner">{payload["message"]}</div>'
+        banner_html = f'<div class="banner">{esc(payload["message"])}</div>'
 
     weekday = payload.get("weekday") or ""
     date_display = payload["date"]
@@ -2365,6 +2378,7 @@ async def seed_legacy_tenant():
     password = os.environ.get("LEGACY_TENANT_PASSWORD") or ""
     name = (os.environ.get("LEGACY_TENANT_NAME") or "").strip()
     await raw_db.login_attempts.create_index("identifier")
+    await raw_db.login_attempts.create_index("last_attempt", expireAfterSeconds=86400)
     if not (email and password and name):
         logger.warning("[SEED] LEGACY_TENANT_* non configurati: nessun locale storico creato")
         return
