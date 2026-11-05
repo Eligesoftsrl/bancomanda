@@ -1,0 +1,1 @@
+{"dependencies":[],"output":[{"data":{"code":"__d(function(g,r,i,a,m,e,d){'use strict';m.exports=Math.abs});","lineCount":1,"map":{"mappings":"4BAAA,aAGAA,EAAOC,QAAUC,KAAKC,GAAI,G","names":["module","exports","Math","abs"]},"functionMap":{"names":["<global>"],"mappings":"AAA"},"hasCjsExports":true},"type":"js/module"}]}

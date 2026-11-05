@@ -1,0 +1,1 @@
+{"dependencies":[],"output":[{"data":{"code":"__d(function(g,r,i,a,m,e,d){m.exports=function(n){return n}});","lineCount":1,"map":{"mappings":"4BAoBAA,EAAOC,QAJP,SAAkBC,GAChB,OAAOA,CACT,CAE0B,G","names":["module","exports","value"]},"functionMap":{"names":["<global>","identity"],"mappings":"AAA;ACgB;CDE"},"hasCjsExports":true},"type":"js/module"}]}

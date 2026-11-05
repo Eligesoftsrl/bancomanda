@@ -107,9 +107,16 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - Gestione richieste demo: lista, filtri, aggiorna stato
 
 ### Da completare:
-- ⏳ Refactoring backend esistente per filtrare per `tenant_id`
-- ⏳ Integrazione auth nel frontend Expo esistente
+- ⏳ Refactoring backend esistente per filtrare per `tenant_id` — **NON toccare il DB attuale (catering-dashboard-3): il personale ci lavora. Nessuna migrazione/inserimento senza conferma esplicita dell'utente.**
+- ⏳ Integrazione auth nel frontend Expo esistente (utente ha scelto: login rimandato per ora)
 - ⏳ Configurazioni tenant-specific (FTP, timezone, numerazione ordini)
+
+### Landing con screenshot reali + nome "Bancomanda" (2026-11-05)
+- Nome landing: "Bancó" → **"Bancomanda"** (solo landing; l'app Expo mostra ancora "Bancó")
+- Rimosse tutte le immagini stock Unsplash. Ora: hero con screenshot Ordini in cornice iPad, card bento con crop Ordini, sezione "L'app" con Ordini del giorno + Menu del giorno
+- Screenshot in `/app/backend/static/landing/app-orders.webp`, `app-menu.webp`, serviti da `GET /api/landing/assets/{name}` (anti path-traversal)
+- Generati con DATI DEMO su DB separato temporaneo (`bancomanda_demo_screens`, poi eliminato) + backend temporaneo porta 8002 + export web Expo; script per rigenerarli in `/app/memory/landing-screenshots/` (seed_demo.py, shot.py)
+- NOTA: il blank della preview web NON dipende dall'auth (le API dati non richiedono JWT): è il bug SDK 58 dello static export senza `<script>`; per gli screenshot si iniettano a mano i tag script nell'index.html esportato
 
 ### File creati:
 - `/app/backend/auth/` - Package autenticazione JWT

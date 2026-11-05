@@ -1,11 +1,21 @@
 """
-Landing page HTML per Bancó SaaS.
+Landing page HTML per Bancomanda SaaS.
 Pagina pubblica con animazioni e immagini.
 """
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from pathlib import Path
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import HTMLResponse, FileResponse
 
 router = APIRouter(tags=["Landing Page"])
+ASSETS_DIR = (Path(__file__).resolve().parent.parent / "static" / "landing").resolve()
+
+
+@router.get("/landing/assets/{name}")
+async def landing_asset(name: str):
+    path = (ASSETS_DIR / name).resolve()
+    if path.parent != ASSETS_DIR or not path.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(path, headers={"Cache-Control": "public, max-age=86400"})
 
 
 def get_landing_html() -> str:
@@ -15,8 +25,8 @@ def get_landing_html() -> str:
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bancó — Sistema Gestione Ordini per Ristoranti</title>
-    <meta name="description" content="Bancó è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad.">
+    <title>Bancomanda — Sistema Gestione Ordini per Ristoranti</title>
+    <meta name="description" content="Bancomanda è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -469,53 +479,57 @@ def get_landing_html() -> str:
             width: 100%;
             height: 150px;
             object-fit: cover;
+            object-position: top;
             border-radius: 12px;
             margin-top: 1.5rem;
+            border: 1px solid var(--border, #e8e2d9);
         }
+        .ipad-frame {
+            background: #1d1d1f;
+            padding: 12px;
+            border-radius: 28px;
+            box-shadow: 0 30px 60px -15px rgba(0,0,0,0.25), inset 0 0 0 2px #3a3a3c;
+        }
+        .ipad-frame img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+        }
+        .hero-image.ipad-frame { max-width: 560px; }
 
         /* Gallery Section */
         .gallery-section {
             padding: 6rem 2rem;
             background: var(--bg-main);
         }
-        .gallery-grid {
+        .showcase-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
             margin-top: 3rem;
         }
-        .gallery-item {
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            aspect-ratio: 4/3;
+        .showcase-item { margin: 0; }
+        .showcase-item .ipad-frame {
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
+        .showcase-item:hover .ipad-frame {
+            transform: translateY(-8px);
+            box-shadow: 0 40px 70px -20px rgba(0,0,0,0.3), inset 0 0 0 2px #3a3a3c;
         }
-        .gallery-item:hover img {
-            transform: scale(1.08);
-        }
-        .gallery-item-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
+        .showcase-item figcaption {
+            margin-top: 1.5rem;
             display: flex;
-            align-items: flex-end;
-            padding: 1.5rem;
-            opacity: 0;
-            transition: opacity 0.3s;
+            flex-direction: column;
+            gap: 0.4rem;
         }
-        .gallery-item:hover .gallery-item-overlay {
-            opacity: 1;
+        .showcase-item figcaption strong {
+            font-size: 1.15rem;
+            color: var(--text-primary);
         }
-        .gallery-item-overlay span {
-            color: white;
-            font-weight: 600;
-            font-size: 1rem;
+        .showcase-item figcaption span {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
         }
 
         /* Demo Form Section */
@@ -747,7 +761,7 @@ def get_landing_html() -> str:
             .floating-card { display: none; }
             .bento-card.large, .bento-card.medium, .bento-card.small { grid-column: span 12; }
             nav { display: none; }
-            .gallery-grid { grid-template-columns: 1fr; }
+            .showcase-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 640px) {
             .form-grid { grid-template-columns: 1fr; }
@@ -763,11 +777,11 @@ def get_landing_html() -> str:
         <div class="header-inner">
             <a href="/api/landing" class="logo">
                 <div class="logo-icon">B</div>
-                <span class="logo-text">Bancó</span>
+                <span class="logo-text">Bancomanda</span>
             </a>
             <nav>
                 <a href="#features">Funzionalità</a>
-                <a href="#gallery">Galleria</a>
+                <a href="#gallery">L'app</a>
                 <a href="#demo">Demo</a>
                 <a href="#faq">FAQ</a>
             </nav>
@@ -794,7 +808,7 @@ def get_landing_html() -> str:
                     La gestione ordini che il tuo <span class="highlight">bistrot meritava.<svg viewBox="0 0 200 12" preserveAspectRatio="none"><path d="M2 8 C 40 2, 100 12, 198 4" fill="none" stroke="#c4501c" stroke-width="4" stroke-linecap="round"/></svg></span>
                 </h1>
                 <p class="hero-desc fade-in fade-in-delay-2">
-                    Bancó è il gestionale pensato per ristoranti, pizzerie e bistrot. 
+                    Bancomanda è il gestionale pensato per ristoranti, pizzerie e bistrot. 
                     Ordini al banco, menu del giorno, stampa termica 62mm, vista cucina e porzionatura. 
                     Tutto su iPad, sincronizzato in tempo reale.
                 </p>
@@ -808,7 +822,9 @@ def get_landing_html() -> str:
                 </div>
             </div>
             <div class="hero-visual fade-in fade-in-delay-4">
-                <img src="https://images.unsplash.com/photo-1556742393-d75f468bfcb0?w=600&q=80" alt="Gestionale su tablet" class="hero-image float-slow">
+                <div class="ipad-frame hero-image float-slow" data-testid="hero-app-screenshot">
+                    <img src="/api/landing/assets/app-orders.webp" alt="Schermata Ordini del giorno su iPad" width="1366" height="1024">
+                </div>
                 
                 <!-- Floating Cards -->
                 <div class="floating-card floating-card-1">
@@ -835,7 +851,7 @@ def get_landing_html() -> str:
                     </div>
                     <div class="floating-card-text">
                         <span>Menu del giorno</span>
-                        <span>12 piatti online</span>
+                        <span>13 piatti online</span>
                     </div>
                 </div>
             </div>
@@ -877,7 +893,7 @@ def get_landing_html() -> str:
                     <div class="bento-icon"><i class="fas fa-clipboard-list"></i></div>
                     <h3>Ordini in Tempo Reale</h3>
                     <p>Prendi ordini al banco, per telefono o WhatsApp. Ogni ordine è visibile su tutti gli iPad del locale, con stato aggiornato in tempo reale.</p>
-                    <img src="https://images.unsplash.com/photo-1728044849280-10a1a75cff83?w=400&q=80" alt="Tablet con ordini" class="bento-card-image">
+                    <img src="/api/landing/assets/app-orders.webp" alt="Stato ordini in tempo reale" class="bento-card-image" loading="lazy">
                 </div>
                 <div class="bento-card small featured">
                     <div class="bento-icon"><i class="fas fa-print"></i></div>
@@ -917,23 +933,29 @@ def get_landing_html() -> str:
     <section class="gallery-section" id="gallery">
         <div class="section-inner">
             <div class="section-header">
-                <div class="section-badge"><span></span> In Cucina</div>
+                <div class="section-badge"><span></span> L'app</div>
                 <h2 class="serif">Pensato per chi lavora ogni giorno</h2>
-                <p>Dalla cucina al bancone, Bancó semplifica ogni passaggio.</p>
+                <p>Le vere schermate di Bancomanda su iPad: dal bancone alla cucina, ogni passaggio è sotto controllo.</p>
             </div>
-            <div class="gallery-grid">
-                <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1621494547944-5ddbc84514b2?w=600&q=80" alt="Cucina professionale">
-                    <div class="gallery-item-overlay"><span>Cucina in azione</span></div>
-                </div>
-                <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1713971346208-70d5eff36787?w=600&q=80" alt="Impiattamento pasta">
-                    <div class="gallery-item-overlay"><span>Piatti pronti</span></div>
-                </div>
-                <div class="gallery-item">
-                    <img src="https://images.unsplash.com/photo-1570054054068-0ad5c3f5136e?w=600&q=80" alt="Pasta fresca">
-                    <div class="gallery-item-overlay"><span>Tradizione italiana</span></div>
-                </div>
+            <div class="showcase-grid">
+                <figure class="showcase-item" data-testid="showcase-orders">
+                    <div class="ipad-frame">
+                        <img src="/api/landing/assets/app-orders.webp" alt="Schermata Ordini del giorno" loading="lazy" width="1366" height="1024">
+                    </div>
+                    <figcaption>
+                        <strong>Ordini del giorno</strong>
+                        <span>Canale, servizio, orario di consegna, note e stato di ogni ordine, con i contatori sempre in vista.</span>
+                    </figcaption>
+                </figure>
+                <figure class="showcase-item" data-testid="showcase-menu">
+                    <div class="ipad-frame">
+                        <img src="/api/landing/assets/app-menu.webp" alt="Schermata Menu del giorno" loading="lazy" width="1366" height="1024">
+                    </div>
+                    <figcaption>
+                        <strong>Menu del giorno</strong>
+                        <span>Prezzi del giorno e porzioni rimaste per ogni piatto, filtrabili per categoria e pubblicabili sul sito.</span>
+                    </figcaption>
+                </figure>
             </div>
         </div>
     </section>
@@ -944,7 +966,7 @@ def get_landing_html() -> str:
             <div class="section-header">
                 <div class="section-badge"><span></span> Contattaci</div>
                 <h2 class="serif">Richiedi una Demo</h2>
-                <p>Compila il modulo e ti contatteremo per mostrarti Bancó in azione.</p>
+                <p>Compila il modulo e ti contatteremo per mostrarti Bancomanda in azione.</p>
             </div>
             <div class="demo-form-card">
                 <form id="demoForm">
@@ -995,7 +1017,7 @@ def get_landing_html() -> str:
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
-                        Bancó funziona con tutte le stampanti termiche ESC/POS che supportano rotoli da 62mm. 
+                        Bancomanda funziona con tutte le stampanti termiche ESC/POS che supportano rotoli da 62mm. 
                         Abbiamo testato con successo Brother QL-820NWB, Epson TM-T20III e molte altre.
                     </div>
                 </div>
@@ -1005,7 +1027,7 @@ def get_landing_html() -> str:
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
-                        Sì! Bancó è ottimizzato per iPad (consigliato) ma funziona anche su tablet Android. 
+                        Sì! Bancomanda è ottimizzato per iPad (consigliato) ma funziona anche su tablet Android. 
                         Puoi usare più dispositivi contemporaneamente.
                     </div>
                 </div>
@@ -1015,13 +1037,13 @@ def get_landing_html() -> str:
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
-                        Bancó genera un file JSON con il menu del giorno e lo pubblica sul tuo sito via FTP. 
+                        Bancomanda genera un file JSON con il menu del giorno e lo pubblica sul tuo sito via FTP. 
                         Il tuo sito mostra sempre il menu aggiornato con prezzi e disponibilità.
                     </div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="toggleFaq(this)">
-                        <span>Quanto costa Bancó?</span>
+                        <span>Quanto costa Bancomanda?</span>
                         <i class="fas fa-chevron-down"></i>
                     </div>
                     <div class="faq-answer">
@@ -1039,9 +1061,9 @@ def get_landing_html() -> str:
             <div class="footer-left">
                 <div class="logo" style="margin-bottom: 1rem;">
                     <div class="logo-icon">B</div>
-                    <span class="logo-text">Bancó</span>
+                    <span class="logo-text">Bancomanda</span>
                 </div>
-                <p>© 2026 Bancó. Sistema gestionale per la ristorazione italiana.</p>
+                <p>© 2026 Bancomanda. Sistema gestionale per la ristorazione italiana.</p>
             </div>
             <div class="footer-links">
                 <a href="#features">Funzionalità</a>
