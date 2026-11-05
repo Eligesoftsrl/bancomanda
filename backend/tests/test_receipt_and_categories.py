@@ -8,7 +8,7 @@ import requests
 import os
 from datetime import date
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://bancos-menu-portal.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://bistrot-hub--1m3cnv6f.preview.emergentagent.com')
 
 
 class TestCategoriesAPI:

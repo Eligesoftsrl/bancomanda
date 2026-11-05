@@ -77,11 +77,58 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - NOTA: la preview web non carica il bundle JS (HTML SSR senza script tag, SDK 58) — Expo Go non è impattato
 
 ## Backlog / Future
-- **Versione multi-locale (fork):** vedi `/app/memory/MULTITENANT_GUIDE.md` (cautele, schema dati, piano, regole)
 - P1: UI tag/allergeni (14 allergeni UE) nella scheda Piatto — oggi i campi esistono nel DB ma non sono modificabili
 - P2: Animazione fade-in del logo (effetto Apple/Stripe) al caricamento app
 - P2: Refactoring `index.tsx` (>4000 righe) in componenti separati
 - P3: Fix lint warnings pre-esistenti (apostrofi non escaped, chiave duplicata `orderItemsList` linee 2524/3164, import non usati)
+- P1: Refactoring backend multi-tenant - aggiungere `tenant_id` a tutte le collezioni (dishes, orders, customers, daily_menus)
+- P1: Refactoring frontend Expo - aggiungere autenticazione JWT e tenant context
+
+## Multi-tenant SaaS (In Progress - 2025-12)
+
+### Completato:
+- ✅ Sistema autenticazione JWT completo (login, register, refresh, logout, /me)
+- ✅ Modelli Pydantic per Tenant, User, DemoRequest  
+- ✅ Script creazione superadmin (`scripts/create_superadmin.py`)
+- ✅ Route superadmin: gestione tenant (CRUD, status update), richieste demo
+- ✅ Route pubbliche: richiesta demo dalla landing page
+- ✅ **Landing Page pubblica** (`/api/landing`) - tema chiaro stile Giorgio Bistrot
+  - Hero section con scontrino termico simulato
+  - Sezione funzionalità (bento grid)
+  - Form richiesta demo (invio a `/api/public/demo-request`)
+  - Modal registrazione autonoma tenant
+  - FAQ accordion
+  - Responsive mobile/desktop
+- ✅ **Dashboard Superadmin** (`/api/admin/dashboard`) - tema chiaro
+  - Login con validazione ruolo superadmin
+  - Statistiche: totale tenant, attivi, in attesa, richieste demo
+  - Gestione tenant: lista, filtri, attiva/sospendi/riattiva
+  - Creazione nuovo tenant con owner
+  - Gestione richieste demo: lista, filtri, aggiorna stato
+
+### Da completare:
+- ⏳ Refactoring backend esistente per filtrare per `tenant_id`
+- ⏳ Integrazione auth nel frontend Expo esistente
+- ⏳ Configurazioni tenant-specific (FTP, timezone, numerazione ordini)
+
+### File creati:
+- `/app/backend/auth/` - Package autenticazione JWT
+- `/app/backend/models/` - Modelli Pydantic (tenant.py, user.py, demo_request.py)
+- `/app/backend/routes/auth.py` - Route autenticazione
+- `/app/backend/routes/superadmin.py` - Route gestione tenant/demo
+- `/app/backend/routes/public.py` - Route pubbliche (demo request)
+- `/app/backend/routes/landing.py` - Landing page HTML
+- `/app/backend/routes/admin_dashboard.py` - Dashboard superadmin HTML
+- `/app/backend/scripts/create_superadmin.py` - Script setup
+
+### URL disponibili:
+- Landing page: `/api/landing`
+- Dashboard superadmin: `/api/admin/dashboard`
+- API auth: `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/me`
+- API superadmin: `/api/superadmin/stats`, `/api/superadmin/tenants`, `/api/superadmin/demo-requests`
+- API pubbliche: `/api/public/demo-request`
 
 ## Credenziali test
 - Reports Tab → Gear Icon Password: `eligesoft`
+- **Superadmin**: email `admin@banco.app`, password `BancoAdmin2024!`
+- **Tenant test**: email `titolare@pizzeria-napoli.it`, password `Password123!` (Pizzeria Napoli)

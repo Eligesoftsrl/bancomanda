@@ -12,7 +12,7 @@ import os
 import pytest
 import requests
 
-BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://bancos-menu-portal.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://bistrot-hub--1m3cnv6f.preview.emergentagent.com").rstrip("/")
 MENU_DATE = "2026-06-22"
 
 

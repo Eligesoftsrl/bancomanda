@@ -41,10 +41,31 @@ except Exception as e:
     print(f"Fallback to localhost")
 
 # Create the main app
-app = FastAPI(title="Sistema Gestione Ordini Ristorazione")
+app = FastAPI(title="Sistema Gestione Ordini Ristorazione - Multi-Tenant")
+
+# Store db in app.state for access in route handlers
+app.state.db = db
+app.state.client = client
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Import and include auth routers
+from routes.auth import router as auth_router
+from routes.superadmin import router as superadmin_router
+from routes.public import router as public_router
+from routes.landing import router as landing_router
+
+api_router.include_router(auth_router)
+api_router.include_router(superadmin_router)
+api_router.include_router(public_router)
+
+# Landing page is served under /api/landing
+api_router.include_router(landing_router)
+
+# Admin dashboard
+from routes.admin_dashboard import router as admin_dashboard_router
+api_router.include_router(admin_dashboard_router)
 
 # Configure logging
 logging.basicConfig(

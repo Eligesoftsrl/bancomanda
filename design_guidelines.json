@@ -1,0 +1,153 @@
+{
+  "project_name": "Bancó - Sistema Gestionale per Ristoranti e Bistrot",
+  "archetype": "ORGANIC_LUXURY_ITALIAN_BISTRO",
+  "context": "Landing Page SaaS per la gestione ordini, menu del giorno, porzionatura, cucina e stampa termica 62mm dedicata a ristoratori, pizzerie e bistrot italiani.",
+  "reference_inspiration": {
+    "url": "https://www.giorgiobistrot.it/",
+    "notes": "Tone of voice elegante ma pratico, colori caldi di bistrot italiano (fondo dark opaco, accenti oro caldo/ottone, tipografia serif di gran classe accoppiata a sans moderno)."
+  },
+  "colors": {
+    "background_main": "#0f0f10",
+    "background_surface": "#161618",
+    "background_surface_elevated": "#1e1e22",
+    "background_card": "#181716",
+    "background_glass": "rgba(22, 22, 24, 0.85)",
+    "primary_gold": "#d4a24c",
+    "primary_gold_hover": "#e2b35d",
+    "primary_gold_muted": "rgba(212, 162, 76, 0.15)",
+    "primary_gold_border": "rgba(212, 162, 76, 0.3)",
+    "secondary_amber": "#c59238",
+    "text_primary": "#f4f1ea",
+    "text_secondary": "#a19f9a",
+    "text_muted": "#6e6d69",
+    "border_subtle": "#282725",
+    "border_gold_glow": "#d4a24c66",
+    "accent_success": "#34d399",
+    "accent_warning": "#fbbf24",
+    "accent_danger": "#f87171"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Playfair Display, Cormorant Garamond, Georgia, serif",
+      "h1_hero": "text-4xl sm:text-5xl lg:text-6xl font-serif font-bold tracking-tight text-[#f4f1ea]",
+      "h2_section": "text-2xl sm:text-3xl lg:text-4xl font-serif font-bold tracking-tight text-[#f4f1ea]",
+      "h3_card": "text-xl sm:text-2xl font-serif font-semibold text-[#f4f1ea]"
+    },
+    "body": {
+      "font_family": "Inter, Plus Jakarta Sans, system-ui, sans-serif",
+      "lead": "text-lg sm:text-xl text-[#a19f9a] leading-relaxed",
+      "standard": "text-base text-[#a19f9a] leading-relaxed",
+      "caption": "text-sm text-[#6e6d69]"
+    },
+    "mono_thermal": {
+      "font_family": "JetBrains Mono, Courier New, monospace",
+      "style": "font-mono text-xs uppercase tracking-wider text-[#d4a24c]"
+    }
+  },
+  "layout_and_bento": {
+    "spacing_philosophy": "Uso generoso dello spazio (padding 2x-3x rispetto ai layout standard). Contenitori con bordi finissimi in ottone/oro opaco e padding interno elevato (p-6 / p-8) per prevenire collisione di testo.",
+    "bento_grid_mode": "TETRIS_ASIMMETRICO",
+    "bento_spans": {
+      "hero_feature": "col-span-full md:col-span-8 row-span-2 (Gestione Ordini in Tempo Reale & Porzionatura)",
+      "square_feature": "col-span-4 row-span-1 (Stampa Termica 62mm ESC/POS)",
+      "tall_feature": "col-span-4 row-span-2 (Menu del Giorno pubblicato su Sito Web & QR)",
+      "filler_feature": "col-span-4 (Multi-iPad Sync & Anagrafica Clienti)"
+    }
+  },
+  "image_urls": {
+    "hero_dish": "https://images.unsplash.com/photo-1600663791817-d74f5196ba29?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwyfHxpdGFsaWFuJTIwcmVzdGF1cmFudCUyMGdvdXJtZXQlMjBkaXNoJTIwbHV4dXJ5JTIwZm9vZHxlbnwwfHx8fDE3OTM4ODUyMDB8MA&ixlib=rb-4.1.0&q=85",
+    "hero_chef_kitchen": "https://images.unsplash.com/photo-1622021142947-da7dedc7c39a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHwxfHxjaGVmJTIwa2l0Y2hlbiUyMHRhYmxldCUyMFBPUyUyMHJlc3RhdXJhbnQlMjBvd25lcnxlbnwwfHx8fDE3OTM4ODUyMDB8MA&ixlib=rb-4.1.0&q=85",
+    "barista_pos_tablet": "https://images.unsplash.com/photo-1556742393-d75f468bfcb0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHwyfHxjaGVmJTIwa2l0Y2hlbiUyMHRhYmxldCUyMFBPUyUyMHJlc3RhdXJhbnQlMjBvd25lcnxlbnwwfHx8fDE3OTM4ODUyMDB8MA&ixlib=rb-4.1.0&q=85",
+    "gourmet_plating": "https://images.unsplash.com/photo-1605880319718-163216d8b95c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHw0fHxpdGFsaWFuJTIwcmVzdGF1cmFudCUyMGdvdXJtZXQlMjBkaXNoJTIwbHV4dXJ5JTIwZm9vZHxlbnwwfHx8fDE3OTM4ODUyMDB8MA&ixlib=rb-4.1.0&q=85",
+    "kitchen_prep": "https://images.unsplash.com/photo-1574966740637-12c84035a4f2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHw0fHxjaGVmJTIwa2l0Y2hlbiUyMHRhYmxldCUyMFBPUyUyMHJlc3RhdXJhbnQlMjBvd25lcnxlbnwwfHx8fDE3OTM4ODUyMDB8MA&ixlib=rb-4.1.0&q=85",
+    "bistro_night": "https://images.unsplash.com/photo-1767713362918-d6db856570ba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODF8MHwxfHNlYXJjaHwxfHxpdGFsaWFuJTIwYmlzdHJvJTIwd2FybSUyMHJlc3RhdXJhbnQlMjBpbnRlcmlvciUyMG5pZ2h0fGVufDB8fHx8MTc5Mzg4NTIwOHww&ixlib=rb-4.1.0&q=85"
+  },
+  "key_sections": [
+    {
+      "id": "header",
+      "description": "Header fisso con backdrop blur 'Crystal Glass', logo Bancó con icona ottone, link di navigazione (Funzionalità, Stampa 62mm, Menu Dinamico, FAQ), pulsante CTA 'Richiedi Demo' e 'Accedi/Registrati'."
+    },
+    {
+      "id": "hero",
+      "description": "Hero section d'impatto con badge 'SaaS per Ristoranti Italiani', titolo ad alto contrasto in Playfair Display ('La gestione ordini che il tuo bistrot meritava'), sottotitolo narrativo, simulazione scontrino termico 62mm interattivo, e form rapido per registrare il ristorante o richiedere una demo."
+    },
+    {
+      "id": "features_bento",
+      "description": "Griglia Bento asimmetrica per illustrare i 6 pilastri di Bancó: 1. Presa Ordini al Banco & Tavoli, 2. Menu del Giorno pubblicato in 1 click, 3. Vista Cucina & Porzionatura Multi-iPad, 4. Stampa Termica 62mm con logo personalizzato, 5. Anagrafica Clienti & Storico Spesa, 6. Calcolo Incassi & Vendite Mancate."
+    },
+    {
+      "id": "thermal_printer_showcase",
+      "description": "Sezione interattiva di simulazione stampa scontrino 62mm in tempo reale con selettore piatti italiani, pulsante 'Simula Stampa' che genera il comanda di cucina con timestamp e porzioni."
+    },
+    {
+      "id": "roi_calculator",
+      "description": "Calcolatore interattivo del tempo risparmiato e riduzione errori in sala/cucina per i ristoratori italiani (coperti/giorno -> ore risparmiate/mese)."
+    },
+    {
+      "id": "testimonials",
+      "description": "Testimonianze reali di titolari di trattorie, bistrot e pizzerie italiane con rating a 5 stelle e metrica di crescita fatturato/velocità servizio."
+    },
+    {
+      "id": "demo_request_form",
+      "description": "Modulo completo di richiesta demo per ristoratori italiani con invio POST a /api/public/demo-request (campi: restaurant_name, contact_name, email, phone, message). Gestione stati loading, success e duplicati 24h."
+    },
+    {
+      "id": "registration_modal",
+      "description": "Modal o flow di auto-registrazione ristorante ('Registra il tuo Ristorante') con form guidato per impostare nome locale e credenziali amministratore."
+    },
+    {
+      "id": "faq",
+      "description": "Faq Accordion con risposte dettagliate su compatibilità stampanti 62mm, utilizzo su iPad/tablet Android, supporto senza connessione e pubblicazione menu su WhatsApp."
+    },
+    {
+      "id": "footer",
+      "description": "Footer con informazioni legali, contatti supporto Italia, social e link rapidi."
+    }
+  ],
+  "api_integration_spec": {
+    "demo_request_endpoint": "/api/public/demo-request",
+    "method": "POST",
+    "payload_schema": {
+      "restaurant_name": "string (min 2, max 120)",
+      "contact_name": "string (min 2, max 100)",
+      "email": "EmailStr",
+      "phone": "string (optional)",
+      "message": "string (optional)"
+    },
+    "rate_limit_handling": "Mostrare un messaggio chiaro se l'utente ha già inviato una richiesta nelle ultime 24 ore (HTTP 429)."
+  },
+  "required_data_testids": [
+    "landing-header-logo",
+    "nav-link-features",
+    "nav-link-thermal",
+    "nav-link-faq",
+    "cta-button-demo-header",
+    "cta-button-register-header",
+    "hero-title",
+    "hero-cta-demo",
+    "hero-cta-register",
+    "thermal-simulator-box",
+    "thermal-simulate-print-button",
+    "roi-calculator-slider",
+    "demo-request-form",
+    "input-restaurant-name",
+    "input-contact-name",
+    "input-email",
+    "input-phone",
+    "input-message",
+    "demo-form-submit-button",
+    "demo-form-success-alert",
+    "modal-self-register",
+    "faq-accordion-item-0",
+    "faq-accordion-item-1",
+    "faq-accordion-item-2"
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Utilizzare esclusivamente la tavolozza cromatico-stilistica di giorgiobistrot.it (#0f0f10 fondo, #d4a24c accenti oro, #f4f1ea testo primario).",
+    "I titoli principali e gli header di sezione DEVONO usare font serif sofisticati (Playfair Display / Cormorant Garamond). NON usare Inter per i titoli H1/H2.",
+    "Non usare MAI sfondi completamente trasparenti per l'header fisso; applicare sempre backdrop-blur-xl con bg-[#0f0f10]/80.",
+    "Tutti gli elementi interattivi (pulsanti, input, item di fisarmonica) devono includere l'attributo data-testid per i test automatici.",
+    "Per la richiesta demo, effettuare la chiamata POST all'endpoint reale /api/public/demo-request gestendo la risposta e gli eventuali errori 429.",
+    "Evitare layout standard 'Vercel/Stripe': integrare la griglia Bento Asimmetrica e gli scontrini termici simulati in stile ESC/POS."
+  ]
+}
