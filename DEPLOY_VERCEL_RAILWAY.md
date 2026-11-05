@@ -27,6 +27,8 @@ Crea un database MongoDB (consigliato MongoDB Atlas) e copia la stringa di conne
 4. Settings → Networking → **Generate Domain**. Annota l'indirizzo (es. `https://bancomanda-api.up.railway.app`).
 5. Settings → Healthcheck Path: `/api/`
 
+Nota: il Dockerfile avvia **un solo processo** (consigliato). Se aumenti worker o repliche, dopo un cambio password un vecchio accesso può restare valido al massimo 30 secondi.
+
 Verifica: aprendo `https://<railway>/api/landing` deve comparire la landing.
 
 ## 3. Frontend su Vercel

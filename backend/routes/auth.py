@@ -15,9 +15,8 @@ from auth.jwt_handler import (
     token_hash,
     get_refresh_token_expiry,
 )
-from auth.dependencies import get_current_user, CurrentUser
+from auth.dependencies import get_current_user, CurrentUser, invalidate_password_version
 from models.user import UserRole
-from tenancy import invalidate_password_version
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -170,7 +169,8 @@ async def register(body: RegisterRequest, request: Request):
         user_id=str(user_doc["_id"]),
         email=email,
         role=user_doc["role"],
-        tenant_id=tenant_id
+        tenant_id=tenant_id,
+        extra_claims={"legacy": False, "pv": 0}
     )
     refresh_token = create_refresh_token()
     

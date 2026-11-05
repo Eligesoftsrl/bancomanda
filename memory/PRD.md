@@ -106,6 +106,15 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - Creazione nuovo tenant con owner
   - Gestione richieste demo: lista, filtri, aggiorna stato
 
+### Anteprima web, cambio password, file Vercel + Railway (2026-11-05)
+- **Fix anteprima bianca**: SDK 58 richiede `useServerDocumentContext()` in `app/+html.tsx` (`headNodes`/`bodyNodes` = script dell'app). Ora preview ed export web caricano l'app (vale anche per Vercel)
+- **Cambio password** (`POST /api/auth/change-password`): verifica password attuale, min 8, diversa; incrementa `users.password_version`, revoca TUTTI i refresh token e restituisce nuova sessione per il dispositivo corrente. Claim JWT `pv` verificato sia nel middleware dati sia in `get_current_user` (cache 30 s per processo, `auth/dependencies.py`) → gli altri tablet vengono scollegati subito
+- UI: pulsante "Password" + `ChangePasswordModal` nell'header Report (accanto a nome locale ed Esci)
+- Testi "iPad" → "tablet" (login, landing): l'app si usa da browser su iPad e Android, aggiunta alla Home
+- **Deploy esterno preparato** (guida `/app/DEPLOY_VERCEL_RAILWAY.md`): `frontend/vercel.json`, `frontend/.env.example`, `backend/Dockerfile.railway` (+ `.dockerignore`, serve `RAILWAY_DOCKERFILE_PATH=Dockerfile.railway` perché railway.json è deprecato per i nuovi servizi), `backend/.env.example`; CORS da env `CORS_ORIGINS` (default `*`)
+- Copia dati verso il nuovo DB: NON fatta, solo con conferma esplicita dell'utente
+- Test: iteration_11 (frontend 100%, backend 43/44 → fix stale token su /auth/me) + rerun 12/12 change password e 32/32 isolamento
+
 ### Login iPad + dati separati per locale + allergeni + nome Bancomanda (2026-11-05)
 - **Isolamento dati** (`/app/backend/tenancy.py`): middleware ASGI legge il JWT e imposta il locale; `ScopedDatabase` filtra in automatico categories/dishes/daily_menus/orders/customers/missed_sales
   - Locale storico **Giorgio Bistrot** (`tenants.legacy_data: true`) = documenti SENZA `tenant_id` → nessuna migrazione, dati esistenti intatti; i suoi nuovi documenti restano senza tenant_id
@@ -127,7 +136,8 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - ⏳ Refactoring backend esistente per filtrare per `tenant_id` — **NON toccare il DB attuale (catering-dashboard-3): il personale ci lavora. Nessuna migrazione/inserimento senza conferma esplicita dell'utente.**
 - ⏳ Integrazione auth nel frontend Expo esistente — ✅ FATTO 2026-11-05
 - ⏳ Indice daily_menus in produzione (serve ok utente) prima di attivare un secondo locale
-- P1: Cambio password dall'app (oggi la password provvisoria si cambia solo a mano)
+- P1: Cambio password dall'app — ✅ FATTO 2026-11-05
+- P1: Copia dati dal DB Emergent al nuovo DB (Atlas/Railway) al momento del passaggio — solo con ok utente
 - ⏳ Configurazioni tenant-specific (FTP, timezone, numerazione ordini)
 
 ### Landing con screenshot reali + nome "Bancomanda" (2026-11-05)

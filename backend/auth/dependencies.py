@@ -1,13 +1,34 @@
 """
 FastAPI dependencies for authentication and authorization.
 """
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional, List
+import time
+from bson import ObjectId
 from .jwt_handler import verify_access_token
 
 # HTTP Bearer scheme for extracting tokens
 bearer_scheme = HTTPBearer(auto_error=False)
+
+# Versione password per utente (token emessi prima di un cambio password = non validi).
+# Cache per processo: con più worker/repliche un vecchio token resta valido al massimo 30 s.
+PV_CACHE_SECONDS = 30
+_pv_cache: dict = {}
+
+
+def invalidate_password_version(user_id: str) -> None:
+    _pv_cache.pop(user_id, None)
+
+
+async def password_version(db, user_id: str) -> Optional[int]:
+    cached = _pv_cache.get(user_id)
+    if cached and cached[1] > time.monotonic():
+        return cached[0]
+    user = await db.users.find_one({"_id": ObjectId(user_id)}, {"password_version": 1, "disabled": 1})
+    version = None if not user or user.get("disabled") else user.get("password_version", 0)
+    _pv_cache[user_id] = (version, time.monotonic() + PV_CACHE_SECONDS)
+    return version
 
 
 class CurrentUser:
@@ -52,6 +73,7 @@ async def get_optional_user(
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> CurrentUser:
     """
@@ -66,7 +88,7 @@ async def get_current_user(
         )
     
     claims = verify_access_token(credentials.credentials)
-    if not claims:
+    if not claims or await password_version(request.app.state.db, claims["sub"]) != claims.get("pv", 0):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token non valido o scaduto",

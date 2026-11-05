@@ -1,0 +1,35 @@
+{
+  "summary": "Tested the web preview fix, login and logout UI, the password change (API + UI, including logging out the other device with 2 browser contexts), dish labels (allergens, preset and custom tags), tenant isolation regression (32/32), landing page and images, and the deploy files (static review only). Everything requested works. One minor backend gap: after a password change, the old access token is still accepted on /api/auth/* routes (/me, /change-password) until it expires. Pizzeria Napoli password restored to Password123! and checked (login returns 200). Giorgio Bistrot was not touched.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/auth/me, POST /api/auth/change-password", "issue": "After a password change, the other device's old access token still returns 200 on /api/auth/me (and can call /api/auth/change-password if it knows the new password). TenantContextMiddleware skips the password_version (pv) check for the /api/auth prefix, and get_current_user does not check pv either. Data routes correctly return 401, so the UI still logs out the other device."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dishes", "issues": ["The 'Nuovo' and 'Categorie' buttons, the dish name/price inputs and the search input have no testID (tests had to use text/placeholder selectors)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_change_password.py", "/app/backend/tests/test_tenant_isolation.py", "/app/test_reports/pytest/pytest_change_password.xml", "/app/test_reports/pytest/pytest_tenant_isolation.xml"],
+  "action_items": [
+    "Optional hardening: make get_current_user (or the change-password and /me routes) check claim pv against users.password_version, so an old token is rejected on /api/auth/* too",
+    "Add testIDs to the Dishes screen controls: Nuovo, Categorie, search, name and price inputs"
+  ],
+  "critical_code_review_comments": [
+    "tenancy.py: the pv cache is per process (30 s), and invalidate_password_version only clears the local process. With several uvicorn workers or Railway replicas, other workers keep accepting old tokens for up to 30 s. Fine with the current single-worker Dockerfile.railway; document this or check pv in the DB if workers are added.",
+    "The register endpoint does not set the pv claim. It works because the default is 0, but for consistency add extra_claims pv=0 and legacy=False.",
+    "server.py: CORS has allow_credentials=True with the default origin '*'. The app uses Bearer tokens, so there is no cookie risk, but in production set CORS_ORIGINS to the Vercel domain (the docs already say so).",
+    "The test suite needs EXPO_PUBLIC_BACKEND_URL exported: test_tenant_isolation.py crashes at collection when it is not set (it reads os.environ with no fallback).",
+    "Playbook check: the app uses Bearer tokens stored on the client, not httpOnly cookies (by design for tablets). Brute-force lockout is present (5 fails -> 15 min)."
+  ],
+  "updated_files": ["/app/backend/tests/test_change_password.py"],
+  "success_rate": {"backend": "98% (43/44; the 1 failure is the minor stale-token-on-/auth/me finding)", "frontend": "100%"},
+  "seed_data_creation": "Pizzeria Napoli only: dishes 'TEST_Pizza Labels' (6aeca2921b19d4b28b4c033e) and 'TEST_UI Dish' (6aeca2aa1b19d4b28b4c0340), both deactivated afterwards (the API only soft-deletes). The test runs created and revoked refresh tokens. The leftover TEST_Cat_* categories in Pizzeria Napoli come from earlier runs.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the tests one at a time with EXPO_PUBLIC_BACKEND_URL exported: python -m pytest tests/test_change_password.py -p no:xdist. test_change_password.py restores the password in a module teardown. The UI passed: preview root redirects to /login, wrong-password error, login and reload persistence, Report header controls, modal validations, 2-context logout of the other device (B ends on the login screen after a tab switch, A stays logged in after reload), password restored via the modal, double-tap logout, dish labels saved and shown. Wrong logins used: 1 in UI, about 3 in pytest (each success resets the counter).",
+  "rca of the issue": "Blank preview: fixed. +html.tsx now renders headNodes and bodyNodes from useServerDocumentContext; the app JS loads and redirects to /login."
+}

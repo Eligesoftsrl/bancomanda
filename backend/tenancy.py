@@ -4,31 +4,13 @@ Il locale "storico" (legacy) usa i documenti SENZA campo tenant_id: i dati esist
 non vengono mai modificati né migrati. Gli altri locali scrivono sempre tenant_id.
 """
 import contextvars
-import time
 from dataclasses import dataclass
 from typing import Optional
 
-from bson import ObjectId
 from starlette.responses import JSONResponse
 
 from auth.jwt_handler import verify_access_token
-
-PV_CACHE_SECONDS = 30
-_pv_cache: dict = {}
-
-
-def invalidate_password_version(user_id: str) -> None:
-    _pv_cache.pop(user_id, None)
-
-
-async def _password_version(db, user_id: str) -> Optional[int]:
-    cached = _pv_cache.get(user_id)
-    if cached and cached[1] > time.monotonic():
-        return cached[0]
-    user = await db.users.find_one({"_id": ObjectId(user_id)}, {"password_version": 1, "disabled": 1})
-    version = None if not user or user.get("disabled") else user.get("password_version", 0)
-    _pv_cache[user_id] = (version, time.monotonic() + PV_CACHE_SECONDS)
-    return version
+from auth.dependencies import password_version as _password_version
 
 SCOPED_COLLECTIONS = {"categories", "dishes", "daily_menus", "orders", "customers", "missed_sales"}
 

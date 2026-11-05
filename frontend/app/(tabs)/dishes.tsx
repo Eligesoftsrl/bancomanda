@@ -348,11 +348,11 @@ export default function DishesScreen() {
               {showInactive ? 'Tutti' : 'Attivi'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryButton} onPress={openCreateCategoryModal}>
+          <TouchableOpacity style={styles.categoryButton} onPress={openCreateCategoryModal} testID="dishes-categories-button">
             <Ionicons name="pricetag" size={16} color="#fff" />
             <Text style={styles.categoryButtonText}>Categorie</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={openCreateDishModal}>
+          <TouchableOpacity style={styles.addButton} onPress={openCreateDishModal} testID="dishes-new-button">
             <Ionicons name="add" size={18} color="#fff" />
             <Text style={styles.addButtonText}>Nuovo</Text>
           </TouchableOpacity>
@@ -368,6 +368,7 @@ export default function DishesScreen() {
           placeholderTextColor="#94a3b8"
           value={searchQuery}
           onChangeText={setSearchQuery}
+          testID="dishes-search-input"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClear}>
@@ -530,6 +531,7 @@ export default function DishesScreen() {
                 onChangeText={setName}
                 placeholder="Es: Pasta al pomodoro"
                 placeholderTextColor="#64748b"
+                testID="dish-name-input"
               />
 
               <Text style={styles.inputLabel}>Categoria</Text>
@@ -573,6 +575,7 @@ export default function DishesScreen() {
                 placeholder="Es: 8.50"
                 placeholderTextColor="#64748b"
                 keyboardType="decimal-pad"
+                testID="dish-price-input"
               />
 
               {/* Favorite Toggle */}
