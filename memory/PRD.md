@@ -213,7 +213,7 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Stampa menu del giorno: intestazione = logo del locale (o nome), non più "GIORGIO IV" fisso.
 - Avvio app: splash blu notte con logo Bancomanda in dissolvenza (~2s), `src/components/LaunchSplash.tsx` montata in posizione stabile in `app/_layout.tsx`.
 - Landing + admin: logo vero (B rossa, `/api/landing/assets/favicon.png`), palette corallo `#f5595a` + blu notte `#141d2c` (vedi `/app/design_guidelines.json`). Admin responsive sotto 900px.
-- Produzione (Railway DB): Giorgio Bistro precompilato con host `ftp.giorgiobistrot.it`, porta 21, cartella `www.giorgiobistrot.it/menu`, password in `settings.ftp.password_plain` (cifrata automaticamente all'avvio del nuovo backend), messaggi domenica/10:00. MANCA il nome utente FTP (sconosciuto): va inserito dall'admin.
+- Produzione (Railway DB): Giorgio Bistro precompilato con host `ftp.giorgiobistrot.it`, porta 21, cartella `www.giorgiobistrot.it/menu`, password in `settings.ftp.password_plain` (cifrata automaticamente all'avvio del nuovo backend), messaggi domenica/10:00. Utente FTP 1746394@aruba.it inserito il 2026-11-07; prova di accesso FTP (solo lettura) riuscita, cartella esistente.
 - Preview: il locale legacy NON ha FTP configurato apposta (eviterebbe di sovrascrivere il sito vero durante i test).
 
 ## Note ambiente
