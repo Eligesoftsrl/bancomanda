@@ -28,7 +28,8 @@ Crea un database MongoDB (consigliato MongoDB Atlas, gratuito per iniziare) e co
    - `RAILWAY_DOCKERFILE_PATH=Dockerfile.railway` (obbligatoria)
    - `MONGO_URL`, `DB_NAME`: dal punto 1
    - `JWT_SECRET`: frase casuale nuova e lunga
-   - `LEGACY_TENANT_*`: nome, email e password provvisoria del tuo locale
+   - `LEGACY_TENANT_*`: nome, email e password provvisoria del locale "storico" (Giorgio): è l'account che vedrà i dati copiati dal sistema attuale. Fino alla copia resta vuoto. Non usarlo per un locale demo.
+   - `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`: il tuo accesso a `bancomanda.com/admin` (creato solo al primo avvio)
    - `FTP_*`: solo se vuoi pubblicare il menu sul sito
 4. Settings → Networking → **Generate Domain**: Railway crea un indirizzo tipo `bancomanda-production.up.railway.app`.
    **Mandalo in chat**: lo inserisco io in `frontend/vercel.json` (oggi c'è il segnaposto `INDIRIZZO-RAILWAY`).

@@ -121,6 +121,8 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - Landing: link Accedi fissi a `/accedi` (rotta Expo `app/accedi.tsx` → Redirect "/" per l'anteprima). Rimossi `BANCOMANDA_APP_URL`, cartella `landing-site`, `frontend/.env.example`; CORS_ORIGINS non più da impostare
   - Segnaposto `INDIRIZZO-RAILWAY.up.railway.app` in `frontend/vercel.json` (3 righe) da sostituire quando l'utente manda l'indirizzo Railway
   - Verificato in locale con simulatore regole Vercel (`/app/memory/landing-screenshots/vercel_sim.py` + `vercel_flow_test.py`): landing → Accedi → /app/login → login → /app/, reload, deep link /app/menu, logout, root resta landing
+- Avvio server: crea indice unico `users.email` e, se non esiste nessun superadmin, lo crea da env `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (serve su DB nuovo Railway). Testato su DB temporaneo poi eliminato
+- LEGACY_TENANT_* su Railway = locale di Giorgio (account vuoto finché non si copiano i suoi dati). MAI usarlo per un locale demo: i dati copiati finirebbero lì
 
 ### Landing "wow" + Accedi + fix /api/admin (2026-11-05)
 - Foto reali (Unsplash/Pexels, scaricate in `backend/static/landing/photo-*.webp`): bento Stampa 62mm (cuochi, overlay verde), Anagrafica Clienti (tavolo), Multi-tablet (cuoco), Menu del Giorno (impiattamento); Report con mini grafico a barre animato

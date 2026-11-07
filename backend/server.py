@@ -2385,6 +2385,23 @@ async def seed_legacy_tenant():
     name = (os.environ.get("LEGACY_TENANT_NAME") or "").strip()
     await raw_db.login_attempts.create_index("identifier")
     await raw_db.login_attempts.create_index("last_attempt", expireAfterSeconds=86400)
+    await raw_db.users.create_index("email", unique=True)
+
+    # Superadmin (pannello /admin): creato solo se non ne esiste nessuno
+    sa_email = (os.environ.get("SUPERADMIN_EMAIL") or "").strip().lower()
+    sa_password = os.environ.get("SUPERADMIN_PASSWORD") or ""
+    if sa_email and sa_password and not await raw_db.users.find_one({"role": "superadmin"}):
+        await raw_db.users.insert_one({
+            "email": sa_email,
+            "name": "Superadmin",
+            "password_hash": hash_password(sa_password),
+            "role": "superadmin",
+            "tenant_id": None,
+            "disabled": False,
+            "created_at": datetime.now(ZoneInfo("UTC")),
+            "last_login": None,
+        })
+        logger.info(f"[SEED] Creato superadmin {sa_email}")
     if not (email and password and name):
         logger.warning("[SEED] LEGACY_TENANT_* non configurati: nessun locale storico creato")
         return
