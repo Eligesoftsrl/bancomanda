@@ -3,9 +3,9 @@
   "framework": null,
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/", "destination": "https://api.bancomanda.com/api/landing" },
-    { "source": "/admin", "destination": "https://api.bancomanda.com/api/admin/dashboard" },
-    { "source": "/api/:path*", "destination": "https://api.bancomanda.com/api/:path*" }
+    { "source": "/", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/landing" },
+    { "source": "/admin", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/admin/dashboard" },
+    { "source": "/api/:path*", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/:path*" }
   ],
   "redirects": [
     { "source": "/login", "destination": "https://app.bancomanda.com/login", "permanent": false },

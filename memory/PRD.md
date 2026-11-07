@@ -113,6 +113,7 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Logo landing → `#top`; favicon `/api/landing/assets/favicon.png`
 - `.env.example` aggiornati (CORS_ORIGINS/BANCOMANDA_APP_URL = https://app.bancomanda.com, EXPO_PUBLIC_BACKEND_URL = https://api.bancomanda.com); guida `/app/DEPLOY_VERCEL_RAILWAY.md` riscritta con tabella DNS
 - Il proxy Vercel si può verificare solo dopo il deploy reale
+- AGGIORNAMENTO: l'utente NON vuole il sottodominio `api.` → server sull'indirizzo gratuito Railway (`xxx.up.railway.app`). In `landing-site/vercel.json` c'è il segnaposto `INDIRIZZO-RAILWAY.up.railway.app` da sostituire quando l'utente comunica l'indirizzo; stesso valore in `EXPO_PUBLIC_BACKEND_URL` del progetto Vercel app. DNS: solo @, www, app
 
 ### Landing "wow" + Accedi + fix /api/admin (2026-11-05)
 - Foto reali (Unsplash/Pexels, scaricate in `backend/static/landing/photo-*.webp`): bento Stampa 62mm (cuochi, overlay verde), Anagrafica Clienti (tavolo), Multi-tablet (cuoco), Menu del Giorno (impiattamento); Report con mini grafico a barre animato
