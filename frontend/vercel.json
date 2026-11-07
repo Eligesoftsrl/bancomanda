@@ -11,9 +11,9 @@
     { "source": "/login", "destination": "/app/login", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/landing" },
-    { "source": "/admin", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/admin/dashboard" },
-    { "source": "/api/:path*", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/:path*" },
+    { "source": "/", "destination": "https://bancomanda-production.up.railway.app/api/landing" },
+    { "source": "/admin", "destination": "https://bancomanda-production.up.railway.app/api/admin/dashboard" },
+    { "source": "/api/:path*", "destination": "https://bancomanda-production.up.railway.app/api/:path*" },
     { "source": "/:file(manifest\\.json|apple-touch-icon\\.png|icon-192\\.png|icon-512\\.png)", "destination": "/app/:file" }
   ],
   "headers": [

@@ -119,7 +119,7 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
   - App sotto `/app`: `app.config.js` imposta `experiments.baseUrl` SOLO se `EXPO_WEB_BASE_URL` (build Vercel); `scripts/vercel-postbuild.js` sposta l'export in `dist/app` e mette start_url/scope `/app/` nel manifest; rewrite di manifest/icone dalla radice a `/app/`
   - `src/services/config.ts`: `EXPO_PUBLIC_SAME_ORIGIN_API=1` → API relative `/api`
   - Landing: link Accedi fissi a `/accedi` (rotta Expo `app/accedi.tsx` → Redirect "/" per l'anteprima). Rimossi `BANCOMANDA_APP_URL`, cartella `landing-site`, `frontend/.env.example`; CORS_ORIGINS non più da impostare
-  - Segnaposto `INDIRIZZO-RAILWAY.up.railway.app` in `frontend/vercel.json` (3 righe) da sostituire quando l'utente manda l'indirizzo Railway
+  - Segnaposto sostituito: server Railway = `https://bancomanda-production.up.railway.app` (verificato online: /api/, /api/landing, asset, /api/admin/dashboard 200; API dati 401 senza token; login risponde → DB collegato)
   - Verificato in locale con simulatore regole Vercel (`/app/memory/landing-screenshots/vercel_sim.py` + `vercel_flow_test.py`): landing → Accedi → /app/login → login → /app/, reload, deep link /app/menu, logout, root resta landing
 - Avvio server: crea indice unico `users.email` e, se non esiste nessun superadmin, lo crea da env `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (serve su DB nuovo Railway). Testato su DB temporaneo poi eliminato
 - LEGACY_TENANT_* su Railway = locale di Giorgio (account vuoto finché non si copiano i suoi dati). MAI usarlo per un locale demo: i dati copiati finirebbero lì
