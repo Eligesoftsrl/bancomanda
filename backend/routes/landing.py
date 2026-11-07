@@ -2,8 +2,6 @@
 Landing page HTML per Bancomanda SaaS.
 Pagina pubblica con animazioni e immagini.
 """
-import os
-from html import escape
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
@@ -988,7 +986,7 @@ def get_landing_html() -> str:
                 <a href="#faq">FAQ</a>
             </nav>
             <div class="nav-buttons">
-                <a href="__APP_URL__" class="btn btn-login" data-testid="header-login-button"><i class="fas fa-right-to-bracket"></i> Accedi</a>
+                <a href="/accedi" class="btn btn-login" data-testid="header-login-button"><i class="fas fa-right-to-bracket"></i> Accedi</a>
                 <a href="#demo" class="btn btn-outline nav-demo">Richiedi Demo</a>
                 <button class="btn btn-primary" onclick="openRegisterModal()" data-testid="header-register-button">Registrati</button>
             </div>
@@ -1023,7 +1021,7 @@ def get_landing_html() -> str:
                         <i class="fas fa-rocket"></i> Inizia Gratis
                     </button>
                 </div>
-                <a href="__APP_URL__" class="hero-login fade-in fade-in-delay-4" data-testid="hero-login-link">
+                <a href="/accedi" class="hero-login fade-in fade-in-delay-4" data-testid="hero-login-link">
                     Hai già un account? <strong>Accedi al tuo locale</strong> <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
@@ -1309,7 +1307,7 @@ def get_landing_html() -> str:
                 <p>© 2026 Bancomanda. Sistema gestionale per la ristorazione italiana.</p>
             </div>
             <div class="footer-links">
-                <a href="__APP_URL__" data-testid="footer-login-link"><i class="fas fa-right-to-bracket"></i> Accedi</a>
+                <a href="/accedi" data-testid="footer-login-link"><i class="fas fa-right-to-bracket"></i> Accedi</a>
                 <a href="#features">Funzionalità</a>
                 <a href="#demo">Richiedi Demo</a>
                 <a href="#faq">FAQ</a>
@@ -1484,9 +1482,7 @@ def get_landing_html() -> str:
 
 
 def render_landing() -> HTMLResponse:
-    # BANCOMANDA_APP_URL = indirizzo dell'app (es. dominio Vercel); in anteprima stessa origine
-    app_url = escape(os.environ.get("BANCOMANDA_APP_URL") or "/", quote=True)
-    return HTMLResponse(content=get_landing_html().replace("__APP_URL__", app_url))
+    return HTMLResponse(content=get_landing_html())
 
 
 @router.get("/", response_class=HTMLResponse)

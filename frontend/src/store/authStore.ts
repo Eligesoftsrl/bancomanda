@@ -2,9 +2,10 @@ import axios from 'axios';
 import { create } from 'zustand';
 import { sessionStorage, StoredSession, AuthUser } from '../services/authStorage';
 import { useAppStore } from './appStore';
+import { API_URL } from '../services/config';
 
 const authHttp = axios.create({
-  baseURL: `${process.env.EXPO_PUBLIC_BACKEND_URL || ''}/api/auth`,
+  baseURL: `${API_URL}/api/auth`,
   headers: { 'Content-Type': 'application/json' },
 });
 

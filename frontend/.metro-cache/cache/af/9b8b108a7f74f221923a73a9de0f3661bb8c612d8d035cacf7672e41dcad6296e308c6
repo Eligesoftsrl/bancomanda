@@ -1,0 +1,1 @@
+{"dependencies":[],"output":[{"data":{"code":"__d(function(g,r,i,a,m,e,d){new Set;m.exports=function(n,...t){}});","lineCount":1,"map":{"mappings":"4BAEiB,IAAIA,IAerBC,EAAOC,QAbP,SAAkBC,KAAcC,GAWhC,CAE0B,G","names":["Set","module","exports","condition","rest"]},"functionMap":{"names":["<global>","warnOnce"],"mappings":"AAA;ACI;CDW"},"hasCjsExports":true},"type":"js/module"}]}

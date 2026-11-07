@@ -1,9 +1,7 @@
 import axios from 'axios';
 import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, Category } from '../types';
 import { useAuthStore } from '../store/authStore';
-
-// Backend URL - use environment variable
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+import { API_URL } from './config';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,

@@ -2,17 +2,27 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "yarn install",
-  "buildCommand": "npx expo export --platform web",
+  "buildCommand": "EXPO_WEB_BASE_URL=/app EXPO_PUBLIC_SAME_ORIGIN_API=1 npx expo export --platform web --output-dir dist-export && node scripts/vercel-postbuild.js",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/accedi", "destination": "/app", "permanent": false },
+    { "source": "/login", "destination": "/app/login", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/landing" },
+    { "source": "/admin", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/admin/dashboard" },
+    { "source": "/api/:path*", "destination": "https://INDIRIZZO-RAILWAY.up.railway.app/api/:path*" },
+    { "source": "/:file(manifest\\.json|apple-touch-icon\\.png|icon-192\\.png|icon-512\\.png)", "destination": "/app/:file" }
+  ],
   "headers": [
     {
-      "source": "/_expo/static/(.*)",
+      "source": "/app/_expo/static/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
-      "source": "/(sw.js|manifest.json)",
+      "source": "/app/(sw.js|manifest.json)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     }
   ]

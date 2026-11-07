@@ -114,6 +114,13 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - `.env.example` aggiornati (CORS_ORIGINS/BANCOMANDA_APP_URL = https://app.bancomanda.com, EXPO_PUBLIC_BACKEND_URL = https://api.bancomanda.com); guida `/app/DEPLOY_VERCEL_RAILWAY.md` riscritta con tabella DNS
 - Il proxy Vercel si può verificare solo dopo il deploy reale
 - AGGIORNAMENTO: l'utente NON vuole il sottodominio `api.` → server sull'indirizzo gratuito Railway (`xxx.up.railway.app`). In `landing-site/vercel.json` c'è il segnaposto `INDIRIZZO-RAILWAY.up.railway.app` da sostituire quando l'utente comunica l'indirizzo; stesso valore in `EXPO_PUBLIC_BACKEND_URL` del progetto Vercel app. DNS: solo @, www, app
+- **AGGIORNAMENTO FINALE: l'utente NON vuole NESSUN sottodominio** (né app. né api.). Tutto su `bancomanda.com` con UN SOLO progetto Vercel (`frontend`):
+  - `/` → rewrite proxy a Railway `/api/landing`; `/admin` → `/api/admin/dashboard`; `/api/:path*` → Railway (stessa origine, niente CORS); `/accedi` e `/login` → redirect a `/app`, `/app/login`
+  - App sotto `/app`: `app.config.js` imposta `experiments.baseUrl` SOLO se `EXPO_WEB_BASE_URL` (build Vercel); `scripts/vercel-postbuild.js` sposta l'export in `dist/app` e mette start_url/scope `/app/` nel manifest; rewrite di manifest/icone dalla radice a `/app/`
+  - `src/services/config.ts`: `EXPO_PUBLIC_SAME_ORIGIN_API=1` → API relative `/api`
+  - Landing: link Accedi fissi a `/accedi` (rotta Expo `app/accedi.tsx` → Redirect "/" per l'anteprima). Rimossi `BANCOMANDA_APP_URL`, cartella `landing-site`, `frontend/.env.example`; CORS_ORIGINS non più da impostare
+  - Segnaposto `INDIRIZZO-RAILWAY.up.railway.app` in `frontend/vercel.json` (3 righe) da sostituire quando l'utente manda l'indirizzo Railway
+  - Verificato in locale con simulatore regole Vercel (`/app/memory/landing-screenshots/vercel_sim.py` + `vercel_flow_test.py`): landing → Accedi → /app/login → login → /app/, reload, deep link /app/menu, logout, root resta landing
 
 ### Landing "wow" + Accedi + fix /api/admin (2026-11-05)
 - Foto reali (Unsplash/Pexels, scaricate in `backend/static/landing/photo-*.webp`): bento Stampa 62mm (cuochi, overlay verde), Anagrafica Clienti (tavolo), Multi-tablet (cuoco), Menu del Giorno (impiattamento); Report con mini grafico a barre animato
