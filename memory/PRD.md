@@ -195,3 +195,15 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Reports Tab → Gear Icon Password: `eligesoft`
 - **Superadmin**: email `admin@banco.app`, password `BancoAdmin2024!`
 - **Tenant test**: email `titolare@pizzeria-napoli.it`, password `Password123!` (Pizzeria Napoli)
+
+## Migrazione dati Giorgio Bistrot → Bancomanda (Railway) — 2026-11-07 ✅
+- Script: `backend/scripts/migrate_legacy.py` (legge in SOLA LETTURA via GET da `bancos-receipt.emergent.host/api`, scrive su Railway).
+- Il locale storico (`tenants.legacy_data: true`) usa documenti SENZA `tenant_id`: lo script sostituisce solo quelli (backup JSON locale prima), mantiene gli `_id` originali (riferimenti cliente/piatto intatti), converte `createdAt/publishedAt` in datetime. Controlla collisioni id e indici unici su `date`. Opzioni `--db`, `--dry-run`.
+- Eseguito UNA volta (scelta utente) su db `bancomanda`: 9 categorie, 405 piatti (12 inattivi), 255 clienti, 5.732 ordini (21/03→07/11/2026, 26 non pagati), 147 menu, 1 mancata vendita. Tutti validati con i modelli dell'app.
+- Connessione: secret `RAILWAY_MONGO_URL` contiene l'URL interno; si usa sostituendo l'host con il TCP proxy `gondola.proxy.rlwy.net:54099`. Il secret è leggibile dall'ambiente del processo backend (`/proc/<pid>/environ`), non sempre in `.env`.
+- ⚠️ Rilanciare lo script DOPO che il locale usa la nuova app cancellerebbe gli ordini nuovi.
+- Ordini fatti sulla vecchia app dopo il 07/11/2026 23:07 UTC NON sono nella nuova.
+
+## Backlog
+- P1: impostazioni per locale (FTP, sito, fuso, numerazione) nel modello Tenant
+- P2: fade-in logo all'avvio; spezzare `(tabs)/index.tsx`
