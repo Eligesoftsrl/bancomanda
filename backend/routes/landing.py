@@ -35,21 +35,26 @@ def get_landing_html() -> str:
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
+            /* Palette Bancomanda: rosso corallo del logo + blu notte della login */
             --bg-main: #faf9f6;
-            --bg-surface: #f5f3ef;
+            --bg-surface: #f2f0eb;
             --bg-elevated: #ffffff;
             --bg-card: #ffffff;
-            --primary: #2d5a27;
-            --primary-hover: #3d7a37;
-            --primary-light: rgba(45, 90, 39, 0.1);
-            --accent: #c4501c;
-            --accent-light: rgba(196, 80, 28, 0.1);
-            --text-primary: #1a1a1a;
-            --text-secondary: #555555;
-            --text-muted: #888888;
-            --border-subtle: #e5e2dc;
-            --success: #2d5a27;
-            --danger: #c4501c;
+            --bg-dark: #141d2c;
+            --primary: #f5595a;
+            --primary-hover: #e04849;
+            --primary-light: rgba(245, 89, 90, 0.12);
+            --accent: #141d2c;
+            --accent-light: rgba(20, 29, 44, 0.08);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #8896ab;
+            --text-on-dark: #f8fafc;
+            --border-subtle: #e2e8f0;
+            --border-dark: #cbd5e1;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
@@ -127,14 +132,11 @@ def get_landing_html() -> str:
         .logo-icon {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            flex-shrink: 0;
+            display: block;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.25rem;
+            object-fit: cover;
+            box-shadow: 0 6px 16px -6px rgba(20, 29, 44, 0.45);
         }
         .logo-text {
             font-family: 'Playfair Display', serif;
@@ -178,12 +180,12 @@ def get_landing_html() -> str:
         .btn-primary {
             background: var(--primary);
             color: white;
-            box-shadow: 0 10px 25px -5px rgba(45, 90, 39, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(245, 89, 90, 0.3);
         }
         .btn-primary:hover { 
             background: var(--primary-hover); 
             transform: translateY(-2px);
-            box-shadow: 0 15px 30px -5px rgba(45, 90, 39, 0.4);
+            box-shadow: 0 15px 30px -5px rgba(245, 89, 90, 0.4);
         }
 
         /* Hero */
@@ -207,14 +209,14 @@ def get_landing_html() -> str:
             left: -100px;
             width: 400px;
             height: 400px;
-            background: rgba(45, 90, 39, 0.12);
+            background: rgba(245, 89, 90, 0.12);
         }
         .hero-blob-2 {
             top: 20%;
             right: -150px;
             width: 500px;
             height: 500px;
-            background: rgba(196, 80, 28, 0.08);
+            background: rgba(20, 29, 44, 0.06);
             animation-delay: -7s;
         }
         .hero-blob-3 {
@@ -222,7 +224,7 @@ def get_landing_html() -> str:
             left: 30%;
             width: 350px;
             height: 350px;
-            background: rgba(251, 235, 168, 0.4);
+            background: rgba(203, 213, 225, 0.35);
             animation-delay: -14s;
         }
         .hero-inner {
@@ -436,7 +438,7 @@ def get_landing_html() -> str:
         .bento-card:hover {
             border-color: var(--primary);
             transform: translateY(-8px);
-            box-shadow: 0 20px 50px -15px rgba(45, 90, 39, 0.2);
+            box-shadow: 0 20px 50px -15px rgba(245, 89, 90, 0.2);
         }
         .bento-card.large { grid-column: span 8; }
         .bento-card.medium { grid-column: span 6; }
@@ -448,7 +450,7 @@ def get_landing_html() -> str:
         }
         .bento-card.featured:hover {
             transform: translateY(-8px);
-            box-shadow: 0 20px 50px -15px rgba(45, 90, 39, 0.4);
+            box-shadow: 0 20px 50px -15px rgba(245, 89, 90, 0.4);
         }
         .bento-icon {
             width: 56px;
@@ -558,7 +560,7 @@ def get_landing_html() -> str:
             transform: translateX(-50%);
             width: 400px;
             height: 400px;
-            background: rgba(45, 90, 39, 0.06);
+            background: rgba(245, 89, 90, 0.06);
             border-radius: 50%;
             filter: blur(100px);
             pointer-events: none;
@@ -600,7 +602,7 @@ def get_landing_html() -> str:
         .form-group input:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(45, 90, 39, 0.1);
+            box-shadow: 0 0 0 4px rgba(245, 89, 90, 0.1);
         }
         .form-group textarea { resize: vertical; min-height: 100px; }
         .form-submit {
@@ -617,13 +619,13 @@ def get_landing_html() -> str:
             display: none;
         }
         .form-alert.success {
-            background: rgba(45, 90, 39, 0.1);
-            border: 1px solid rgba(45, 90, 39, 0.3);
+            background: rgba(5, 150, 105, 0.1);
+            border: 1px solid rgba(5, 150, 105, 0.3);
             color: var(--success);
         }
         .form-alert.error {
-            background: rgba(196, 80, 28, 0.1);
-            border: 1px solid rgba(196, 80, 28, 0.3);
+            background: rgba(220, 38, 38, 0.08);
+            border: 1px solid rgba(220, 38, 38, 0.3);
             color: var(--danger);
         }
 
@@ -785,7 +787,7 @@ def get_landing_html() -> str:
             font-size: 0.95rem;
         }
         .hero-login strong { color: var(--primary); }
-        .hero-login i { color: var(--accent); transition: transform 0.25s ease; }
+        .hero-login i { color: var(--primary); transition: transform 0.25s ease; }
         .hero-login:hover i { transform: translateX(4px); }
 
         /* Scroll reveal (attivo solo con JS) */
@@ -807,7 +809,7 @@ def get_landing_html() -> str:
             flex-direction: column;
             justify-content: flex-end;
             border-color: transparent;
-            background: #1a1a1a;
+            background: #141d2c;
         }
         .bento-bg {
             position: absolute;
@@ -821,10 +823,10 @@ def get_landing_html() -> str:
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(20, 18, 16, 0.1) 0%, rgba(20, 18, 16, 0.88) 100%);
+            background: linear-gradient(180deg, rgba(20, 29, 44, 0.1) 0%, rgba(20, 29, 44, 0.88) 100%);
         }
         .bento-card.featured.photo-bg::after {
-            background: linear-gradient(180deg, rgba(45, 90, 39, 0.25) 0%, rgba(26, 54, 23, 0.94) 100%);
+            background: linear-gradient(180deg, rgba(20, 29, 44, 0.2) 0%, rgba(20, 29, 44, 0.94) 100%);
         }
         .bento-card.photo-bg > *:not(.bento-bg) { position: relative; z-index: 1; }
         .bento-card.photo-bg:hover .bento-bg { transform: scale(1.07); }
@@ -842,7 +844,7 @@ def get_landing_html() -> str:
         .mini-chart span {
             flex: 1;
             height: var(--h);
-            background: linear-gradient(180deg, var(--accent), #e8946a);
+            background: linear-gradient(180deg, var(--primary), #f9a8a9);
             border-radius: 6px 6px 2px 2px;
             transform-origin: bottom;
         }
@@ -858,7 +860,7 @@ def get_landing_html() -> str:
         .photo-band {
             position: relative;
             padding: 7rem 2rem;
-            background: #1a1a1a url('/api/landing/assets/photo-kitchen.webp') center / cover no-repeat;
+            background: #141d2c url('/api/landing/assets/photo-kitchen.webp') center / cover no-repeat;
             color: #fff;
             overflow: hidden;
         }
@@ -866,7 +868,7 @@ def get_landing_html() -> str:
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(100deg, rgba(20, 18, 16, 0.94) 0%, rgba(20, 18, 16, 0.78) 55%, rgba(20, 18, 16, 0.45) 100%);
+            background: linear-gradient(100deg, rgba(20, 29, 44, 0.94) 0%, rgba(20, 29, 44, 0.78) 55%, rgba(20, 29, 44, 0.45) 100%);
         }
         .photo-band-inner {
             position: relative;
@@ -894,7 +896,7 @@ def get_landing_html() -> str:
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: rgba(196, 80, 28, 0.9);
+            background: rgba(245, 89, 90, 0.9);
             flex-shrink: 0;
         }
         .photo-band-visual { position: relative; justify-self: center; }
@@ -923,11 +925,11 @@ def get_landing_html() -> str:
             font-size: 0.9rem;
             box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.35);
         }
-        .band-chip i { color: var(--accent); font-size: 1.1rem; }
+        .band-chip i { color: var(--primary); font-size: 1.1rem; }
 
         /* Demo con foto di sfondo */
         .demo-section.photo {
-            background: linear-gradient(rgba(18, 16, 14, 0.8), rgba(18, 16, 14, 0.9)), url('/api/landing/assets/photo-interior.webp') center / cover no-repeat;
+            background: linear-gradient(rgba(20, 29, 44, 0.8), rgba(20, 29, 44, 0.9)), url('/api/landing/assets/photo-interior.webp') center / cover no-repeat;
         }
         .demo-section.photo::before { display: none; }
         .demo-section.photo .section-header h2 { color: #fff; }
@@ -976,7 +978,7 @@ def get_landing_html() -> str:
     <header id="top">
         <div class="header-inner">
             <a href="#top" class="logo" data-testid="landing-logo">
-                <div class="logo-icon">B</div>
+                <img class="logo-icon" src="/api/landing/assets/favicon.png" alt="Bancomanda">
                 <span class="logo-text">Bancomanda</span>
             </a>
             <nav>
@@ -1006,7 +1008,7 @@ def get_landing_html() -> str:
                     SaaS per Ristoranti Italiani
                 </div>
                 <h1 class="serif fade-in fade-in-delay-1">
-                    La gestione ordini che il tuo <span class="highlight">bistrot meritava.<svg viewBox="0 0 200 12" preserveAspectRatio="none"><path d="M2 8 C 40 2, 100 12, 198 4" fill="none" stroke="#c4501c" stroke-width="4" stroke-linecap="round"/></svg></span>
+                    La gestione ordini che il tuo <span class="highlight">bistrot meritava.<svg viewBox="0 0 200 12" preserveAspectRatio="none"><path d="M2 8 C 40 2, 100 12, 198 4" fill="none" stroke="#141d2c" stroke-width="4" stroke-linecap="round"/></svg></span>
                 </h1>
                 <p class="hero-desc fade-in fade-in-delay-2">
                     Bancomanda è il gestionale pensato per ristoranti, pizzerie e bistrot. 
@@ -1032,7 +1034,7 @@ def get_landing_html() -> str:
                 
                 <!-- Floating Cards -->
                 <div class="floating-card floating-card-1">
-                    <div class="floating-card-icon" style="background: #c4501c;">
+                    <div class="floating-card-icon" style="background: var(--primary);">
                         <i class="fas fa-clipboard-list"></i>
                     </div>
                     <div class="floating-card-text">
@@ -1301,7 +1303,7 @@ def get_landing_html() -> str:
         <div class="footer-inner">
             <div class="footer-left">
                 <div class="logo" style="margin-bottom: 1rem;">
-                    <div class="logo-icon">B</div>
+                    <img class="logo-icon" src="/api/landing/assets/favicon.png" alt="Bancomanda">
                     <span class="logo-text">Bancomanda</span>
                 </div>
                 <p>© 2026 Bancomanda. Sistema gestionale per la ristorazione italiana.</p>

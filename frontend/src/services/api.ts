@@ -350,4 +350,12 @@ export const setupApi = {
   },
 };
 
+// Nome e logo del locale (stampa menu)
+export const tenantApi = {
+  getBranding: async (): Promise<{ name: string; logo: string | null }> => {
+    const response = await api.get('/tenant/branding');
+    return response.data;
+  },
+};
+
 export default api;

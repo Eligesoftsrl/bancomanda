@@ -21,7 +21,8 @@ import { it } from 'date-fns/locale';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useAppStore } from '../../src/store/appStore';
-import { menusApi, dishesApi, missedSalesApi, categoriesApi } from '../../src/services/api';
+import { menusApi, dishesApi, missedSalesApi, categoriesApi, tenantApi } from '../../src/services/api';
+import { useAuthStore } from '../../src/store/authStore';
 import { DailyMenu, Dish, MenuItem, Category } from '../../src/types';
 import { sortCategoriesByFixedOrder, sortDishesByCategory, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { useFocusEffect } from 'expo-router';
@@ -393,6 +394,20 @@ export default function MenuScreen() {
 
     const formattedDate = format(new Date(selectedDate), "EEEE d MMMM yyyy", { locale: it });
     const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+    let brandName = useAuthStore.getState().user?.tenant_name || '';
+    let brandLogo: string | null = null;
+    try {
+      const branding = await tenantApi.getBranding();
+      brandName = branding.name || brandName;
+      brandLogo = branding.logo;
+    } catch (error) {
+      console.error('Branding error:', error);
+    }
+    const safeBrandName = brandName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const brandHtml = brandLogo
+      ? `<img class="brand-logo" src="${brandLogo}" alt="${safeBrandName}">`
+      : `<div class="logo">${safeBrandName}</div>`;
     
     // Group items by category
     const groupedItems: Record<string, MenuItem[]> = {};
@@ -501,6 +516,14 @@ export default function MenuScreen() {
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
           }
           
+          .brand-logo {
+            display: block;
+            max-width: 260px;
+            max-height: 120px;
+            margin: 0 auto 12px;
+            object-fit: contain;
+          }
+          
           .divider {
             width: 100px;
             height: 3px;
@@ -603,7 +626,7 @@ export default function MenuScreen() {
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">GIORGIO IV</div>
+            ${brandHtml}
             <div class="divider"></div>
             <div class="subtitle">Menu del Giorno</div>
             <div class="date">${capitalizedDate}</div>
@@ -625,6 +648,14 @@ export default function MenuScreen() {
         if (printWindow) {
           printWindow.document.write(html);
           printWindow.document.close();
+          const logoImg = printWindow.document.querySelector('img');
+          if (logoImg && !logoImg.complete) {
+            await new Promise<void>((resolve) => {
+              logoImg.onload = () => resolve();
+              logoImg.onerror = () => resolve();
+              setTimeout(resolve, 3000);
+            });
+          }
           printWindow.print();
         }
       } else {

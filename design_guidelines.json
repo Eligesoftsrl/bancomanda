@@ -1,140 +1,94 @@
 {
-  "project_name": "Bancomanda Landing Page - Dynamic Photo & Motion Enhancement",
-  "archetype": "ORGANIC & EARTHY / ITALIAN TRATTORIA SaaS",
-  "tech_stack": {
-    "framework": "FastAPI (Python) rendering Single HTML template",
-    "styling": "Vanilla CSS with Custom CSS Variables",
-    "scripting": "Vanilla JavaScript (IntersectionObserver for scroll reveal)",
-    "typography": "Playfair Display (Serif), Inter (Sans-serif), JetBrains Mono (Monospace)",
-    "icons": "Font Awesome 6.4.0 (i.fas, i.far)"
+  "project_name": "Bancomanda SaaS",
+  "archetype": "ARCHETYPE 2 & 4 FUSION - Performance Pro & Swiss High-Contrast for Italian Culinary SaaS",
+  "brand_identity": {
+    "logo_spec": {
+      "icon_background": "#141D2C",
+      "icon_foreground_red_b": "#F5595A",
+      "border_radius": "10px",
+      "dimensions": "40px x 40px",
+      "rendering_note": "Dark navy rounded box (#141D2C) containing the coral-red stylized 'B' icon (#F5595A). Fits restaurant login app icon branding."
+    }
   },
-  "color_palette": {
-    "bg_main": "#faf9f6",
-    "bg_surface": "#f5f3ef",
-    "bg_card": "#ffffff",
-    "primary": "#2d5a27",
-    "primary_hover": "#3d7a37",
-    "primary_light": "rgba(45, 90, 39, 0.1)",
-    "accent": "#c4501c",
-    "accent_hover": "#d65d26",
-    "accent_light": "rgba(196, 80, 28, 0.1)",
-    "text_primary": "#1a1a1a",
-    "text_secondary": "#555555",
-    "text_muted": "#888888",
-    "text_light": "#ffffff",
-    "border_subtle": "#e5e2dc",
-    "overlay_dark": "rgba(20, 18, 16, 0.82)",
-    "overlay_gradient": "linear-gradient(180deg, rgba(20, 20, 20, 0.75) 0%, rgba(20, 20, 20, 0.9) 100%)"
+  "colors": {
+    "css_variables": {
+      "--bg-main": "#FAF9F6",
+      "--bg-surface": "#F2F0EB",
+      "--bg-elevated": "#FFFFFF",
+      "--bg-card": "#FFFFFF",
+      "--bg-dark-section": "#141D2C",
+      "--primary": "#F5595A",
+      "--primary-hover": "#E04849",
+      "--primary-light": "rgba(245, 89, 90, 0.12)",
+      "--accent": "#141D2C",
+      "--accent-hover": "#1E293B",
+      "--accent-light": "rgba(20, 29, 44, 0.08)",
+      "--text-primary": "#0F172A",
+      "--text-secondary": "#475569",
+      "--text-muted": "#8896AB",
+      "--text-on-dark": "#F8FAFC",
+      "--border-subtle": "#E2E8F0",
+      "--border-dark": "#CBD5E1",
+      "--success": "#10B981",
+      "--warning": "#F59E0B",
+      "--danger": "#EF4444"
+    },
+    "guidance": "Eliminated green #2d5a27 and orange #c4501c to eliminate visual overlap with tiptii. Anchor brand identity with Coral Red #F5595A from the Bancomanda 'B' app logo, contrasting against Deep Navy #141D2C (derived from the restaurant iPad login panel). Use Deep Navy #141D2C for high-impact bands and primary cards."
   },
   "typography": {
-    "headings": "'Playfair Display', Georgia, serif",
-    "body": "'Inter', system-ui, -apple-system, sans-serif",
-    "code_mono": "'JetBrains Mono', monospace",
-    "sizes": {
-      "h1": "clamp(2.5rem, 5vw, 3.5rem)",
-      "h2": "clamp(2rem, 4vw, 2.75rem)",
-      "h3": "1.25rem - 1.5rem",
-      "body": "1rem",
-      "small": "0.875rem"
+    "heading_font": "'Playfair Display', Georgia, serif",
+    "body_font": "'Inter', system-ui, -apple-system, sans-serif",
+    "mono_font": "'JetBrains Mono', monospace",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl (clamp 2.5rem to 3.5rem)",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl (clamp 2rem to 2.75rem)",
+      "h3": "text-xl sm:text-2xl",
+      "body": "1rem / 1.6 line-height"
     }
   },
-  "user_choices_and_requirements": {
-    "accedi_login_links": "Add prominent 'Accedi' login links for restaurants in Header (desktop + mobile), Hero section, and Footer pointing to '/login' or app home.",
-    "real_photos_integration": "In Bento grid cards without tablet screenshots, replace plain empty spaces with vivid real kitchen/food stock photos (chef slicing in kitchen, pasta plating with basil, trattoria evening setting).",
-    "photo_background_section": "Transform the Demo Request section into a high-impact 'wow' section with a full-width real restaurant/kitchen photo background and a sleek dark overlay card.",
-    "scroll_reveal_animations": "Implement smooth IntersectionObserver scroll reveal animations on all key sections, headers, and bento grid cards with staggered delays.",
-    "preserve_tablet_screenshots": "Keep all existing real app screenshots in iPad frames (app-orders.webp, app-menu.webp, app-kitchen.webp)."
+  "layouts": {
+    "landing": "Fixed blur header, responsive hero grid with floating status cards, bento grid for feature storytelling with real kitchen photos, dark navy contrast band for live order flow, iPad app showcase gallery, photo demo section, FAQ accordion, and dual-column footer.",
+    "admin_dashboard": "Dark navy / elevated white sidebar with brand badge, top stat cards grid with status icons, tabbed tenant data table with status pills and action buttons, superadmin login screen."
   },
-  "image_urls": [
-    {
-      "category": "Chef in Kitchen Action",
-      "url": "https://images.unsplash.com/photo-1574966740637-12c84035a4f2",
-      "alt": "Chef in cucina professionale al lavoro",
-      "used_in": "Bento Grid - Vista Cucina & Stampa comande card"
-    },
-    {
-      "category": "Italian Pasta Plating",
-      "url": "https://images.pexels.com/photos/36430164/pexels-photo-36430164.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-      "alt": "Placcaggio pasta fresca con basilico",
-      "used_in": "Bento Grid - Menu del Giorno card"
-    },
-    {
-      "category": "Restaurant Dining Table & Food",
-      "url": "https://images.unsplash.com/photo-1532117472055-4d0734b51f31?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwyfHxpdGFsaWFuJTIwZm9vZCUyMHBsYXRpbmclMjBwYXN0YXxlbnwwfHx8fDE3ODQ3MDgwNDR8MA&ixlib=rb-4.1.0&q=85",
-      "alt": "Tavolo ristorante con calici e piatti italiani",
-      "used_in": "Bento Grid - Anagrafica Clienti & Multi-tablet cards"
-    },
-    {
-      "category": "Cozy Trattoria Atmosphere",
-      "url": "https://images.unsplash.com/photo-1786654735906-6e472c374c46?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHw0fHxjb3p5JTIwaXRhbGlhbiUyMHRyYXR0b3JpYSUyMGludGVyaW9yJTIwcmVzdGF1cmFudCUyMGRpbmluZ3xlbnwwfHx8fDE3OTA3ODUzMjN8MA&ixlib=rb-4.1.0&q=85",
-      "alt": "Atmosfera serale trattoria italiana",
-      "used_in": "Demo Request Section Background with overlay"
-    }
+  "buttons": {
+    "btn-primary": "background: #F5595A, color: #FFFFFF, box-shadow: 0 10px 25px -5px rgba(245, 89, 90, 0.35); hover: translateY(-2px), background: #E04849.",
+    "btn-outline": "background: transparent, border: 1px solid #E2E8F0, color: #0F172A; hover: border #F5595A, color #F5595A, bg #F2F0EB.",
+    "btn-login": "background: rgba(245, 89, 90, 0.12), color: #F5595A; hover: background #F5595A, color #FFFFFF."
+  },
+  "motion": {
+    "scroll": "Lenis smooth scroll feel / IntersectionObserver scroll reveal fade-in-up.",
+    "cards": "Subtle 8px translateY on hover with expanded shadow rgba(245, 89, 90, 0.15)."
+  },
+  "accessibility": {
+    "contrast": "APCA & WCAG AA compliant. Minimum 4.5:1 contrast ratio for all body text over light or dark backgrounds.",
+    "reduced_motion": "@media (prefers-reduced-motion: reduce) disables CSS keyframe transforms and transitions."
+  },
+  "data_testids": [
+    "landing-logo",
+    "header-login-button",
+    "header-register-button",
+    "hero-app-screenshot",
+    "hero-login-link",
+    "bento-orders",
+    "bento-print",
+    "bento-menu",
+    "bento-kitchen",
+    "bento-customers",
+    "bento-tablets",
+    "bento-report",
+    "photo-band",
+    "showcase-orders",
+    "showcase-menu",
+    "showcase-kitchen",
+    "demo-section",
+    "admin-login-email",
+    "admin-login-password",
+    "admin-login-submit"
   ],
-  "login_link_placements": {
-    "header_desktop": {
-      "text": "Accedi",
-      "target_url": "/login",
-      "style": "btn-outline with accent hover, icon fa-user-lock or fa-right-to-bracket",
-      "testid": "header-login-button"
-    },
-    "header_mobile": {
-      "text": "Accedi Ristorante",
-      "target_url": "/login",
-      "style": "Full-width inline button in mobile nav dropdown/header",
-      "testid": "mobile-login-button"
-    },
-    "hero_cta": {
-      "text": "Sei già dei nostri? Accedi",
-      "target_url": "/login",
-      "style": "Subtle text link with arrow icon below hero buttons",
-      "testid": "hero-login-link"
-    },
-    "footer": {
-      "text": "Area Riservata / Accedi",
-      "target_url": "/login",
-      "style": "Footer link under quick links",
-      "testid": "footer-login-link"
-    }
-  },
-  "scroll_reveal_specs": {
-    "css_classes": {
-      "base": ".reveal-on-scroll { opacity: 0; transform: translateY(32px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); will-change: opacity, transform; }",
-      "active": ".reveal-on-scroll.is-visible { opacity: 1; transform: translateY(0); }",
-      "stagger_delays": ".delay-100 { transition-delay: 0.1s; } .delay-200 { transition-delay: 0.2s; } .delay-300 { transition-delay: 0.3s; } .delay-400 { transition-delay: 0.4s; }"
-    },
-    "js_implementation": "const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); } }); }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' }); document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));",
-    "accessibility": "@media (prefers-reduced-motion: reduce) { .reveal-on-scroll { opacity: 1 !important; transform: none !important; transition: none !important; } }"
-  },
-  "bento_grid_photo_mappings": {
-    "card_1_ordini": "Tablet screenshot app-orders.webp in clean container",
-    "card_2_stampa": "Featured card with background image of printer/kitchen + dark green gradient overlay",
-    "card_3_menu_giorno": "Real pasta plating photo (photo-36430164) as top media header image",
-    "card_4_vista_cucina": "Tablet screenshot app-kitchen.webp in iPad frame",
-    "card_5_clienti": "Real trattoria table photo with wine & dishes as card background with bottom text scrim",
-    "card_6_multitablet": "Real chef cooking action photo (photo-1574966740637) with subtle border radius",
-    "card_7_report": "Stat counter layout with warm terracotta accent tint"
-  },
-  "photo_background_sections": {
-    "demo_section": {
-      "bg_image": "https://images.unsplash.com/photo-1786654735906-6e472c374c46?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHw0fHxjb3p5JTIwaXRhbGlhbiUyMHRyYXR0b3JpYSUyMGludGVyaW9yJTIwcmVzdGF1cmFudCUyMGRpbmluZ3xlbnwwfHx8fDE3OTA3ODUzMjN8MA&ixlib=rb-4.1.0&q=85",
-      "overlay": "linear-gradient(rgba(18, 22, 16, 0.85), rgba(18, 22, 16, 0.92))",
-      "text_contrast": "White heading (#ffffff), light gray subtitle (rgba(255,255,255,0.85)), glassmorphic card container with backdrop-filter blur(16px) and border rgba(255,255,255,0.15)."
-    }
-  },
-  "data_testid_guidelines": {
-    "nav_login": "data-testid=\"header-login-button\"",
-    "mobile_login": "data-testid=\"mobile-login-button\"",
-    "hero_login": "data-testid=\"hero-login-link\"",
-    "hero_demo_btn": "data-testid=\"hero-demo-button\"",
-    "bento_cards": "data-testid=\"bento-card-{index}\"",
-    "demo_form": "data-testid=\"demo-request-form\"",
-    "register_modal": "data-testid=\"register-modal\""
-  },
-  "general_ui_ux_guidelines": [
-    "Ensure contrast meets APCA standard against dark overlay backgrounds.",
-    "All clickable buttons must have hover/active state transitions with explicit color definitions.",
-    "Mobile menu must cleanly display navigation links and the 'Accedi' button without cutoffs.",
-    "IntersectionObserver animations must strictly respect prefers-reduced-motion media query."
+  "instructions_to_main_agent": [
+    "Replace existing green/orange CSS variables in /app/backend/routes/landing.py and /app/backend/routes/admin_dashboard.py with the new Coral Red (#F5595A) and Dark Navy (#141D2C) palette.",
+    "Update the .logo-icon CSS class to use background #141D2C with text color #F5595A (or linear-gradient from #141D2C to #1A202C with coral-red 'B' letter).",
+    "Ensure all interactive CTA buttons use the red #F5595A primary brand color.",
+    "Preserve all existing HTML structural layout, JavaScript API integrations, and data-testid attributes."
   ]
 }

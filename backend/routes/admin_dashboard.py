@@ -22,24 +22,26 @@ def get_dashboard_html() -> str:
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            /* Light warm theme inspired by giorgiobistrot.it */
+            /* Palette Bancomanda: rosso corallo del logo + blu notte della login */
             --bg-main: #faf9f6;
-            --bg-surface: #f5f3ef;
+            --bg-surface: #f2f0eb;
             --bg-elevated: #ffffff;
             --bg-card: #ffffff;
-            --primary: #2d5a27;
-            --primary-hover: #3d7a37;
-            --primary-light: rgba(45, 90, 39, 0.1);
-            --accent: #c4501c;
-            --accent-light: rgba(196, 80, 28, 0.1);
-            --text-primary: #1a1a1a;
-            --text-secondary: #555555;
-            --text-muted: #888888;
-            --border-subtle: #e5e2dc;
-            --border-dark: #d1cdc4;
-            --success: #2d5a27;
-            --warning: #c4501c;
-            --danger: #b91c1c;
+            --bg-dark: #141d2c;
+            --primary: #f5595a;
+            --primary-hover: #e04849;
+            --primary-light: rgba(245, 89, 90, 0.12);
+            --accent: #141d2c;
+            --accent-light: rgba(20, 29, 44, 0.08);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #8896ab;
+            --text-on-dark: #f8fafc;
+            --border-subtle: #e2e8f0;
+            --border-dark: #cbd5e1;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -80,14 +82,10 @@ def get_dashboard_html() -> str:
             width: 40px;
             height: 40px;
             flex-shrink: 0;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            display: block;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.25rem;
+            object-fit: cover;
+            box-shadow: 0 6px 16px -6px rgba(20, 29, 44, 0.45);
         }
         .logo-text { font-size: 1.25rem; color: var(--text-primary); font-weight: 600; }
         .sidebar .logo { gap: 0.6rem; flex-wrap: wrap; }
@@ -164,9 +162,9 @@ def get_dashboard_html() -> str:
             font-size: 1rem;
         }
         .stat-card-icon.gold { background: var(--primary-light); color: var(--primary); }
-        .stat-card-icon.green { background: rgba(45, 90, 39, 0.1); color: var(--success); }
-        .stat-card-icon.orange { background: rgba(196, 80, 28, 0.1); color: var(--warning); }
-        .stat-card-icon.red { background: rgba(185, 28, 28, 0.1); color: var(--danger); }
+        .stat-card-icon.green { background: rgba(5, 150, 105, 0.1); color: var(--success); }
+        .stat-card-icon.orange { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
+        .stat-card-icon.red { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
         .stat-card-value {
             font-size: 2rem;
             font-weight: 700;
@@ -226,9 +224,9 @@ def get_dashboard_html() -> str:
             font-size: 0.75rem;
             font-weight: 500;
         }
-        .badge-active { background: rgba(45, 90, 39, 0.1); color: var(--success); }
-        .badge-pending { background: rgba(196, 80, 28, 0.1); color: var(--warning); }
-        .badge-suspended { background: rgba(185, 28, 28, 0.1); color: var(--danger); }
+        .badge-active { background: rgba(5, 150, 105, 0.1); color: var(--success); }
+        .badge-pending { background: rgba(217, 119, 6, 0.1); color: var(--warning); }
+        .badge-suspended { background: rgba(220, 38, 38, 0.1); color: var(--danger); }
         .badge-new { background: var(--primary-light); color: var(--primary); }
 
         /* Buttons */
@@ -248,10 +246,10 @@ def get_dashboard_html() -> str:
         .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-hover); }
-        .btn-success { background: rgba(45, 90, 39, 0.1); color: var(--success); border: 1px solid rgba(45, 90, 39, 0.3); }
-        .btn-success:hover { background: rgba(45, 90, 39, 0.2); }
-        .btn-danger { background: rgba(185, 28, 28, 0.1); color: var(--danger); border: 1px solid rgba(185, 28, 28, 0.3); }
-        .btn-danger:hover { background: rgba(185, 28, 28, 0.2); }
+        .btn-success { background: rgba(5, 150, 105, 0.1); color: var(--success); border: 1px solid rgba(5, 150, 105, 0.3); }
+        .btn-success:hover { background: rgba(5, 150, 105, 0.2); }
+        .btn-danger { background: rgba(220, 38, 38, 0.1); color: var(--danger); border: 1px solid rgba(220, 38, 38, 0.3); }
+        .btn-danger:hover { background: rgba(220, 38, 38, 0.2); }
         .btn-outline { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); }
         .btn-outline:hover { background: var(--bg-surface); border-color: var(--primary); color: var(--text-primary); }
 
@@ -363,10 +361,34 @@ def get_dashboard_html() -> str:
             display: none;
         }
         .login-alert.error {
-            background: rgba(185, 28, 28, 0.1);
-            border: 1px solid rgba(185, 28, 28, 0.3);
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
             color: var(--danger);
         }
+
+        /* Impostazioni locale */
+        .modal-wide { max-width: 780px; max-height: 90vh; overflow-y: auto; }
+        .settings-section { border-top: 1px solid var(--border-subtle); padding-top: 1.25rem; margin-top: 1.25rem; }
+        .settings-section:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+        .settings-section h3 { color: var(--text-primary); font-size: 1rem; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+        .settings-section h3 i { color: var(--primary); }
+        .settings-hint { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+        .form-row.ftp { grid-template-columns: 3fr 1fr; }
+        .day-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .day-chip { position: relative; }
+        .day-chip input { position: absolute; opacity: 0; pointer-events: none; }
+        .day-chip span { display: inline-block; padding: 0.4rem 0.85rem; border-radius: 9999px; border: 1px solid var(--border-dark); font-size: 0.85rem; cursor: pointer; transition: background-color 0.2s, color 0.2s, border-color 0.2s; text-transform: capitalize; }
+        .day-chip input:checked + span { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .logo-box { display: flex; align-items: center; gap: 1.25rem; }
+        .logo-preview { width: 180px; height: 90px; border: 1px dashed var(--border-dark); border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-surface); overflow: hidden; color: var(--text-muted); font-size: 0.8rem; }
+        .logo-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .logo-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+        .inline-alert { margin-top: 0.75rem; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.85rem; display: none; }
+        .inline-alert.ok { display: block; background: rgba(5, 150, 105, 0.1); color: var(--success); }
+        .inline-alert.err { display: block; background: rgba(220, 38, 38, 0.08); color: var(--danger); }
+        .settings-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; position: sticky; bottom: -2rem; background: var(--bg-card); padding: 1rem 0; border-top: 1px solid var(--border-subtle); }
+        @media (max-width: 640px) { .form-row, .form-row.ftp { grid-template-columns: 1fr; } }
 
         /* Hidden */
         .hidden { display: none !important; }
@@ -400,7 +422,7 @@ def get_dashboard_html() -> str:
     <div id="loginScreen" class="login-container">
         <div class="login-card">
             <div class="logo">
-                <div class="logo-icon">B</div>
+                <img class="logo-icon" src="/api/landing/assets/favicon.png" alt="Bancomanda">
                 <span class="logo-text">Bancomanda</span>
                 <span class="logo-badge">Admin</span>
             </div>
@@ -428,7 +450,7 @@ def get_dashboard_html() -> str:
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <div class="logo-icon">B</div>
+                <img class="logo-icon" src="/api/landing/assets/favicon.png" alt="Bancomanda">
                 <span class="logo-text">Bancomanda</span>
                 <span class="logo-badge">Admin</span>
             </div>
@@ -611,6 +633,78 @@ def get_dashboard_html() -> str:
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
                     <i class="fas fa-plus"></i> Crea Ristorante
                 </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tenant Settings Modal -->
+    <div class="modal-overlay" id="tenantSettingsModal" data-testid="tenant-settings-modal">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h2 class="serif" id="tsTitle">Impostazioni locale</h2>
+                <button class="modal-close" onclick="closeModal('tenantSettingsModal')" data-testid="tenant-settings-close">&times;</button>
+            </div>
+            <form id="tenantSettingsForm">
+                <div class="settings-section">
+                    <h3><i class="fas fa-image"></i> Logo del locale</h3>
+                    <p class="settings-hint">Compare sul menu del giorno stampato. PNG, JPG o WEBP, massimo 5 MB.</p>
+                    <div class="logo-box">
+                        <div class="logo-preview" id="tsLogoPreview" data-testid="tenant-logo-preview">Nessun logo</div>
+                        <div class="logo-actions">
+                            <input type="file" id="tsLogoInput" accept="image/png,image/jpeg,image/webp" class="hidden" data-testid="tenant-logo-input">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('tsLogoInput').click()" data-testid="tenant-logo-upload-btn"><i class="fas fa-upload"></i> Carica logo</button>
+                            <button type="button" class="btn btn-danger btn-sm hidden" id="tsLogoRemove" onclick="removeTenantLogo()" data-testid="tenant-logo-remove-btn"><i class="fas fa-trash"></i> Rimuovi</button>
+                        </div>
+                    </div>
+                    <div class="inline-alert" id="tsLogoAlert" data-testid="tenant-logo-alert"></div>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fas fa-building"></i> Dati aziendali</h3>
+                    <p class="settings-hint">Per la tua anagrafica, non compaiono nell'app.</p>
+                    <div class="form-row">
+                        <div class="form-group"><label>Ragione sociale</label><input name="legal_name" maxlength="160" data-testid="ts-legal-name"></div>
+                        <div class="form-group"><label>Partita IVA</label><input name="vat_number" maxlength="32" data-testid="ts-vat-number"></div>
+                    </div>
+                    <div class="form-group"><label>Indirizzo</label><input name="address" maxlength="240" data-testid="ts-address"></div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Telefono</label><input name="phone" maxlength="40" data-testid="ts-phone"></div>
+                        <div class="form-group"><label>Email</label><input name="company_email" type="email" maxlength="160" data-testid="ts-email"></div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fas fa-message"></i> Messaggi del menu sul sito</h3>
+                    <p class="settings-hint">Testi mostrati sul sito quando il menu del giorno non è pubblicato.</p>
+                    <div class="form-group">
+                        <label>Giorni di chiusura</label>
+                        <div class="day-chips" id="tsDays" data-testid="ts-closing-days"></div>
+                    </div>
+                    <div class="form-group"><label>Messaggio nei giorni di chiusura</label><input name="closing_message" maxlength="300" placeholder="Oggi siamo chiusi. Torna domani per il menu." data-testid="ts-closing-message"></div>
+                    <div class="form-group"><label>Messaggio quando il menu non è ancora pubblicato</label><input name="pending_message" maxlength="300" placeholder="Il menu del giorno non è ancora disponibile." data-testid="ts-pending-message"></div>
+                </div>
+
+                <div class="settings-section">
+                    <h3><i class="fas fa-server"></i> Pubblicazione menu sul sito (FTP)</h3>
+                    <p class="settings-hint">Servono per il tasto "Pubblica sul sito" dell'app: il file menu.json viene inviato in questa cartella.</p>
+                    <div class="form-row ftp">
+                        <div class="form-group"><label>Indirizzo FTP</label><input name="ftp_host" maxlength="200" placeholder="ftp.miosito.it" data-testid="ts-ftp-host"></div>
+                        <div class="form-group"><label>Porta</label><input name="ftp_port" type="number" min="1" max="65535" value="21" data-testid="ts-ftp-port"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Utente</label><input name="ftp_user" maxlength="200" autocomplete="off" data-testid="ts-ftp-user"></div>
+                        <div class="form-group"><label>Password</label><input name="ftp_password" type="password" maxlength="200" autocomplete="new-password" id="tsFtpPassword" data-testid="ts-ftp-password"></div>
+                    </div>
+                    <div class="form-group"><label>Cartella sul sito</label><input name="ftp_directory" maxlength="300" placeholder="www.miosito.it/menu" data-testid="ts-ftp-directory"></div>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="testTenantFtp()" id="tsFtpTestBtn" data-testid="ts-ftp-test-btn"><i class="fas fa-plug"></i> Prova collegamento</button>
+                    <div class="inline-alert" id="tsFtpAlert" data-testid="ts-ftp-alert"></div>
+                </div>
+
+                <div class="inline-alert" id="tsSaveAlert" data-testid="ts-save-alert"></div>
+                <div class="settings-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('tenantSettingsModal')" data-testid="ts-cancel-btn">Annulla</button>
+                    <button type="submit" class="btn btn-primary" id="tsSaveBtn" data-testid="ts-save-btn"><i class="fas fa-check"></i> Salva impostazioni</button>
+                </div>
             </form>
         </div>
     </div>
@@ -813,6 +907,7 @@ def get_dashboard_html() -> str:
                             ${t.status === 'in_attesa' ? `<button class="btn btn-success btn-sm" onclick="updateTenantStatus('${escapeHtml(t.id)}', 'attivo')"><i class="fas fa-check"></i> Attiva</button>` : ''}
                             ${t.status === 'attivo' ? `<button class="btn btn-danger btn-sm" onclick="updateTenantStatus('${escapeHtml(t.id)}', 'sospeso')"><i class="fas fa-ban"></i> Sospendi</button>` : ''}
                             ${t.status === 'sospeso' ? `<button class="btn btn-success btn-sm" onclick="updateTenantStatus('${escapeHtml(t.id)}', 'attivo')"><i class="fas fa-redo"></i> Riattiva</button>` : ''}
+                            <button class="btn btn-outline btn-sm" onclick="openTenantSettings('${escapeHtml(t.id)}')" data-testid="tenant-settings-btn-${escapeHtml(t.slug)}"><i class="fas fa-gear"></i> Impostazioni</button>
                         </td>
                     </tr>
                 `).join('');
@@ -966,6 +1061,165 @@ def get_dashboard_html() -> str:
                 alert('Errore di connessione');
             }
         });
+
+        // ===== Impostazioni locale =====
+        const WEEKDAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+        let tsTenantId = null;
+
+        function tsAlert(id, msg, ok) {
+            const el = document.getElementById(id);
+            el.textContent = msg || '';
+            el.className = 'inline-alert' + (msg ? (ok ? ' ok' : ' err') : '');
+        }
+
+        function tsErr(data, fallback) {
+            if (data && typeof data.detail === 'string') return data.detail;
+            if (data && Array.isArray(data.detail)) return data.detail.map(d => d.msg).join(' · ');
+            return fallback;
+        }
+
+        function renderLogo(url) {
+            const box = document.getElementById('tsLogoPreview');
+            box.innerHTML = url ? `<img src="${escapeHtml(url)}" alt="Logo" data-testid="tenant-logo-img">` : 'Nessun logo';
+            document.getElementById('tsLogoRemove').classList.toggle('hidden', !url);
+        }
+
+        function fillTenantSettings(d) {
+            const f = document.getElementById('tenantSettingsForm');
+            document.getElementById('tsTitle').textContent = 'Impostazioni · ' + d.name;
+            f.legal_name.value = d.company.legal_name || '';
+            f.vat_number.value = d.company.vat_number || '';
+            f.address.value = d.company.address || '';
+            f.phone.value = d.company.phone || '';
+            f.company_email.value = d.company.email || '';
+            f.closing_message.value = d.menu.closing_message || '';
+            f.pending_message.value = d.menu.pending_message || '';
+            f.ftp_host.value = d.ftp.host || '';
+            f.ftp_port.value = d.ftp.port || 21;
+            f.ftp_user.value = d.ftp.user || '';
+            f.ftp_directory.value = d.ftp.directory || '';
+            f.ftp_password.value = '';
+            f.ftp_password.placeholder = d.ftp.has_password ? 'Salvata · lascia vuoto per non cambiarla' : 'Non impostata';
+            document.getElementById('tsDays').innerHTML = WEEKDAYS.map(day => `
+                <label class="day-chip"><input type="checkbox" value="${day}" ${d.menu.closing_days.includes(day) ? 'checked' : ''} data-testid="ts-day-${day.slice(0, 3)}"><span>${day}</span></label>
+            `).join('');
+            renderLogo(d.logo_url);
+        }
+
+        async function openTenantSettings(id) {
+            tsTenantId = id;
+            ['tsLogoAlert', 'tsFtpAlert', 'tsSaveAlert'].forEach(a => tsAlert(a, ''));
+            try {
+                const resp = await fetch(`/api/superadmin/tenants/${id}/settings`, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                if (resp.status === 401) { logout(); return; }
+                const data = await resp.json();
+                if (!resp.ok) { alert(tsErr(data, 'Impossibile caricare le impostazioni')); return; }
+                fillTenantSettings(data);
+                document.getElementById('tenantSettingsModal').classList.add('active');
+            } catch (err) {
+                alert('Errore di connessione');
+            }
+        }
+
+        function ftpFormData() {
+            const f = document.getElementById('tenantSettingsForm');
+            return {
+                host: f.ftp_host.value.trim(),
+                port: parseInt(f.ftp_port.value, 10) || 21,
+                user: f.ftp_user.value.trim(),
+                directory: f.ftp_directory.value.trim(),
+                password: f.ftp_password.value || null,
+            };
+        }
+
+        document.getElementById('tenantSettingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const f = this;
+            const body = {
+                company: {
+                    legal_name: f.legal_name.value.trim(), vat_number: f.vat_number.value.trim(),
+                    address: f.address.value.trim(), phone: f.phone.value.trim(), email: f.company_email.value.trim(),
+                },
+                menu: {
+                    closing_days: [...document.querySelectorAll('#tsDays input:checked')].map(i => i.value),
+                    closing_message: f.closing_message.value.trim(),
+                    pending_message: f.pending_message.value.trim(),
+                },
+                ftp: ftpFormData(),
+            };
+            const btn = document.getElementById('tsSaveBtn');
+            btn.disabled = true;
+            try {
+                const resp = await fetch(`/api/superadmin/tenants/${tsTenantId}/settings`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await resp.json();
+                if (!resp.ok) { tsAlert('tsSaveAlert', tsErr(data, 'Salvataggio non riuscito'), false); return; }
+                fillTenantSettings(data);
+                tsAlert('tsSaveAlert', 'Impostazioni salvate', true);
+            } catch (err) {
+                tsAlert('tsSaveAlert', 'Errore di connessione', false);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        async function testTenantFtp() {
+            const btn = document.getElementById('tsFtpTestBtn');
+            btn.disabled = true;
+            tsAlert('tsFtpAlert', 'Collegamento in corso...', true);
+            try {
+                const resp = await fetch(`/api/superadmin/tenants/${tsTenantId}/ftp-test`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ftpFormData()),
+                });
+                const data = await resp.json();
+                tsAlert('tsFtpAlert', resp.ok ? data.message : tsErr(data, 'Collegamento non riuscito'), resp.ok);
+            } catch (err) {
+                tsAlert('tsFtpAlert', 'Errore di connessione', false);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('tsLogoInput').addEventListener('change', async function() {
+            const file = this.files[0];
+            this.value = '';
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { tsAlert('tsLogoAlert', 'Logo troppo grande (massimo 5 MB)', false); return; }
+            const fd = new FormData();
+            fd.append('file', file);
+            tsAlert('tsLogoAlert', 'Caricamento...', true);
+            try {
+                const resp = await fetch(`/api/superadmin/tenants/${tsTenantId}/logo`, {
+                    method: 'POST', headers: { 'Authorization': `Bearer ${accessToken}` }, body: fd,
+                });
+                const data = await resp.json();
+                if (!resp.ok) { tsAlert('tsLogoAlert', tsErr(data, 'Caricamento non riuscito'), false); return; }
+                renderLogo(data.logo_url);
+                tsAlert('tsLogoAlert', 'Logo caricato', true);
+            } catch (err) {
+                tsAlert('tsLogoAlert', 'Errore di connessione', false);
+            }
+        });
+
+        async function removeTenantLogo() {
+            if (!confirm('Rimuovere il logo di questo locale?')) return;
+            try {
+                const resp = await fetch(`/api/superadmin/tenants/${tsTenantId}/logo`, {
+                    method: 'DELETE', headers: { 'Authorization': `Bearer ${accessToken}` },
+                });
+                const data = await resp.json();
+                if (!resp.ok) { tsAlert('tsLogoAlert', tsErr(data, 'Rimozione non riuscita'), false); return; }
+                renderLogo(null);
+                tsAlert('tsLogoAlert', 'Logo rimosso', true);
+            } catch (err) {
+                tsAlert('tsLogoAlert', 'Errore di connessione', false);
+            }
+        }
 
         // Close modal on overlay click
         document.querySelectorAll('.modal-overlay').forEach(overlay => {

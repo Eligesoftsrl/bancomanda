@@ -1,17 +1,23 @@
 """
 Superadmin routes: gestione tenant, richieste demo.
 """
-from fastapi import APIRouter, HTTPException, status, Depends, Request
-from pydantic import BaseModel, EmailStr, Field
+import asyncio
+import time
+
+from fastapi import APIRouter, HTTPException, status, Depends, Request, UploadFile, File
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime, timezone
-from bson import ObjectId
+from bson import Binary, ObjectId
 
 from auth.dependencies import require_roles, CurrentUser
 from auth.jwt_handler import hash_password
 from models.tenant import TenantStatus, TenantSettings
 from models.user import UserRole
 from models.demo_request import DemoRequestStatus
+from tenant_profile import (
+    MAX_LOGO_BYTES, WEEKDAYS, FtpNotConfigured, encrypt_secret, ftp_config, ftp_test, process_logo,
+)
 
 router = APIRouter(prefix="/superadmin", tags=["Superadmin"])
 
@@ -364,3 +370,169 @@ async def update_demo_request(
         notes=demo_req.get("notes"),
         created_at=demo_req["created_at"]
     )
+
+
+# ============ IMPOSTAZIONI LOCALE ============
+
+class CompanyInfo(BaseModel):
+    legal_name: str = Field("", max_length=160)
+    vat_number: str = Field("", max_length=32)
+    address: str = Field("", max_length=240)
+    phone: str = Field("", max_length=40)
+    email: str = Field("", max_length=160)
+
+
+class MenuMessages(BaseModel):
+    closing_days: List[str] = []
+    closing_message: str = Field("", max_length=300)
+    pending_message: str = Field("", max_length=300)
+
+    @field_validator("closing_days")
+    @classmethod
+    def valid_days(cls, v):
+        bad = [d for d in v if d not in WEEKDAYS]
+        if bad:
+            raise ValueError(f"Giorni non validi: {bad}")
+        return [d for d in WEEKDAYS if d in v]
+
+
+class FtpSettingsIn(BaseModel):
+    host: str = Field("", max_length=200)
+    port: int = Field(21, ge=1, le=65535)
+    user: str = Field("", max_length=200)
+    directory: str = Field("", max_length=300)
+    password: Optional[str] = Field(None, max_length=200)  # vuota = mantieni quella salvata
+
+
+class FtpSettingsOut(BaseModel):
+    host: str = ""
+    port: int = 21
+    user: str = ""
+    directory: str = ""
+    has_password: bool = False
+
+
+class TenantSettingsIn(BaseModel):
+    company: CompanyInfo
+    menu: MenuMessages
+    ftp: FtpSettingsIn
+
+
+class TenantSettingsOut(BaseModel):
+    id: str
+    name: str
+    slug: str
+    company: CompanyInfo
+    menu: MenuMessages
+    ftp: FtpSettingsOut
+    logo_url: Optional[str] = None
+
+
+async def _tenant_or_404(db, tenant_id: str) -> dict:
+    tenant = await db.tenants.find_one({"_id": ObjectId(tenant_id)}) if ObjectId.is_valid(tenant_id) else None
+    if not tenant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant non trovato")
+    return tenant
+
+
+def _settings_out(t: dict) -> TenantSettingsOut:
+    st = t.get("settings") or {}
+    ftp = st.get("ftp") or {}
+    version = t.get("logo_version")
+    return TenantSettingsOut(
+        id=str(t["_id"]),
+        name=t["name"],
+        slug=t["slug"],
+        company=CompanyInfo(**{k: v or "" for k, v in (t.get("company") or {}).items() if k in CompanyInfo.model_fields}),
+        menu=MenuMessages(
+            closing_days=st.get("closing_days") or [],
+            closing_message=st.get("closing_message") or "",
+            pending_message=st.get("menu_pending_message") or "",
+        ),
+        ftp=FtpSettingsOut(
+            host=ftp.get("host") or "",
+            port=ftp.get("port") or 21,
+            user=ftp.get("user") or "",
+            directory=ftp.get("directory") or "",
+            has_password=bool(ftp.get("password_encrypted") or ftp.get("password_plain")),
+        ),
+        logo_url=f"/api/public/tenant-logo/{t['_id']}?v={version}" if version else None,
+    )
+
+
+@router.get("/tenants/{tenant_id}/settings", response_model=TenantSettingsOut)
+async def get_tenant_settings(tenant_id: str, request: Request, user: CurrentUser = Depends(require_roles("superadmin"))):
+    return _settings_out(await _tenant_or_404(request.app.state.db, tenant_id))
+
+
+@router.put("/tenants/{tenant_id}/settings", response_model=TenantSettingsOut)
+async def update_tenant_settings(tenant_id: str, body: TenantSettingsIn, request: Request, user: CurrentUser = Depends(require_roles("superadmin"))):
+    db = request.app.state.db
+    tenant = await _tenant_or_404(db, tenant_id)
+    update = {
+        "company": {k: v.strip() for k, v in body.company.model_dump().items()},
+        "settings.closing_days": body.menu.closing_days,
+        "settings.closing_message": body.menu.closing_message.strip(),
+        "settings.menu_pending_message": body.menu.pending_message.strip(),
+        "settings.ftp.host": body.ftp.host.strip(),
+        "settings.ftp.port": body.ftp.port,
+        "settings.ftp.user": body.ftp.user.strip(),
+        "settings.ftp.directory": body.ftp.directory.strip().strip("/"),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    unset = {}
+    if body.ftp.password:
+        update["settings.ftp.password_encrypted"] = encrypt_secret(body.ftp.password)
+        update["settings.ftp.has_password"] = True
+        unset["settings.ftp.password_plain"] = ""
+    ops = {"$set": update}
+    if unset:
+        ops["$unset"] = unset
+    await db.tenants.update_one({"_id": tenant["_id"]}, ops)
+    return _settings_out(await db.tenants.find_one({"_id": tenant["_id"]}))
+
+
+@router.post("/tenants/{tenant_id}/ftp-test")
+async def test_tenant_ftp(tenant_id: str, body: FtpSettingsIn, request: Request, user: CurrentUser = Depends(require_roles("superadmin"))):
+    """Prova l'accesso FTP con i dati del modulo (password vuota = quella salvata)."""
+    tenant = await _tenant_or_404(request.app.state.db, tenant_id)
+    saved = (tenant.get("settings") or {}).get("ftp") or {}
+    form = {**saved, "host": body.host, "port": body.port, "user": body.user, "directory": body.directory}
+    try:
+        cfg = ftp_config(form, body.password or saved.get("password_plain") or None)
+        message = await asyncio.to_thread(ftp_test, cfg)
+    except FtpNotConfigured as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Collegamento non riuscito: {e}")
+    return {"ok": True, "message": message}
+
+
+@router.post("/tenants/{tenant_id}/logo", response_model=TenantSettingsOut)
+async def upload_tenant_logo(tenant_id: str, request: Request, file: UploadFile = File(...), user: CurrentUser = Depends(require_roles("superadmin"))):
+    db = request.app.state.db
+    tenant = await _tenant_or_404(db, tenant_id)
+    raw = await file.read(MAX_LOGO_BYTES + 1)
+    if len(raw) > MAX_LOGO_BYTES:
+        raise HTTPException(status_code=413, detail="Logo troppo grande (massimo 5 MB)")
+    try:
+        data = process_logo(raw)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    now = datetime.now(timezone.utc)
+    await db.tenant_logos.update_one(
+        {"tenant_id": tenant_id},
+        {"$set": {"tenant_id": tenant_id, "content_type": "image/png", "data": Binary(data), "updated_at": now}},
+        upsert=True,
+    )
+    await db.tenants.update_one({"_id": tenant["_id"]}, {"$set": {"logo_version": int(time.time() * 1000), "updated_at": now}})
+    return _settings_out(await db.tenants.find_one({"_id": tenant["_id"]}))
+
+
+@router.delete("/tenants/{tenant_id}/logo", response_model=TenantSettingsOut)
+async def delete_tenant_logo(tenant_id: str, request: Request, user: CurrentUser = Depends(require_roles("superadmin"))):
+    db = request.app.state.db
+    tenant = await _tenant_or_404(db, tenant_id)
+    await db.tenant_logos.delete_one({"tenant_id": tenant_id})
+    await db.tenants.update_one({"_id": tenant["_id"]}, {"$unset": {"logo_version": ""}})
+    return _settings_out(await db.tenants.find_one({"_id": tenant["_id"]}))

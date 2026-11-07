@@ -1,7 +1,8 @@
 """
 Public routes: landing page API, demo requests.
 """
-from fastapi import APIRouter, HTTPException, status, Request
+from bson import ObjectId
+from fastapi import APIRouter, HTTPException, status, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime, timezone
@@ -68,3 +69,13 @@ async def create_demo_request(body: DemoRequestCreate, request: Request):
 async def health_check():
     """Simple health check for monitoring."""
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@router.get("/tenant-logo/{tenant_id}")
+async def tenant_logo(tenant_id: str, request: Request):
+    """Logo del locale (pubblico, URL con versione per la cache)."""
+    logo = await request.app.state.db.tenant_logos.find_one({"tenant_id": tenant_id}) if ObjectId.is_valid(tenant_id) else None
+    if not logo:
+        raise HTTPException(status_code=404, detail="Logo non trovato")
+    return Response(content=bytes(logo["data"]), media_type=logo.get("content_type", "image/png"),
+                    headers={"Cache-Control": "public, max-age=86400"})

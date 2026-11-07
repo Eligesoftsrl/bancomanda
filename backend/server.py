@@ -14,7 +14,6 @@ from bson import ObjectId
 import io
 import json
 import asyncio
-import ftplib
 from html import escape as esc
 from bson.errors import InvalidId
 from pymongo.errors import DuplicateKeyError
@@ -44,6 +43,7 @@ except Exception as e:
     print(f"Fallback to localhost")
 
 from tenancy import ScopedDatabase, TenantContextMiddleware, get_tenant
+from tenant_profile import FtpNotConfigured, current_tenant_doc, encrypt_secret, ftp_config, ftp_upload_menu_json, logo_data_url, menu_message
 from auth.jwt_handler import hash_password
 
 # Collezioni dati filtrate automaticamente per locale (vedi tenancy.py)
@@ -603,93 +603,22 @@ async def remove_menu_item(menu_id: str, dish_id: str):
 
 # ========== PUBBLICAZIONE SU SITO WEB ==========
 
-FTP_MENU_FILENAME = "menu.json"
-
-
-class FtpNotConfigured(Exception):
-    pass
-
-
-def _ftp_settings() -> dict:
-    host = (os.environ.get("FTP_HOST") or "").strip()
-    user = os.environ.get("FTP_USER") or ""
-    password = os.environ.get("FTP_PASSWORD") or ""
-    port = os.environ.get("FTP_PORT") or ""
-    folder = (os.environ.get("FTP_DIR") or "").strip().strip("/")
-    if not (host and user and password and port and folder):
-        raise FtpNotConfigured("FTP non configurato: mancano host, utente, password, porta o cartella")
-    # Accetta anche "ftp://host" o "host:porta"
-    for prefix in ("ftp://", "ftps://", "sftp://"):
-        if host.lower().startswith(prefix):
-            host = host[len(prefix):]
-    host = host.rstrip("/")
-    if ":" in host:
-        host, port = host.rsplit(":", 1)
-    return {"host": host, "port": int(port), "user": user, "password": password, "folder": folder}
-
-
-def _ftp_open(cfg: dict) -> ftplib.FTP:
-    """Prova prima FTPS (connessione cifrata), se il server non lo supporta usa FTP semplice."""
-    try:
-        ftp = ftplib.FTP_TLS(timeout=20)
-        ftp.connect(cfg["host"], cfg["port"])
-        ftp.login(cfg["user"], cfg["password"])
-        ftp.prot_p()
-        return ftp
-    except Exception as e:
-        logger.info(f"FTPS non disponibile ({e}), uso FTP semplice")
-        try:
-            ftp.close()
-        except Exception:
-            pass
-    ftp = ftplib.FTP(timeout=20)
-    ftp.connect(cfg["host"], cfg["port"])
-    ftp.login(cfg["user"], cfg["password"])
-    return ftp
-
-
-def _ftp_upload_menu_json(public_payload: dict) -> str:
-    cfg = _ftp_settings()
-    data = json.dumps(public_payload, ensure_ascii=False, indent=2).encode("utf-8")
-    ftp = _ftp_open(cfg)
-    try:
-        for part in cfg["folder"].split("/"):
-            try:
-                ftp.cwd(part)
-            except ftplib.error_perm:
-                ftp.mkd(part)
-                ftp.cwd(part)
-        # Upload su file temporaneo + rinomina: il sito non legge mai un file a metà
-        tmp_name = FTP_MENU_FILENAME + ".tmp"
-        ftp.storbinary(f"STOR {tmp_name}", io.BytesIO(data))
-        try:
-            ftp.rename(tmp_name, FTP_MENU_FILENAME)
-        except ftplib.error_perm:
-            ftp.delete(FTP_MENU_FILENAME)
-            ftp.rename(tmp_name, FTP_MENU_FILENAME)
-    finally:
-        try:
-            ftp.quit()
-        except Exception:
-            ftp.close()
-    return f"/{cfg['folder']}/{FTP_MENU_FILENAME}"
-
-
 @api_router.patch("/menus/{menu_id}/publish", response_model=DailyMenu)
 async def toggle_menu_publish(menu_id: str, payload: DailyMenuPublishUpdate):
     """Pubblica/ritira il menu: genera menu.json e lo invia via FTP al sito."""
-    if not get_tenant().legacy:
-        raise HTTPException(status_code=503, detail="Pubblicazione sul sito non ancora configurata per questo locale")
     menu = await db.daily_menus.find_one({"_id": ObjectId(menu_id)})
     if not menu:
         raise HTTPException(status_code=404, detail="Menu non trovato")
+    tenant = await current_tenant_doc(raw_db)
+    try:
+        cfg = ftp_config(((tenant or {}).get("settings") or {}).get("ftp"))
+    except FtpNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
     menu["isPublished"] = payload.isPublished
     public_payload = await _build_public_payload(menu, menu["date"])
     try:
-        remote_path = await asyncio.to_thread(_ftp_upload_menu_json, public_payload)
-    except FtpNotConfigured as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        remote_path = await asyncio.to_thread(ftp_upload_menu_json, cfg, public_payload)
     except Exception as e:
         logger.exception("Invio FTP del menu fallito")
         raise HTTPException(status_code=502, detail=f"Invio al sito non riuscito: {e}")
@@ -795,11 +724,8 @@ async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
 
     message = None
     if not is_published:
-        is_sunday = now_rome.weekday() == 6
-        if is_sunday:
-            message = "Siamo chiusi la domenica. Torna domani per il menu."
-        else:
-            message = "Il menu del giorno arriva entro le 10:00."
+        tenant = await current_tenant_doc(raw_db)
+        message = menu_message((tenant or {}).get("settings") or {}, weekday_name)
 
     return {
         "date": target_date,
@@ -839,6 +765,16 @@ async def public_menu_by_date(date: str):
     menu = await db.daily_menus.find_one({"date": date})
     payload = await _build_public_payload(menu, date)
     return _public_json(payload)
+
+
+@api_router.get("/tenant/branding")
+async def tenant_branding():
+    """Nome e logo del locale corrente (per la stampa del menu)."""
+    tenant = await current_tenant_doc(raw_db)
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Locale non trovato")
+    logo = await raw_db.tenant_logos.find_one({"tenant_id": str(tenant["_id"])})
+    return {"name": tenant.get("name"), "logo": logo_data_url(bytes(logo["data"])) if logo else None}
 
 
 # ============ ROUTES - ORDERS ============
@@ -2376,6 +2312,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def encrypt_pending_ftp_passwords():
+    """Cifra le password FTP inserite in chiaro da script di migrazione e rimuove il testo in chiaro."""
+    await raw_db.tenant_logos.create_index("tenant_id", unique=True)
+    async for t in raw_db.tenants.find({"settings.ftp.password_plain": {"$exists": True}}):
+        plain = t["settings"]["ftp"]["password_plain"]
+        await raw_db.tenants.update_one({"_id": t["_id"]}, {
+            "$set": {"settings.ftp.password_encrypted": encrypt_secret(plain), "settings.ftp.has_password": True},
+            "$unset": {"settings.ftp.password_plain": ""},
+        })
+        logger.info(f"[SEED] Password FTP cifrata per '{t.get('name')}'")
+
 
 @app.on_event("startup")
 async def seed_legacy_tenant():
