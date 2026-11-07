@@ -16,7 +16,7 @@ from models.tenant import TenantStatus, TenantSettings
 from models.user import UserRole
 from models.demo_request import DemoRequestStatus
 from tenant_profile import (
-    MAX_LOGO_BYTES, WEEKDAYS, FtpNotConfigured, encrypt_secret, ftp_config, ftp_test, process_logo,
+    MAX_LOGO_BYTES, WEEKDAYS, FtpNotConfigured, encrypt_secret, ftp_config, ftp_error_message, ftp_test, process_logo,
 )
 
 router = APIRouter(prefix="/superadmin", tags=["Superadmin"])
@@ -504,7 +504,7 @@ async def test_tenant_ftp(tenant_id: str, body: FtpSettingsIn, request: Request,
     except FtpNotConfigured as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Collegamento non riuscito: {e}")
+        raise HTTPException(status_code=400, detail=f"Collegamento non riuscito: {ftp_error_message(e)}")
     return {"ok": True, "message": message}
 
 

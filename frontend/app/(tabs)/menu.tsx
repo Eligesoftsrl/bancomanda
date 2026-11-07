@@ -395,6 +395,8 @@ export default function MenuScreen() {
     const formattedDate = format(new Date(selectedDate), "EEEE d MMMM yyyy", { locale: it });
     const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
+    // Su web la finestra va aperta subito (prima di attese) per non essere bloccata dal browser
+    const printWindow = Platform.OS === 'web' ? window.open('', '_blank') : null;
     let brandName = useAuthStore.getState().user?.tenant_name || '';
     let brandLogo: string | null = null;
     try {
@@ -644,7 +646,6 @@ export default function MenuScreen() {
 
     try {
       if (Platform.OS === 'web') {
-        const printWindow = window.open('', '_blank');
         if (printWindow) {
           printWindow.document.write(html);
           printWindow.document.close();

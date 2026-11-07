@@ -11,8 +11,6 @@ from typing import List, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from bson import ObjectId
-import io
-import json
 import asyncio
 from html import escape as esc
 from bson.errors import InvalidId
@@ -42,8 +40,8 @@ except Exception as e:
     raw_db = client[DB_NAME]
     print(f"Fallback to localhost")
 
-from tenancy import ScopedDatabase, TenantContextMiddleware, get_tenant
-from tenant_profile import FtpNotConfigured, current_tenant_doc, encrypt_secret, ftp_config, ftp_upload_menu_json, logo_data_url, menu_message
+from tenancy import ScopedDatabase, TenantContextMiddleware
+from tenant_profile import FtpNotConfigured, current_tenant_doc, encrypt_secret, ftp_config, ftp_error_message, ftp_upload_menu_json, logo_data_url, menu_message
 from auth.jwt_handler import hash_password
 
 # Collezioni dati filtrate automaticamente per locale (vedi tenancy.py)
@@ -621,7 +619,7 @@ async def toggle_menu_publish(menu_id: str, payload: DailyMenuPublishUpdate):
         remote_path = await asyncio.to_thread(ftp_upload_menu_json, cfg, public_payload)
     except Exception as e:
         logger.exception("Invio FTP del menu fallito")
-        raise HTTPException(status_code=502, detail=f"Invio al sito non riuscito: {e}")
+        raise HTTPException(status_code=502, detail=f"Invio al sito non riuscito: {ftp_error_message(e)}")
     logger.info(f"Menu {menu['date']} inviato via FTP in {remote_path} (published={payload.isPublished})")
 
     await db.daily_menus.update_one({"_id": ObjectId(menu_id)}, {"$set": {

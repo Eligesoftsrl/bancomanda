@@ -39,37 +39,33 @@ export default function RootLayout() {
     init();
   }, [init]);
 
-  const splash = showSplash ? <LaunchSplash onDone={hideSplash} /> : null;
-
-  if (status === 'loading') {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f7fa' }}>
-        <ActivityIndicator size="large" color="#DB0007" />
-        {splash}
-      </View>
-    );
-  }
-
   const authed = status === 'authed';
 
+  // La splash resta nella stessa posizione dell'albero: non si rimonta quando finisce il caricamento
   return (
     <View style={{ flex: 1 }}>
       <StatusBar style="light" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: '#f5f7fa' },
-        }}
-      >
-        <Stack.Protected guard={authed}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="unpaid-orders" />
-        </Stack.Protected>
-        <Stack.Protected guard={!authed}>
-          <Stack.Screen name="login" />
-        </Stack.Protected>
-      </Stack>
-      {splash}
+      {status === 'loading' ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f7fa' }}>
+          <ActivityIndicator size="large" color="#DB0007" />
+        </View>
+      ) : (
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#f5f7fa' },
+          }}
+        >
+          <Stack.Protected guard={authed}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="unpaid-orders" />
+          </Stack.Protected>
+          <Stack.Protected guard={!authed}>
+            <Stack.Screen name="login" />
+          </Stack.Protected>
+        </Stack>
+      )}
+      {showSplash && <LaunchSplash onDone={hideSplash} />}
     </View>
   );
 }

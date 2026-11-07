@@ -1,0 +1,44 @@
+{
+  "summary": "Tested tenant settings (company data, menu messages, per-tenant FTP with encrypted password, logo upload/remove, branding, publish via DB FTP, public menu messages), the admin settings modal, the landing/admin rebrand and the Expo splash and print. Backend: 20 of 20 pytest pass. Admin modal: every section works at 1920x800 and 390x844 (save and reopen keep the values, PNG upload shows a preview, removal asks for confirmation, FTP test shows the error). Landing: red-B icon, coral/navy colours, no green left, no broken images, register modal and demo form work. Expo print window shows <img class='brand-logo'> with the tenant logo and never 'GIORGIO IV'. Publish with the fake FTP host leaves the toggle off. ONE REAL BUG: the launch splash appears for only about 0.2-0.3s instead of about 2s.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PATCH /api/menus/{id}/publish", "issue": "ftp_config() runs int(port_str) on 'host:xyz', which raises an uncaught ValueError. ftp_config is outside the try, so the response is a 500. PUT settings does not validate the host format."},
+      {"endpoint": "POST /api/superadmin/tenants/{id}/ftp-test", "issue": "The error text is technical English, e.g. 'Collegamento non riuscito: [Errno -2] Name or service not known'. It should be translated into an Italian hint (host not found, wrong credentials, timeout)."},
+      {"endpoint": "tenant_profile.ftp_open", "issue": "Any FTPS failure, including a wrong login, falls back to plain FTP. The password is then sent in clear text, and an unreachable host waits for two 20s timeouts (about 40s)."},
+      {"endpoint": "Legacy tenant FTP", "issue": "The Giorgio Bistrot tenant has no FTP settings in the DB (host/user/dir None) and the backend .env has no FTP_* vars. Publishing now returns 503 for the real restaurant until the superadmin enters FTP data, or until a migration sets settings.ftp.password_plain. Make sure production is migrated."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LaunchSplash (app/_layout.tsx)", "issue": "The splash disappears after about 200-300ms instead of fading in for about 2s. In _layout.tsx, {splash} is rendered in two different trees: inside the 'loading' View, and later after the <Stack>. When auth status leaves 'loading' (about 300ms), LaunchSplash unmounts and remounts. The effect cleanup calls anim.stop(), and Animated calls the start callback with finished=false, so onDone() runs and setShowSplash(false) hides it. Measured on web: data-testid=launch-splash was present only from 100ms to 200ms, then null. The same will happen on iPad, because SecureStore init is fast.", "selector": "[data-testid=launch-splash]", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Menu print (web)", "issue": "window.open('', '_blank') is called after 'await tenantApi.getBranding()', outside the user-gesture tick. Safari/iPadOS web and strict popup blockers may block the print window. It worked in Chromium. Fix: open the window first, or prefetch the branding.", "affected_selectors": ["Condividi (n categorie)"]}
+    ],
+    "design_issues": [
+      {"screen": "Admin dashboard at 390px", "issues": ["The sidebar is not responsive: page scrollWidth is 1170px on a 390px viewport and the content is cut off on the right. The settings modal itself fits."]},
+      {"screen": "Landing header", "issues": ["After the register modal is closed, the 'Registrati' button keeps a dark focus ring (cosmetic)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_tenant_settings.py", "/app/test_reports/pytest/pytest_tenant_settings.xml"],
+  "action_items": [
+    "Fix LaunchSplash so it lasts about 2s. Render {splash} at one stable position: wrap both the loading branch and the Stack branch in the same root View with the splash as a sibling. Also call onDone only when finished: anim.start(({finished}) => finished && onDone()). Note: with only the finished check and no stable mount, the remount replays the animation and never calls onDone, so do both.",
+    "Optional: in handlePrintMenu, open the print window before awaiting branding (Safari popup blocker).",
+    "Optional: catch ValueError in ftp_config port parsing (return 400/503 instead of 500) and translate ftp-test errors into Italian.",
+    "Production: make sure the legacy tenant FTP credentials are migrated into settings.ftp, otherwise Giorgio Bistrot publishing returns 503."
+  ],
+  "critical_code_review_comments": [
+    "_layout.tsx: {splash} is rendered in two different trees, so LaunchSplash remounts and anim.stop() fires onDone too early.",
+    "tenant_profile.ftp_open falls back to plain FTP after any TLS error, including a login error, which exposes the password in clear text.",
+    "server.py is 2393 lines and admin_dashboard.py 1246 lines. Consider splitting them.",
+    "API responses never return the password: only has_password is exposed. The DB stores only the Fernet ciphertext (password_encrypted)."
+  ],
+  "updated_files": ["/app/backend/tests/test_tenant_settings.py"],
+  "success_rate": {"backend": "100% (20/20)", "frontend": "90% (all flows pass except the splash duration)"},
+  "seed_data_creation": "Pizzeria Napoli only. Settings were overwritten with TEST_UI company data, closing days lunedì+martedì+domenica, FTP ftp.example.invalid/pizza/www/menu (password set). A 1200x400 test logo is uploaded. A temporary dish 'TEST_Margherita iter14' was added to Napoli's 2026-11-08 menu and removed after the print test (menu is empty again, dish deleted). The demo request TEST_iter14_demo_ui was deleted by exact name+email. Giorgio Bistrot was not modified (read-only GET settings, public menu, branding).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Tenant IDs: Napoli 6aec83f079163e42b25d0680, Giorgio 6aec994f253089c9bb5bf3ce. Run: EXPO_PUBLIC_BACKEND_URL=<url> pytest tests/test_tenant_settings.py -p no:xdist. Admin: nav .nav-item[data-view=tenants], then tenant-settings-btn-pizzeria-napoli. Expo: the browser clock is UTC (2026-11-07) while Rome is 2026-11-08; use the next-day arrow at about (1102,76) on 1920 width to reach the 2026-11-08 menu. The print popup can be caught with page.context.expect_page after clicking 'Condividi (n categorie)'. Retest the splash with add_init_script that polls [data-testid=launch-splash] every 100ms.",
+  "rca of the issue": "Splash: RootLayout returns two different trees depending on status. LaunchSplash is a child of the loading View first and of the root View later, so React unmounts and remounts it. On unmount, the useEffect cleanup calls anim.stop(). Animated.sequence.stop calls the start() callback with {finished:false}, and the callback calls onDone() without checking finished, so showSplash becomes false. To reproduce: load '/' and poll for [data-testid=launch-splash]; it is gone by about 330ms. Mitigation: keep one stable mount point and check finished."
+}

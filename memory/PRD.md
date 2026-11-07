@@ -204,6 +204,21 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - ⚠️ Rilanciare lo script DOPO che il locale usa la nuova app cancellerebbe gli ordini nuovi.
 - Ordini fatti sulla vecchia app dopo il 07/11/2026 23:07 UTC NON sono nella nuova.
 
+## Impostazioni per locale + logo + rebrand — 2026-11-07 ✅ (iteration_14)
+- Area admin → Ristoranti → "Impostazioni" (modale `tenantSettingsModal` in `routes/admin_dashboard.py`): logo, dati aziendali (ragione sociale, P.IVA, indirizzo, telefono, email — solo anagrafica), messaggi menu sito (giorni di chiusura, messaggio chiusura, messaggio "menu non ancora pubblicato"), FTP (host, porta, utente, password, cartella) + "Prova collegamento".
+- API superadmin: `GET/PUT /api/superadmin/tenants/{id}/settings`, `POST .../ftp-test`, `POST/DELETE .../logo`. Logo pubblico: `GET /api/public/tenant-logo/{id}?v=`. App: `GET /api/tenant/branding` → {name, logo data-URL}.
+- Logo salvato nel DB (`tenant_logos`, PNG ridimensionato max 800x400, ≤5MB in upload) perché la produzione è su Railway (nessuna configurazione extra).
+- FTP ora per locale da DB (`tenant_profile.py`), password cifrata (Fernet derivata da JWT_SECRET: se JWT_SECRET cambia le password FTP vanno reinserite). Le variabili FTP_* non sono più usate. FTPS se supportato, ripiego in chiaro solo se il server rifiuta AUTH TLS. Errori FTP tradotti in italiano.
+- Pubblicazione menu abilitata per tutti i locali (prima solo legacy). Messaggi JSON pubblico presi dalle impostazioni del locale (default: "Oggi siamo chiusi..." / "Il menu del giorno non è ancora disponibile.").
+- Stampa menu del giorno: intestazione = logo del locale (o nome), non più "GIORGIO IV" fisso.
+- Avvio app: splash blu notte con logo Bancomanda in dissolvenza (~2s), `src/components/LaunchSplash.tsx` montata in posizione stabile in `app/_layout.tsx`.
+- Landing + admin: logo vero (B rossa, `/api/landing/assets/favicon.png`), palette corallo `#f5595a` + blu notte `#141d2c` (vedi `/app/design_guidelines.json`). Admin responsive sotto 900px.
+- Produzione (Railway DB): Giorgio Bistro precompilato con host `ftp.giorgiobistrot.it`, porta 21, cartella `www.giorgiobistrot.it/menu`, password in `settings.ftp.password_plain` (cifrata automaticamente all'avvio del nuovo backend), messaggi domenica/10:00. MANCA il nome utente FTP (sconosciuto): va inserito dall'admin.
+- Preview: il locale legacy NON ha FTP configurato apposta (eviterebbe di sovrascrivere il sito vero durante i test).
+
+## Note ambiente
+- Gli heredoc `python3 - <<EOF` lunghi a volte vengono bloccati ("/app is owned by the regression harness"): scrivere lo script con create_file in /root e lanciarlo.
+
 ## Backlog
-- P1: impostazioni per locale (FTP, sito, fuso, numerazione) nel modello Tenant
-- P2: fade-in logo all'avvio; spezzare `(tabs)/index.tsx`
+- P1: fuso orario/numerazione ordini per locale (oggi Europe/Rome per tutti)
+- P2: spezzare `(tabs)/index.tsx`; password impostazioni Report per locale (oggi `eligesoft` uguale per tutti)

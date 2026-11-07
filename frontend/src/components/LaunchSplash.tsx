@@ -15,10 +15,10 @@ export const LaunchSplash = ({ onDone }: { onDone: () => void }) => {
         Animated.timing(logo, { toValue: 1, duration: 700, easing: ease, useNativeDriver: useNative }),
         Animated.timing(title, { toValue: 1, duration: 700, delay: 250, easing: ease, useNativeDriver: useNative }),
       ]),
-      Animated.delay(450),
+      Animated.delay(650),
       Animated.timing(screen, { toValue: 0, duration: 400, easing: Easing.in(Easing.quad), useNativeDriver: useNative }),
     ]);
-    anim.start(() => onDone());
+    anim.start(({ finished }) => finished && onDone());
     return () => anim.stop();
   }, [logo, title, screen, onDone]);
 

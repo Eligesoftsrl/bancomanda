@@ -6,6 +6,8 @@ import io
 import json
 import logging
 import os
+import socket
+import ssl
 from typing import Optional
 
 from bson import ObjectId
@@ -77,27 +79,42 @@ def ftp_config(ftp: Optional[dict], password: Optional[str] = None) -> dict:
     host = host.rstrip("/")
     if ":" in host:
         host, port_str = host.rsplit(":", 1)
+        if not port_str.isdigit():
+            raise FtpNotConfigured("Indirizzo FTP non valido: dopo i due punti va solo il numero di porta")
         port = int(port_str)
     return {"host": host, "port": port, "user": user, "password": password, "folder": folder}
 
 
+def ftp_error_message(e: Exception) -> str:
+    if isinstance(e, socket.gaierror):
+        return "indirizzo FTP non trovato, controlla di averlo scritto bene"
+    if isinstance(e, ftplib.error_perm) and str(e).startswith("530"):
+        return "utente o password FTP errati"
+    if isinstance(e, (TimeoutError, socket.timeout)):
+        return "il server FTP non risponde (controlla indirizzo e porta)"
+    if isinstance(e, ConnectionRefusedError):
+        return "il server FTP ha rifiutato la connessione (porta errata?)"
+    if isinstance(e, ftplib.error_perm):
+        return f"il server FTP ha rifiutato l'operazione ({e})"
+    return f"errore imprevisto ({e})"
+
+
 def ftp_open(cfg: dict) -> ftplib.FTP:
-    """Prova prima FTPS (connessione cifrata), se il server non lo supporta usa FTP semplice."""
+    """Usa FTPS (cifrato) se il server lo supporta, altrimenti FTP semplice.
+    Il ripiego in chiaro avviene solo se il server non accetta la cifratura, mai dopo un login fallito."""
+    ftp = ftplib.FTP_TLS(timeout=20)
+    ftp.connect(cfg["host"], cfg["port"])
     try:
-        ftp = ftplib.FTP_TLS(timeout=20)
+        ftp.auth()
+    except (ftplib.error_perm, ftplib.error_reply, ssl.SSLError) as e:
+        logger.info(f"FTPS non disponibile ({e}), uso FTP semplice")
+        ftp.close()
+        ftp = ftplib.FTP(timeout=20)
         ftp.connect(cfg["host"], cfg["port"])
         ftp.login(cfg["user"], cfg["password"])
-        ftp.prot_p()
         return ftp
-    except Exception as e:
-        logger.info(f"FTPS non disponibile ({e}), uso FTP semplice")
-        try:
-            ftp.close()
-        except Exception:
-            pass
-    ftp = ftplib.FTP(timeout=20)
-    ftp.connect(cfg["host"], cfg["port"])
     ftp.login(cfg["user"], cfg["password"])
+    ftp.prot_p()
     return ftp
 
 

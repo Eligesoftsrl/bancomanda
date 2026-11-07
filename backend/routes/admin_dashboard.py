@@ -390,6 +390,21 @@ def get_dashboard_html() -> str:
         .settings-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; position: sticky; bottom: -2rem; background: var(--bg-card); padding: 1rem 0; border-top: 1px solid var(--border-subtle); }
         @media (max-width: 640px) { .form-row, .form-row.ftp { grid-template-columns: 1fr; } }
 
+        /* Schermi stretti: barra laterale in alto */
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; }
+            .sidebar { position: static; width: 100%; border-right: none; border-bottom: 1px solid var(--border-subtle); padding: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; }
+            .sidebar .logo { margin-bottom: 0; }
+            .sidebar nav { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+            .nav-section { margin-bottom: 0; display: flex; gap: 0.25rem; }
+            .nav-section-title { display: none; }
+            .nav-item { margin-bottom: 0; padding: 0.5rem 0.75rem; }
+            .user-info { margin-top: 0; margin-left: auto; padding: 0.5rem 0.75rem; }
+            .main-content { margin-left: 0; padding: 1.25rem; }
+            .table-container { overflow-x: auto; }
+            .page-header { flex-wrap: wrap; gap: 1rem; }
+        }
+
         /* Hidden */
         .hidden { display: none !important; }
 

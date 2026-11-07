@@ -166,6 +166,8 @@ def get_landing_html() -> str:
             align-items: center;
             gap: 0.5rem;
         }
+        .btn:focus:not(:focus-visible) { outline: none; }
+        .btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .btn-outline {
             background: transparent;
             border: 1px solid var(--border-subtle);
