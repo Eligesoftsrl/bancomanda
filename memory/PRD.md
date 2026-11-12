@@ -222,3 +222,8 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 ## Backlog
 - P1: fuso orario/numerazione ordini per locale (oggi Europe/Rome per tutti)
 - P2: spezzare `(tabs)/index.tsx`; password impostazioni Report per locale (oggi `eligesoft` uguale per tutti)
+
+## Allineamento dati Giorgio Bistrot — 2026-11-12 ✅
+- `scripts/migrate_legacy.py --sync`: aggiorna/aggiunge per `_id` con `$set` (vecchia app vince sui campi che ha), non cancella nulla, mantiene i campi presenti solo su Railway (es. `isPublished/publishedAt` dei menu pubblicati dalla nuova app).
+- Eseguito alle ~11:25 UTC del 12/11: +230 ordini (6 aggiornati a pagato), +10 piatti, +3 menu (1 aggiornato). Totali Railway = vecchia app: 9 cat, 415 piatti, 255 clienti, 5.962 ordini, 150 menu, 1 mancata vendita. Tutti validati.
+- Per riallineare ancora: stesso comando (sicuro anche se la nuova app è già in uso; i dati creati solo nella nuova app restano).

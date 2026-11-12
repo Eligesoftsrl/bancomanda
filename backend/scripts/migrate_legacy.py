@@ -1,7 +1,8 @@
 """Copia i dati di Giorgio Bistrot dalla vecchia app (sola lettura via API) al nuovo database multi-locale.
 
-Uso: RAILWAY_MONGO_URL=... python scripts/migrate_legacy.py [--db NOME] [--dry-run]
+Uso: RAILWAY_MONGO_URL=... python scripts/migrate_legacy.py [--db NOME] [--dry-run] [--sync]
 Il locale storico usa documenti senza tenant_id: vengono sostituiti solo quelli.
+--sync: aggiorna/aggiunge per id senza cancellare nulla (i campi presenti solo nel nuovo db restano).
 """
 import argparse
 import json
@@ -13,7 +14,7 @@ from pathlib import Path
 import requests
 from bson import ObjectId
 from dotenv import load_dotenv
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -62,10 +63,25 @@ def find_target_db(client, name):
     return client[found[0]]
 
 
+def sync(db, docs, existing, dry_run):
+    for col, items in docs.items():
+        current = {d["_id"]: d for d in existing[col]}
+        new = sum(1 for d in items if d["_id"] not in current)
+        only_target = len(set(current) - {d["_id"] for d in items})
+        print(f"[SYNC] {col}: nuovi {new}, solo nel nuovo db (lasciati intatti) {only_target}")
+        if dry_run or not items:
+            continue
+        ops = [UpdateOne({"_id": d["_id"]}, {"$set": {k: v for k, v in d.items() if k != "_id"}}, upsert=True) for d in items]
+        r = db[col].bulk_write(ops, ordered=False)
+        print(f"[SYNC] {col}: inseriti {r.upserted_count}, aggiornati {r.modified_count}")
+    print("[DRY-RUN] nessuna modifica" if dry_run else "[FATTO]")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--sync", action="store_true")
     args = ap.parse_args()
 
     target_url = os.environ["RAILWAY_MONGO_URL"]
@@ -90,6 +106,9 @@ def main():
 
     existing = {col: list(db[col].find(LEGACY)) for col in docs}
     print("[ATTUALI] " + ", ".join(f"{c}={len(v)}" for c, v in existing.items()))
+    if args.sync:
+        sync(db, docs, existing, args.dry_run)
+        return
     if args.dry_run:
         print("[DRY-RUN] nessuna modifica")
         return
