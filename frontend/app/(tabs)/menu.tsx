@@ -1677,6 +1677,8 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '90%',
     maxWidth: 500,
+    maxHeight: '90%',
+    ...Platform.select({ web: { overflowY: 'auto' as any } }),
   },
   modalHeader: {
     flexDirection: 'row',

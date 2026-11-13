@@ -1483,11 +1483,12 @@ export default function OrdersScreen() {
                 ))}
               </View>
             )}
+            </ScrollView>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={handleCreateOrder} testID="create-order-button">
+            {/* Fuori dallo scroll: il tasto resta sempre visibile */}
+            <TouchableOpacity style={[styles.primaryButton, styles.newOrderFooterButton]} onPress={handleCreateOrder} testID="create-order-button">
               <Text style={styles.primaryButtonText}>Crea Ordine</Text>
             </TouchableOpacity>
-            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -3181,6 +3182,9 @@ const styles = StyleSheet.create({
   newOrderScrollContent: {
     paddingBottom: 8,
   },
+  newOrderFooterButton: {
+    marginTop: 12,
+  },
   largeModal: {
     maxWidth: 900,
     width: '95%',
@@ -4103,9 +4107,11 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     width: '100%',
     maxWidth: 400,
+    maxHeight: '90%',
     ...Platform.select({
       web: {
         zIndex: 100000,
+        overflowY: 'auto' as any,
       },
     }),
   },
@@ -4490,6 +4496,7 @@ const styles = StyleSheet.create({
   receiptImage: {
     width: '100%',
     height: 500,
+    flexShrink: 1,
     backgroundColor: '#f5f7fa',
   },
   panelHeaderActions: {

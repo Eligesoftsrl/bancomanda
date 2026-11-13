@@ -86,7 +86,7 @@ export const ChangePasswordModal = ({ visible, onClose }: { visible: boolean; on
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  card: { backgroundColor: '#ffffff', borderRadius: 16, padding: 24, width: '100%', maxWidth: 460 },
+  card: { backgroundColor: '#ffffff', borderRadius: 16, padding: 24, width: '100%', maxWidth: 460, maxHeight: '90%', ...Platform.select({ web: { overflowY: 'auto' as any } }) },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 22, fontWeight: '700', color: '#1a202c' },
   hint: { fontSize: 14, color: '#64748b', marginTop: 6, marginBottom: 4 },

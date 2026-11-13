@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Switch,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -286,7 +287,7 @@ export default function CustomersScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={Platform.OS === 'web'} testID="customer-modal-scroll">
               {/* Customer Type Selector */}
               <Text style={styles.inputLabel}>Tipo Cliente *</Text>
               <View style={styles.typeSelector}>
@@ -382,13 +383,14 @@ export default function CustomersScreen() {
                 placeholderTextColor="#64748b"
                 multiline
               />
-
-              <TouchableOpacity style={styles.primaryButton} onPress={handleSave}>
-                <Text style={styles.primaryButtonText}>
-                  {editingCustomer ? 'Salva Modifiche' : 'Crea Cliente'}
-                </Text>
-              </TouchableOpacity>
             </ScrollView>
+
+            {/* Fuori dallo scroll: il salvataggio resta sempre visibile */}
+            <TouchableOpacity style={[styles.primaryButton, styles.modalFooterButton]} onPress={handleSave} testID="customer-save-button">
+              <Text style={styles.primaryButtonText}>
+                {editingCustomer ? 'Salva Modifiche' : 'Crea Cliente'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -688,6 +690,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     marginBottom: 20,
+  },
+  modalScroll: {
+    flexShrink: 1,
+    paddingRight: Platform.OS === 'web' ? 8 : 0,
+  },
+  modalFooterButton: {
+    marginTop: 16,
+    marginBottom: 0,
   },
   primaryButtonText: {
     color: '#ffffff',

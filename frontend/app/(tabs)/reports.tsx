@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -1918,6 +1919,8 @@ const styles = StyleSheet.create({
     padding: 16,
     width: '100%',
     maxWidth: 380,
+    maxHeight: '90%',
+    ...Platform.select({ web: { overflowY: 'auto' as any } }),
   },
   calendarTitle: {
     color: '#1a202c',
@@ -1979,6 +1982,8 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '100%',
     maxWidth: 340,
+    maxHeight: '90%',
+    ...Platform.select({ web: { overflowY: 'auto' as any } }),
   },
   modalHeader: {
     alignItems: 'center',
