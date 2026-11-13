@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Animated,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -523,7 +524,11 @@ export default function DishesScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.modalScroll}
+              showsVerticalScrollIndicator={Platform.OS === 'web'}
+              testID="dish-modal-scroll"
+            >
               <Text style={styles.inputLabel}>Nome Piatto *</Text>
               <TextInput
                 style={styles.textInput}
@@ -604,13 +609,14 @@ export default function DishesScreen() {
                 onChangeTags={setTags}
                 onChangeAllergens={setAllergens}
               />
-
-              <TouchableOpacity style={styles.primaryButton} onPress={handleSaveDish} testID="dish-save-button">
-                <Text style={styles.primaryButtonText}>
-                  {editingDish ? 'Salva Modifiche' : 'Crea Piatto'}
-                </Text>
-              </TouchableOpacity>
             </ScrollView>
+
+            {/* Fuori dallo scroll: il salvataggio resta sempre visibile */}
+            <TouchableOpacity style={[styles.primaryButton, styles.modalFooterButton]} onPress={handleSaveDish} testID="dish-save-button">
+              <Text style={styles.primaryButtonText}>
+                {editingDish ? 'Salva Modifiche' : 'Crea Piatto'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -1052,6 +1058,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 24,
+  },
+  modalScroll: {
+    flexShrink: 1,
+    paddingRight: Platform.OS === 'web' ? 8 : 0,
+  },
+  modalFooterButton: {
+    marginTop: 16,
   },
   primaryButtonText: {
     color: '#ffffff',

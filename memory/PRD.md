@@ -231,3 +231,8 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Nota: `RAILWAY_MONGO_URL` ora è disponibile direttamente nell'ambiente della shell (os.environ), non sempre in /proc del backend.
 - In caso di differenze ambigue (es. pagato su Railway ma non nella vecchia app) chiedere all'utente prima del sync: il sync dà sempre ragione alla vecchia app.
 - 2026-11-13 ~14:15 UTC (fine servizio): terzo `--sync` → +31 ordini, 34 aggiornati (2 del 13/11 tornati "non pagato" come nella vecchia app: #13 Vitolo, #1 Jamila), menu 13/11 aggiornato. Parità: 6.033 ordini, 151 menu, 420 piatti, 259 clienti. Ultimo ordine 12:31 UTC.
+
+## Fix modale piatto su desktop — 2026-11-13 ✅
+- `app/(tabs)/dishes.tsx`: ScrollView con `flexShrink: 1` e barra visibile su web; tasto "Crea Piatto / Salva Modifiche" spostato FUORI dallo scroll (sempre visibile in fondo alla modale).
+- `app/+html.tsx`: stile barra di scorrimento sempre visibile per `[data-testid="dish-modal-scroll"]` (::-webkit-scrollbar per Chrome/Safari, scrollbar-width per Firefox). Nota: Playwright headless nasconde sempre le scrollbar, quindi in test la larghezza risulta 0.
+- Verificato a 1366x620 e 1920x800 (creazione + modifica). Il modale cliente (`customers.tsx`) ha lo stesso schema con barra nascosta: non toccato.

@@ -48,6 +48,14 @@ export default function Root({ children }: PropsWithChildren) {
               body > div:first-child { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; }
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
+              /* Barra di scorrimento sempre visibile nelle finestre lunghe (desktop): Chrome/Safari usano ::-webkit-scrollbar, Firefox le proprietà standard */
+              [data-testid="dish-modal-scroll"]::-webkit-scrollbar { width: 8px; }
+              [data-testid="dish-modal-scroll"]::-webkit-scrollbar-track { background: transparent; }
+              [data-testid="dish-modal-scroll"]::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+              [data-testid="dish-modal-scroll"]::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+              @supports not selector(::-webkit-scrollbar) {
+                [data-testid="dish-modal-scroll"] { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+              }
             `,
           }}
         />
