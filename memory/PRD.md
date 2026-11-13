@@ -227,3 +227,6 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - `scripts/migrate_legacy.py --sync`: aggiorna/aggiunge per `_id` con `$set` (vecchia app vince sui campi che ha), non cancella nulla, mantiene i campi presenti solo su Railway (es. `isPublished/publishedAt` dei menu pubblicati dalla nuova app).
 - Eseguito alle ~11:25 UTC del 12/11: +230 ordini (6 aggiornati a pagato), +10 piatti, +3 menu (1 aggiornato). Totali Railway = vecchia app: 9 cat, 415 piatti, 255 clienti, 5.962 ordini, 150 menu, 1 mancata vendita. Tutti validati.
 - Per riallineare ancora: stesso comando (sicuro anche se la nuova app è già in uso; i dati creati solo nella nuova app restano).
+- 2026-11-13 ~09:57 UTC: secondo `--sync` → +41 ordini (22 aggiornati, es. stato "pronto", 4 tornati "non pagato" come nella vecchia app su conferma utente), +4 clienti, +5 piatti, +1 menu. Cancellato su conferma l'ordine vuoto #47 del 12/11 (eliminato nella vecchia app; backup in `/app/memory/deleted_order_47_backup.json`). Parità totale: 9 cat, 420 piatti, 259 clienti, 6.002 ordini, 151 menu.
+- Nota: `RAILWAY_MONGO_URL` ora è disponibile direttamente nell'ambiente della shell (os.environ), non sempre in /proc del backend.
+- In caso di differenze ambigue (es. pagato su Railway ma non nella vecchia app) chiedere all'utente prima del sync: il sync dà sempre ragione alla vecchia app.
