@@ -244,3 +244,4 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - `+html.tsx`: scrollbar stilizzate sempre visibili dentro `[role="dialog"]` su `(pointer: fine)` (le scrollbar orizzontali nascoste da RN restano nascoste).
 - Contrasto corretto: calendario Report (mese/giorni erano bianchi su bianco, tasto Annulla), lista "Categorie Esistenti" nei piatti.
 - Segnalati, NON fatti (fuori richiesta): Esc per chiudere le modali su desktop; badge stato nello storico ordini cliente mostra sempre "In Attesa" (mappa solo completato/annullato); `data-testid` invece di `testID` in unpaid-orders.tsx; modali inutilizzate in index.tsx.
+- 2026-11-13: storico ordini cliente (`customers.tsx`) ora mostra lo stato reale con gli stessi colori della schermata Ordini (`ORDER_STATUS_STYLE`: in attesa, in preparazione, pronto, sospeso, consegnato, + completato/annullato). Verificato con 5 ordini di prova (poi cancellati).

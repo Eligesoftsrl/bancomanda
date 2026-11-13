@@ -21,6 +21,18 @@ import { useAppStore } from '../../src/store/appStore';
 import { customersApi } from '../../src/services/api';
 import { Customer, Order } from '../../src/types';
 
+// Stessi colori della schermata Ordini
+const ORDER_STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = {
+  in_attesa: { label: 'In attesa', bg: '#FFBC0D', fg: '#1a202c' },
+  in_preparazione: { label: 'In preparazione', bg: '#3498db', fg: '#ffffff' },
+  pronto: { label: 'Pronto', bg: '#00754A', fg: '#ffffff' },
+  sospeso: { label: 'Sospeso', bg: '#DB0007', fg: '#ffffff' },
+  consegnato: { label: 'Consegnato', bg: '#94a3b8', fg: '#ffffff' },
+  completato: { label: 'Completato', bg: '#00754A', fg: '#ffffff' },
+  annullato: { label: 'Annullato', bg: '#DB0007', fg: '#ffffff' },
+};
+
+
 export default function CustomersScreen() {
   const { customers, setCustomers } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
@@ -431,12 +443,12 @@ export default function CustomersScreen() {
                       ))}
                     </View>
                     <View style={styles.orderHistoryFooter}>
-                      <View style={[
-                        styles.statusBadge,
-                        { backgroundColor: order.status === 'completato' ? '#00754A' : order.status === 'annullato' ? '#DB0007' : '#FFBC0D' }
-                      ]}>
-                        <Text style={styles.statusBadgeText}>
-                          {order.status === 'completato' ? 'Completato' : order.status === 'annullato' ? 'Annullato' : 'In Attesa'}
+                      <View
+                        style={[styles.statusBadge, { backgroundColor: (ORDER_STATUS_STYLE[order.status] || ORDER_STATUS_STYLE.in_attesa).bg }]}
+                        testID={`order-history-status-${order.id}`}
+                      >
+                        <Text style={[styles.statusBadgeText, { color: (ORDER_STATUS_STYLE[order.status] || ORDER_STATUS_STYLE.in_attesa).fg }]}>
+                          {(ORDER_STATUS_STYLE[order.status] || { label: order.status }).label}
                         </Text>
                       </View>
                       <Text style={styles.orderHistoryTotal}>{order.total.toFixed(2)} €</Text>
