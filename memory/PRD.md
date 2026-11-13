@@ -245,3 +245,4 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Contrasto corretto: calendario Report (mese/giorni erano bianchi su bianco, tasto Annulla), lista "Categorie Esistenti" nei piatti.
 - Segnalati, NON fatti (fuori richiesta): Esc per chiudere le modali su desktop; badge stato nello storico ordini cliente mostra sempre "In Attesa" (mappa solo completato/annullato); `data-testid` invece di `testID` in unpaid-orders.tsx; modali inutilizzate in index.tsx.
 - 2026-11-13: storico ordini cliente (`customers.tsx`) ora mostra lo stato reale con gli stessi colori della schermata Ordini (`ORDER_STATUS_STYLE`: in attesa, in preparazione, pronto, sospeso, consegnato, + completato/annullato). Verificato con 5 ordini di prova (poi cancellati).
+- 2026-11-13 ~17:47 UTC: quarto `--sync` → +2 categorie ("Base Fit", "Proteine Fit"), +10 piatti, 6 piatti aggiornati. Nessun conflitto. Parità: 11 cat, 430 piatti, 259 clienti, 6.033 ordini, 151 menu.
