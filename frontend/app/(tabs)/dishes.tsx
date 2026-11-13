@@ -1114,7 +1114,7 @@ const styles = StyleSheet.create({
   },
   categoryListItemText: {
     flex: 1,
-    color: '#ffffff',
+    color: '#1a202c',
     fontSize: 15,
   },
   dishNameRow: {

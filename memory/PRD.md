@@ -236,3 +236,11 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - `app/(tabs)/dishes.tsx`: ScrollView con `flexShrink: 1` e barra visibile su web; tasto "Crea Piatto / Salva Modifiche" spostato FUORI dallo scroll (sempre visibile in fondo alla modale).
 - `app/+html.tsx`: stile barra di scorrimento sempre visibile per `[data-testid="dish-modal-scroll"]` (::-webkit-scrollbar per Chrome/Safari, scrollbar-width per Firefox). Nota: Playwright headless nasconde sempre le scrollbar, quindi in test la larghezza risulta 0.
 - Verificato a 1366x620 e 1920x800 (creazione + modifica). Il modale cliente (`customers.tsx`) ha lo stesso schema con barra nascosta: non toccato.
+
+## Verifica finestre a comparsa su desktop — 2026-11-13 ✅ (iteration_15)
+- 24 modali verificate a 1366x650, 1920x950, 1366x480 + regressione iPad 1180x820: 0 elementi irraggiungibili.
+- Tasto principale fisso fuori dallo scroll: piatto (`dish-save-button`), cliente (`customer-save-button`), nuovo ordine (`create-order-button`).
+- Card senza scroll ora `maxHeight: '90%'` + `overflowY: 'auto'` su web: menu.tsx `modalContent` (pubblica/aggiungi piatto/modifica voce/mancata vendita), reports `modalContent` + `calendarModalContent`, index `customItemModalContent`, `ChangePasswordModal` card; `receiptImage` flexShrink.
+- `+html.tsx`: scrollbar stilizzate sempre visibili dentro `[role="dialog"]` su `(pointer: fine)` (le scrollbar orizzontali nascoste da RN restano nascoste).
+- Contrasto corretto: calendario Report (mese/giorni erano bianchi su bianco, tasto Annulla), lista "Categorie Esistenti" nei piatti.
+- Segnalati, NON fatti (fuori richiesta): Esc per chiudere le modali su desktop; badge stato nello storico ordini cliente mostra sempre "In Attesa" (mappa solo completato/annullato); `data-testid` invece di `testID` in unpaid-orders.tsx; modali inutilizzate in index.tsx.

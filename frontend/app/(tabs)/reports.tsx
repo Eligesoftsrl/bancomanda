@@ -1175,13 +1175,13 @@ export default function ReportsScreen() {
                 calendarBackground: '#ffffff',
                 backgroundColor: '#ffffff',
                 textSectionTitleColor: '#64748b',
-                dayTextColor: '#fff',
-                monthTextColor: '#fff',
+                dayTextColor: '#1a202c',
+                monthTextColor: '#1a202c',
                 arrowColor: '#DB0007',
                 todayTextColor: '#DB0007',
                 selectedDayBackgroundColor: '#DB0007',
                 selectedDayTextColor: '#fff',
-                textDisabledColor: '#e2e8f0',
+                textDisabledColor: '#94a3b8',
               }}
               firstDay={1}
             />
@@ -1949,7 +1949,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   calendarCancelBtnText: {
-    color: '#ffffff',
+    color: '#1a202c',
     fontWeight: '600',
     fontSize: 14,
   },

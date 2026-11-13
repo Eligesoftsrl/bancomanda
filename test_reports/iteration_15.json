@@ -1,0 +1,56 @@
+{
+  "summary": "Frontend-only check of every modal on desktop (1366x650, 1920x950) plus an extra small-height stress test (1366x480) and an iPad landscape regression (1180x820), on tenant Pizzeria Napoli. Each modal got the provided DOM detector, an extended version of it, a mouse-wheel scroll over the card and a check of the last control and the primary button (visible + elementFromPoint hit test). RESULT: 0 unreachable elements in all 24 modals or modal states at every size. Every scrollable modal scrolled to the very bottom with the wheel, and the last control was clickable. The fixed footers dish-save-button, customer-save-button and create-order-button stayed visible without scrolling, both before and after the wheel scroll. iPad regression passed: a TEST_ dish was created through the dish modal and an order through the Nuovo Ordine modal, which then opened the add-item full-screen modal. The audit did turn up some contrast bugs and minor issues inside modals (see design_issues).",
+  "modal_audit_results": {
+    "Piatti - Nuovo piatto": "OK at all sizes; dish-modal-scroll scrolls (650: 401/774); save button fixed at the bottom",
+    "Piatti - Modifica piatto (long description, 10 allergens, 4 tags)": "OK; dish-modal-scroll 401/815 at 650 scrolls to max 414; Salva Modifiche always visible. The 80px description textarea takes the wheel first when the pointer is over it (normal browser behaviour)",
+    "Piatti - Categorie (new + edit with Elimina)": "OK; inner list maxHeight 200 scrolls; all buttons reachable",
+    "Piatti - Disattiva confirm": "OK",
+    "Clienti - Nuovo/Modifica cliente": "OK; customer-modal-scroll 368/587 at 650; customer-save-button always visible",
+    "Clienti - Storico ordini (6 orders)": "OK; list scrolls (650: 467/1400, 480: 322/1400)",
+    "Ordini - Nuovo ordine (+ inline customer picker)": "OK; create-order-button always visible (650: top 515 / bottom 565)",
+    "Ordini - Portion dashboard (16 items)": "OK; body scrolls 421/910 at 650",
+    "Ordini - Add-item full-screen modal (+ inline Edit header, inline Scontrino with a 600x2400 image, inline Piatto Libero, inline delete confirm)": "OK; page scroller 570/2559+; Salva on the header form is reachable; receipt image fitted at 200px height; red X closes the modal",
+    "Menu - Codice/publish info": "OK at 650/950; at 480 the inner code block scrolls and Copia codice stays visible",
+    "Menu - Aggiungi al menu / Modifica piatto menu / Mancata vendita / Rimuovi confirm": "OK; at 480 the edit item card scrolls (432/477)",
+    "Report - Area Riservata password / Impostazioni Admin setup": "OK; setup scrolls at 480. I did not click Esegui Setup Database",
+    "Report - Calendar range": "OK at 650/950; at 480 the card scrolls 396/508 and Applica becomes visible after the wheel scroll",
+    "Change password (header 'Password')": "OK; at 480 the card change-password-modal scrolls 389/408",
+    "/unpaid-orders - order detail": "OK; scrolls 572/736 at 650 and 402/736 at 480; Segna come Pagato reachable",
+    "Not testable (dead code)": "In index.tsx the Modals showCustomItemModal, showReceiptPreview and showCustomerPicker are never opened: nothing ever sets them to true, and the inline versions are used instead"
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Reports calendar modal (react-native-calendars theme)", "issue": "theme.monthTextColor '#fff' and theme.dayTextColor '#fff' on calendarBackground '#ffffff'. The month/year title between the arrows and every enabled day outside the selected range (e.g. 1-5 Nov) are INVISIBLE. textDisabledColor '#e2e8f0' is barely visible too", "selector": "app/(tabs)/reports.tsx ~line 1175-1185 (Calendar theme)", "priority": "HIGH"},
+      {"component": "Reports calendar modal - Annulla button", "issue": "calendarCancelBtnText color '#ffffff' on backgroundColor '#dde4ee': the 'Annulla' label is almost invisible", "selector": "[data-testid=calendar-cancel], styles.calendarCancelBtnText reports.tsx ~1951", "priority": "MEDIUM"},
+      {"component": "Dishes - Categorie modal list", "issue": "categoryListItemText color '#ffffff' on categoryListItem backgroundColor '#f5f7fa': category names in 'Categorie Esistenti' are invisible", "selector": "styles.categoryListItemText dishes.tsx ~line 1115", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "All modals (desktop)", "issues": ["Pressing Escape does not close modals (e.g. the dish modal has no onRequestClose). A small desktop UX improvement"]},
+      {"screen": "Ordini add-item modal - inline delete confirm", "issues": ["The 'Annulla' text is not vertically centred in its button, and 'Cancella Ordine' wraps onto 2 lines at 1366 width"]},
+      {"screen": "Clienti - Storico ordini modal", "issues": ["The status badge maps only 'completato'/'annullato', but order statuses are in_attesa/in_preparazione/pronto/sospeso/consegnato, so every order shows 'In Attesa' (consegnato too)"]}
+    ]
+  },
+  "test_report_links": ["/app/tests/modal_audit_prelude.py", "/app/tests/seed_modal_test.py", "/app/tests/seed_modal_orders.py", "/app/tests/seed_more_orders.py", "/app/tests/seed_unpaid.py", "/app/tests/seed_extra.py", "/app/tests/seed_menu2.py", "/app/tests/cleanup_modal_test.py"],
+  "action_items": [
+    "reports.tsx Calendar theme: set monthTextColor and dayTextColor to a dark colour (e.g. '#1a202c') and textDisabledColor to something like '#94a3b8'",
+    "reports.tsx calendarCancelBtnText: use dark text (e.g. '#1a202c' or '#475569') on '#dde4ee'",
+    "dishes.tsx categoryListItemText: change color '#ffffff' to '#1a202c'",
+    "Optional: add onRequestClose to every Modal so Escape closes it on desktop",
+    "Optional: customers.tsx orders history status badge should map the real statuses (consegnato, pronto, ...)",
+    "Optional: unpaid-orders.tsx uses the `data-testid` prop on RN components, which RN Web does not render. Use testID (close-detail-modal, order-card-N, unpaid-orders-screen)",
+    "Optional: remove the dead Modals in index.tsx (custom item modal, receipt preview, customer picker), or wire them up"
+  ],
+  "critical_code_review_comments": [
+    "A whole family of white-on-white text (#ffffff on light backgrounds) looks left over from a dark-to-light theme switch. Grep for color: '#ffffff' / '#fff' on light backgrounds across the tabs",
+    "The provided detector only covers button/[role=button]/input/textarea. RN-Web Touchables render as div[tabindex=0] without role, so I also ran an extended detector that includes [tabindex=0]. It found 0 unreachable elements as well",
+    "index.tsx is over 4500 lines and should be split into modules"
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend only)", "frontend": "100% modal reachability (24/24 modal states, 3 desktop sizes + iPad); 3 contrast bugs inside modals"},
+  "seed_data_creation": "Pizzeria Napoli only: 17 TEST_ dishes, 7 orders (6 via API + #7 via the iPad UI) and the menu items were all DELETED afterwards. LEFT BEHIND (no delete API exists): customer TEST_Cliente_Modali (id 6af723d5297a578dbce1233d), and today's daily menu (date of server 2026-11-13, id 6af723d6297a578dbce1233e, now with 0 items), which I created through POST /api/menus. Nothing was touched on Giorgio Bistrot",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Load the audit helpers in browser_automation with: g={'page':page}; exec(open('/app/tests/modal_audit_prelude.py').read(), g); audit=g['audit'] (also login, closedlg). Navigate by clicking a[href='/dishes'] etc.; page.goto needs about 12s to load. To close modals, click the Ionicons glyph (private-use unicode char) inside [tabindex=0]. The portions button is new-order-button.previousElementSibling. The calendar is only visible after clicking the 'Periodo' tab in Reports."
+}
