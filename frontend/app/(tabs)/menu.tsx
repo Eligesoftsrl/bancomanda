@@ -23,6 +23,7 @@ import * as Sharing from 'expo-sharing';
 import { useAppStore } from '../../src/store/appStore';
 import { menusApi, dishesApi, missedSalesApi, categoriesApi, tenantApi } from '../../src/services/api';
 import { useAuthStore } from '../../src/store/authStore';
+import { escapeHtml } from '../../src/utils/escapeHtml';
 import { DailyMenu, Dish, MenuItem, Category } from '../../src/types';
 import { sortCategoriesByFixedOrder, sortDishesByCategory, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { useFocusEffect } from 'expo-router';
@@ -406,7 +407,7 @@ export default function MenuScreen() {
     } catch (error) {
       console.error('Branding error:', error);
     }
-    const safeBrandName = brandName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const safeBrandName = escapeHtml(brandName);
     const brandHtml = brandLogo
       ? `<img class="brand-logo" src="${brandLogo}" alt="${safeBrandName}">`
       : `<div class="logo">${safeBrandName}</div>`;
@@ -429,15 +430,15 @@ export default function MenuScreen() {
 
     const menuItemsHtml = sortedCategories.map(category => `
       <div class="category">
-        <div class="category-header">${category}</div>
+        <div class="category-header">${escapeHtml(category)}</div>
         <div class="category-items">
           ${groupedItems[category].map(item => `
             <div class="menu-item">
-              <span class="item-name">${item.dishName}</span>
+              <span class="item-name">${escapeHtml(item.dishName)}</span>
               <span class="item-dots"></span>
               <span class="item-price">${item.dailyPrice.toFixed(2)} €</span>
             </div>
-            ${item.notes ? `<div class="item-notes">${item.notes}</div>` : ''}
+            ${item.notes ? `<div class="item-notes">${escapeHtml(item.notes)}</div>` : ''}
           `).join('')}
         </div>
       </div>

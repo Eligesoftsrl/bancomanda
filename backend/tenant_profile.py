@@ -3,6 +3,7 @@ import base64
 import ftplib
 import hashlib
 import io
+import ipaddress
 import json
 import logging
 import os
@@ -23,11 +24,29 @@ MENU_FILENAME = "menu.json"
 DEFAULT_CLOSING_MESSAGE = "Oggi siamo chiusi. Torna domani per il menu."
 DEFAULT_PENDING_MESSAGE = "Il menu del giorno non è ancora disponibile."
 MAX_LOGO_BYTES = 5 * 1024 * 1024
+MAX_LOGO_PIXELS = 25_000_000  # oltre: rischio "decompression bomb" (immagine piccola che esplode in memoria)
 LOGO_BOX = (800, 400)
+Image.MAX_IMAGE_PIXELS = MAX_LOGO_PIXELS
 
 
 class FtpNotConfigured(Exception):
     pass
+
+
+class FtpHostNotAllowed(Exception):
+    pass
+
+
+def ensure_public_host(host: str, port: int):
+    """Blocca SSRF: il server FTP deve essere su Internet, mai su rete interna/locale del server."""
+    try:
+        infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    except socket.gaierror:
+        raise
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global or ip.is_multicast:
+            raise FtpHostNotAllowed(host)
 
 
 def _fernet() -> Fernet:
@@ -86,6 +105,8 @@ def ftp_config(ftp: Optional[dict], password: Optional[str] = None) -> dict:
 
 
 def ftp_error_message(e: Exception) -> str:
+    if isinstance(e, FtpHostNotAllowed):
+        return "indirizzo FTP non consentito: punta a una rete interna"
     if isinstance(e, socket.gaierror):
         return "indirizzo FTP non trovato, controlla di averlo scritto bene"
     if isinstance(e, ftplib.error_perm) and str(e).startswith("530"):
@@ -102,6 +123,7 @@ def ftp_error_message(e: Exception) -> str:
 def ftp_open(cfg: dict) -> ftplib.FTP:
     """Usa FTPS (cifrato) se il server lo supporta, altrimenti FTP semplice.
     Il ripiego in chiaro avviene solo se il server non accetta la cifratura, mai dopo un login fallito."""
+    ensure_public_host(cfg["host"], cfg["port"])
     ftp = ftplib.FTP_TLS(timeout=20)
     ftp.connect(cfg["host"], cfg["port"])
     try:
@@ -164,7 +186,11 @@ def ftp_test(cfg: dict) -> str:
 def process_logo(raw: bytes) -> bytes:
     try:
         img = Image.open(io.BytesIO(raw))
+        if img.width * img.height > MAX_LOGO_PIXELS:
+            raise ValueError("Immagine troppo grande: massimo 25 megapixel")
         img.load()
+    except ValueError:
+        raise
     except Exception:
         raise ValueError("Il file non è un'immagine valida (usa PNG, JPG o WEBP)")
     img = img.convert("RGBA")

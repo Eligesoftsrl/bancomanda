@@ -99,10 +99,12 @@ class TestTenantLifecycle:
         pwd = "TestPass123!"
         reg = requests.post(f"{BASE_URL}/api/auth/register", json={
             "email": email, "password": pwd, "name": "TEST Owner",
-            "tenant_name": f"TEST_Locale {suf}", "tenant_slug": f"test-locale-{suf}"})
+            "tenant_name": f"TEST_Locale {suf}", "tenant_slug": f"test-locale-{suf}", "privacy_accepted": True})
         assert reg.status_code == 201, reg.text
-        tid = reg.json()["user"]["tenant_id"]
-        assert reg.json()["user"]["role"] == "tenant_admin"
+        # nessun token finché il superadmin non approva
+        assert "access_token" not in reg.json() and reg.json()["success"] is True
+        pending = requests.get(f"{BASE_URL}/api/superadmin/tenants?status=in_attesa", headers=sa_headers).json()
+        tid = next(t["id"] for t in pending["tenants"] if t.get("owner_email") == email)
 
         # pending -> login blocked
         r = _login({"email": email, "password": pwd})
@@ -111,7 +113,7 @@ class TestTenantLifecycle:
         # duplicates
         dup = requests.post(f"{BASE_URL}/api/auth/register", json={
             "email": email, "password": pwd, "name": "TEST Owner",
-            "tenant_name": "TEST_x", "tenant_slug": f"other-{suf}"})
+            "tenant_name": "TEST_x", "tenant_slug": f"other-{suf}", "privacy_accepted": True})
         assert dup.status_code == 409
 
         # appears in pending filter
@@ -173,10 +175,10 @@ class TestDemoRequests:
         before = requests.get(f"{BASE_URL}/api/superadmin/stats", headers=sa_headers).json()
         r = requests.post(f"{BASE_URL}/api/public/demo-request", json={
             "restaurant_name": f"TEST_Rist {suf}", "contact_name": "TEST Mario", "email": email,
-            "phone": "3331234567", "message": "test"})
+            "phone": "3331234567", "message": "test", "privacy_accepted": True})
         assert r.status_code == 201 and r.json()["success"] is True
         dup = requests.post(f"{BASE_URL}/api/public/demo-request", json={
-            "restaurant_name": f"TEST_Rist {suf}", "contact_name": "TEST Mario", "email": email})
+            "restaurant_name": f"TEST_Rist {suf}", "contact_name": "TEST Mario", "email": email, "privacy_accepted": True})
         assert dup.status_code == 429
         after = requests.get(f"{BASE_URL}/api/superadmin/stats", headers=sa_headers).json()
         assert after["total_demo_requests"] == before["total_demo_requests"] + 1

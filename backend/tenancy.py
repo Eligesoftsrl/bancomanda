@@ -14,8 +14,13 @@ from auth.dependencies import password_version as _password_version
 
 SCOPED_COLLECTIONS = {"categories", "dishes", "daily_menus", "orders", "customers", "missed_sales"}
 
-PUBLIC_PREFIXES = ("/api/auth", "/api/superadmin", "/api/public", "/api/landing", "/api/admin")
+PUBLIC_PREFIXES = ("/api/auth", "/api/superadmin", "/api/public", "/api/landing", "/api/admin", "/api/legal")
 LEGACY_PUBLIC_PREFIXES = ("/api/public/menu", "/public/menu")
+
+
+def _under(path: str, prefixes: tuple) -> bool:
+    """Confronto per segmento: '/api/admin' copre '/api/admin/x' ma non '/api/administrator'."""
+    return any(path == p or path.startswith(p + "/") for p in prefixes)
 
 
 @dataclass(frozen=True)
@@ -103,9 +108,9 @@ class TenantContextMiddleware:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         path = scope["path"]
-        if path.startswith(LEGACY_PUBLIC_PREFIXES):
+        if _under(path, LEGACY_PUBLIC_PREFIXES):
             ctx = TenantContext(None, True)
-        elif not path.startswith("/api/") or path == "/api/" or path.startswith(PUBLIC_PREFIXES):
+        elif not path.startswith("/api/") or path == "/api/" or _under(path, PUBLIC_PREFIXES):
             return await self.app(scope, receive, send)
         else:
             token = _bearer(scope)

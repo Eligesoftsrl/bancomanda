@@ -19,8 +19,10 @@
 - **Role**: tenant_admin
 - **Tenant**: Pizzeria Napoli (slug: pizzeria-napoli), status attivo
 
-## Legacy App Access
-- **Reports Tab → Gear Icon Password**: eligesoft
+## Reports Tab → Gear Icon (impostazioni)
+- La vecchia password fissa `eligesoft` NON esiste più: si sblocca con la password dell'account con cui si è entrati (verificata dal server, `POST /api/auth/verify-password`).
+- Es. Pizzeria Napoli → `Password123!`. 5 errori = blocco 15 minuti (429).
+- Blocco login: 5 errori per IP+email, 10 per account → 15 minuti (429). Nota: in preview l'IP di uscita alterna tra 2 indirizzi.
 
 ## API Endpoints
 - Landing page: `/api/landing` (asset: `/api/landing/assets/{file}`)

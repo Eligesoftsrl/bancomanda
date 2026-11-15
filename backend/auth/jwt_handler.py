@@ -2,6 +2,7 @@
 JWT token handling and password hashing.
 Following the integration playbook for secure auth.
 """
+import logging
 import os
 import secrets
 import hashlib
@@ -11,7 +12,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 
 # JWT Configuration - loaded from environment
-JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
+JWT_SECRET = os.environ["JWT_SECRET"]
+if len(JWT_SECRET) < 32:
+    logging.getLogger(__name__).critical("JWT_SECRET troppo corto (%d caratteri): usarne almeno 32", len(JWT_SECRET))
 JWT_ALGORITHM = "HS256"
 JWT_ISSUER = os.environ.get("JWT_ISSUER", "banco-api")
 JWT_AUDIENCE = os.environ.get("JWT_AUDIENCE", "banco-client")
@@ -30,6 +33,10 @@ def hash_password(password: str) -> str:
     if len(raw) < 8:
         raise ValueError("Password must be at least 8 characters")
     return bcrypt.hashpw(raw, bcrypt.gensalt(rounds=12)).decode()
+
+
+# Hash fittizio: con utente inesistente si esegue comunque bcrypt (stessi tempi, niente enumerazione)
+DUMMY_PASSWORD_HASH = bcrypt.hashpw(b"bancomanda-dummy-password", bcrypt.gensalt(rounds=12)).decode()
 
 
 def verify_password(password: str, stored_hash: str) -> bool:

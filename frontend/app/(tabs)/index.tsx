@@ -16,6 +16,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { escapeHtml } from '../../src/utils/escapeHtml';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
@@ -334,24 +335,24 @@ export default function OrdersScreen() {
         <hr class="hr" />
 
         <div class="info">
-          <p class="bold">${order.customerName || 'Cliente Anonimo'}</p>
-          ${isFirst && customer?.address ? `<p>${customer.address}</p>` : ''}
-          ${isFirst && customer?.phone ? `<p>Tel: ${customer.phone}</p>` : ''}
+          <p class="bold">${escapeHtml(order.customerName || 'Cliente Anonimo')}</p>
+          ${isFirst && customer?.address ? `<p>${escapeHtml(customer.address)}</p>` : ''}
+          ${isFirst && customer?.phone ? `<p>Tel: ${escapeHtml(customer.phone)}</p>` : ''}
         </div>
 
-        ${order.deliveryTime ? `<div class="delivery-time">ORA: ${order.deliveryTime}</div>` : ''}
+        ${order.deliveryTime ? `<div class="delivery-time">ORA: ${escapeHtml(order.deliveryTime)}</div>` : ''}
 
-        ${isFirst && order.notes ? `<div class="notes-box"><span class="bold">NOTE:</span> ${order.notes}</div>` : ''}
+        ${isFirst && order.notes ? `<div class="notes-box"><span class="bold">NOTE:</span> ${escapeHtml(order.notes)}</div>` : ''}
 
         <hr class="hr" />
 
         ${items.map(item => `
           <div class="item">
             <div class="item-row">
-              <span class="item-name">${item.quantity}x ${item.dishName}</span>
+              <span class="item-name">${item.quantity}x ${escapeHtml(item.dishName)}</span>
               <span class="item-price">${item.subtotal.toFixed(2)}€</span>
             </div>
-            ${item.notes ? `<div class="item-note">> ${item.notes}</div>` : ''}
+            ${item.notes ? `<div class="item-note">&gt; ${escapeHtml(item.notes)}</div>` : ''}
           </div>
         `).join('')}
 

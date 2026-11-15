@@ -5,7 +5,9 @@ from bson import ObjectId
 from fastapi import APIRouter, HTTPException, status, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+from routes.legal import PRIVACY_VERSION
 
 router = APIRouter(prefix="/public", tags=["Public"])
 
@@ -19,6 +21,7 @@ class DemoRequestCreate(BaseModel):
     email: EmailStr
     phone: Optional[str] = Field(None, max_length=20)
     message: Optional[str] = Field(None, max_length=1000)
+    privacy_accepted: bool = False
 
 
 class DemoRequestResponse(BaseModel):
@@ -35,12 +38,14 @@ async def create_demo_request(body: DemoRequestCreate, request: Request):
     No authentication required.
     """
     db = request.app.state.db
-    
+    now = datetime.now(timezone.utc)
+    if not body.privacy_accepted:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Per inviare la richiesta devi accettare l'informativa privacy")
+
     # Check for duplicate recent requests (same email in last 24h)
-    from datetime import timedelta
     recent = await db.demo_requests.find_one({
         "email": body.email.lower(),
-        "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(hours=24)}
+        "created_at": {"$gte": now - timedelta(hours=24)}
     })
     if recent:
         raise HTTPException(
@@ -57,7 +62,9 @@ async def create_demo_request(body: DemoRequestCreate, request: Request):
         "message": body.message,
         "status": "nuova",
         "notes": None,
-        "created_at": datetime.now(timezone.utc),
+        "privacy_accepted_at": now,
+        "privacy_version": PRIVACY_VERSION,
+        "created_at": now,
         "updated_at": None,
     }
     await db.demo_requests.insert_one(doc)

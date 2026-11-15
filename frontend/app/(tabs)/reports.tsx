@@ -18,7 +18,7 @@ import { format, addDays, subDays, startOfMonth, endOfMonth, subMonths } from 'd
 import { it } from 'date-fns/locale';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { useAppStore } from '../../src/store/appStore';
-import { reportsApi, missedSalesApi, setupApi, ordersApi, kitchenApi, porzionaturApi, KitchenGroup } from '../../src/services/api';
+import { reportsApi, missedSalesApi, setupApi, ordersApi, kitchenApi, porzionaturApi, authApi, KitchenGroup } from '../../src/services/api';
 import { DailySummary, MissedSale, Order } from '../../src/types';
 import { AccountButton } from '../../src/components/AccountButton';
 
@@ -39,7 +39,6 @@ const CHANNEL_LABELS: Record<string, string> = {
   richiesta: 'Richiesta',
 };
 
-const ADMIN_PASSWORD = 'eligesoft';
 
 type ReportMode = 'daily' | 'range';
 
@@ -340,14 +339,16 @@ export default function ReportsScreen() {
   };
 
   // Setup/Admin functions
-  const handlePasswordSubmit = () => {
-    if (password === ADMIN_PASSWORD) {
+  // Sblocco verificato dal server con la password dell'account (nessuna password scritta nell'app)
+  const handlePasswordSubmit = async () => {
+    try {
+      await authApi.verifyPassword(password);
       setShowPasswordModal(false);
       setPassword('');
       setShowSetupModal(true);
       checkSetupStatus();
-    } else {
-      Alert.alert('Errore', 'Password non corretta');
+    } catch (error: any) {
+      Alert.alert('Errore', error?.response?.data?.detail || 'Password non corretta');
       setPassword('');
     }
   };
@@ -412,7 +413,7 @@ export default function ReportsScreen() {
               <Ionicons name="lock-closed" size={40} color="#DB0007" />
               <Text style={styles.modalTitle}>Area Riservata</Text>
               <Text style={styles.modalSubtitle}>
-                Inserisci la password per accedere alle impostazioni
+                Inserisci la password del tuo account (la stessa usata per accedere)
               </Text>
             </View>
             <TextInput

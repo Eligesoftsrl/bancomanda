@@ -29,10 +29,8 @@ def get_landing_html() -> str:
     <meta name="description" content="Bancomanda è il gestionale per ristoranti, bistrot e pizzerie italiane. Ordini, menu del giorno, stampa termica 62mm, cucina e porzionatura su iPad e tablet Android.">
     <link rel="icon" type="image/png" href="/api/landing/assets/favicon.png">
     <link rel="apple-touch-icon" href="/api/landing/assets/favicon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/api/landing/assets/fonts.css">
+    <link rel="stylesheet" href="/api/landing/assets/fa.min.css">
     <style>
         :root {
             /* Palette Bancomanda: rosso corallo del logo + blu notte della login */
@@ -692,6 +690,30 @@ def get_landing_html() -> str:
             background: var(--bg-main);
             border-top: 1px solid var(--border-subtle);
         }
+        .footer-legal { font-size: 0.8rem; margin-top: 0.5rem; opacity: 0.85; }
+        .privacy-check { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; cursor: pointer; }
+        .privacy-check.full { grid-column: 1 / -1; }
+        .privacy-check input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--primary); }
+        .privacy-check a { color: var(--primary-hover); }
+        .cookie-notice {
+            position: fixed; left: 1.25rem; bottom: 1.25rem; z-index: 900;
+            display: flex; gap: 0.9rem; align-items: flex-start;
+            max-width: 400px; padding: 1.1rem 1.2rem;
+            background: var(--bg-dark); color: var(--text-on-dark);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.28);
+            opacity: 0; transform: translateY(24px); pointer-events: none; visibility: hidden;
+            transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s linear 0.35s;
+        }
+        .cookie-notice.visible { opacity: 1; transform: translateY(0); pointer-events: auto; visibility: visible; transition: opacity 0.35s ease, transform 0.35s ease; }
+        .cookie-notice-icon { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; display: grid; place-items: center; background: var(--primary-light); color: var(--primary); font-size: 1rem; }
+        .cookie-notice-body strong { display: block; font-size: 0.95rem; margin-bottom: 0.25rem; }
+        .cookie-notice-body p { font-size: 0.83rem; line-height: 1.5; color: rgba(248,250,252,0.75); margin-bottom: 0.8rem; }
+        .cookie-notice-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .cookie-notice-ok { padding: 0.55rem 1.2rem; font-size: 0.85rem; }
+        .cookie-notice-actions a { color: rgba(248,250,252,0.85); font-size: 0.83rem; text-decoration: underline; text-underline-offset: 3px; }
+        .cookie-notice-actions a:hover { color: #fff; }
+        @media (max-width: 560px) { .cookie-notice { left: 0.75rem; right: 0.75rem; bottom: 0.75rem; max-width: none; } }
         .footer-inner {
             max-width: 1200px;
             margin: 0 auto;
@@ -1236,6 +1258,10 @@ def get_landing_html() -> str:
                             <label for="message">Messaggio</label>
                             <textarea id="message" name="message" placeholder="Raccontaci del tuo locale..."></textarea>
                         </div>
+                        <label class="privacy-check full" data-testid="demo-privacy-label">
+                            <input type="checkbox" name="privacy" required data-testid="demo-privacy-checkbox">
+                            <span>Ho letto l'<a href="/api/legal/privacy" target="_blank" rel="noopener">informativa privacy</a> e acconsento a essere ricontattato per la demo. *</span>
+                        </label>
                     </div>
                     <div class="form-submit">
                         <button type="submit" class="btn btn-primary">
@@ -1308,14 +1334,16 @@ def get_landing_html() -> str:
                     <img class="logo-icon" src="/api/landing/assets/favicon.png" alt="Bancomanda">
                     <span class="logo-text">Bancomanda</span>
                 </div>
-                <p>© 2026 Bancomanda. Sistema gestionale per la ristorazione italiana.</p>
+                <p>Sistema gestionale per la ristorazione italiana.</p>
+                <p class="footer-legal" data-testid="footer-company">© 2026 Eligesoft srl · Human Technology · P. IVA 04532690650 · Via San Pietro 16, 84014 Nocera Inferiore (SA)</p>
             </div>
             <div class="footer-links">
                 <a href="/accedi" data-testid="footer-login-link"><i class="fas fa-right-to-bracket"></i> Accedi</a>
                 <a href="#features">Funzionalità</a>
                 <a href="#demo">Richiedi Demo</a>
                 <a href="#faq">FAQ</a>
-                <a href="mailto:info@banco.app">Contatti</a>
+                <a href="mailto:info@eligesoft.com" data-testid="footer-contact-link">Contatti</a>
+                <a href="/api/legal/privacy" data-testid="footer-privacy-link">Privacy e cookie</a>
             </div>
         </div>
     </footer>
@@ -1349,6 +1377,10 @@ def get_landing_html() -> str:
                     <label>Password *</label>
                     <input type="password" id="reg_password" required minlength="8" placeholder="Minimo 8 caratteri">
                 </div>
+                <label class="privacy-check" style="margin-bottom: 1.5rem;" data-testid="register-privacy-label">
+                    <input type="checkbox" id="reg_privacy" required data-testid="register-privacy-checkbox">
+                    <span>Ho letto l'<a href="/api/legal/privacy" target="_blank" rel="noopener">informativa privacy</a>. *</span>
+                </label>
                 <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
                     <i class="fas fa-rocket"></i> Crea Account
                 </button>
@@ -1357,7 +1389,25 @@ def get_landing_html() -> str:
         </div>
     </div>
 
+    <div class="cookie-notice" id="cookieNotice" role="region" aria-label="Avviso cookie" data-testid="cookie-notice">
+        <div class="cookie-notice-icon"><i class="fas fa-cookie-bite"></i></div>
+        <div class="cookie-notice-body">
+            <strong>Solo cookie tecnici</strong>
+            <p data-testid="cookie-notice-text">Questo sito usa esclusivamente strumenti tecnici necessari al funzionamento. Nessun cookie di profilazione, pubblicità o statistica.</p>
+            <div class="cookie-notice-actions">
+                <button type="button" class="btn btn-primary cookie-notice-ok" id="cookieNoticeOk" data-testid="cookie-notice-accept-btn">Ho capito</button>
+                <a href="/api/legal/privacy#cookie" data-testid="cookie-notice-info-link">Maggiori informazioni</a>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function apiError(result, fallback) {
+            if (result && typeof result.detail === 'string') return result.detail;
+            if (result && Array.isArray(result.detail)) return result.detail.map(d => d.msg).join(' · ');
+            return fallback;
+        }
+
         // Demo form
         document.getElementById('demoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1370,7 +1420,8 @@ def get_landing_html() -> str:
                 contact_name: this.contact_name.value,
                 email: this.email.value,
                 phone: this.phone.value || null,
-                message: this.message.value || null
+                message: this.message.value || null,
+                privacy_accepted: this.privacy.checked
             };
             try {
                 const resp = await fetch('/api/public/demo-request', {
@@ -1384,8 +1435,9 @@ def get_landing_html() -> str:
                     alert.style.display = 'block';
                     this.reset();
                 } else if (resp.status === 429) {
+                    const result = await resp.json().catch(() => ({}));
                     alert.className = 'form-alert error';
-                    alert.textContent = 'Hai già inviato una richiesta nelle ultime 24 ore.';
+                    alert.textContent = apiError(result, 'Hai già inviato una richiesta nelle ultime 24 ore.');
                     alert.style.display = 'block';
                 } else {
                     throw new Error();
@@ -1411,7 +1463,8 @@ def get_landing_html() -> str:
                 tenant_slug: document.getElementById('reg_tenant_slug').value.toLowerCase(),
                 name: document.getElementById('reg_name').value,
                 email: document.getElementById('reg_email').value,
-                password: document.getElementById('reg_password').value
+                password: document.getElementById('reg_password').value,
+                privacy_accepted: document.getElementById('reg_privacy').checked
             };
             try {
                 const resp = await fetch('/api/auth/register', {
@@ -1427,7 +1480,7 @@ def get_landing_html() -> str:
                     this.reset();
                 } else {
                     alert.className = 'form-alert error';
-                    alert.textContent = result.detail || 'Errore durante la registrazione.';
+                    alert.textContent = apiError(result, 'Errore durante la registrazione.');
                     alert.style.display = 'block';
                 }
             } catch (err) {
@@ -1480,6 +1533,19 @@ def get_landing_html() -> str:
         } else {
             document.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
         }
+
+        // Avviso cookie informativo: la chiusura viene ricordata in questo browser
+        (function () {
+            const KEY = 'bm_cookie_notice_v1';
+            const box = document.getElementById('cookieNotice');
+            let seen = false;
+            try { seen = localStorage.getItem(KEY) === '1'; } catch (e) {}
+            if (!seen) requestAnimationFrame(() => box.classList.add('visible'));
+            document.getElementById('cookieNoticeOk').addEventListener('click', () => {
+                try { localStorage.setItem(KEY, '1'); } catch (e) {}
+                box.classList.remove('visible');
+            });
+        })();
     </script>
 </body>
 </html>'''

@@ -237,7 +237,8 @@ class TestNapoliFlow:
     def test_publish_503(self, napoli, state):
         h = H(napoli)
         r = requests.patch(f"{API}/menus/{state['menu_id']}/publish", headers=h, json={"isPublished": True})
-        assert r.status_code == 503
+        # 503 = FTP non configurato, 502 = FTP configurato ma irraggiungibile (preview)
+        assert r.status_code in (502, 503)
         m = requests.get(f"{API}/menus/{state['menu_id']}", headers=h).json()
         assert m["isPublished"] is False
 

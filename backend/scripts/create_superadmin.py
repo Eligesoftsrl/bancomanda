@@ -17,16 +17,16 @@ load_dotenv(Path(__file__).parent.parent / '.env')
 from motor.motor_asyncio import AsyncIOMotorClient
 from auth.jwt_handler import hash_password
 
-# Default superadmin credentials
-DEFAULT_EMAIL = "admin@banco.app"
-DEFAULT_PASSWORD = "BancoAdmin2024!"
+# Credenziali solo da variabili d'ambiente: nessuna password scritta nel codice
+DEFAULT_EMAIL = os.environ["SUPERADMIN_EMAIL"].strip().lower()
+DEFAULT_PASSWORD = os.environ["SUPERADMIN_PASSWORD"]
 DEFAULT_NAME = "Super Admin"
 
 
 async def create_superadmin():
     """Create the initial superadmin user."""
-    mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
-    db_name = os.environ.get('DB_NAME', 'catering-dashboard-3')
+    mongo_url = os.environ['MONGO_URL']
+    db_name = os.environ['DB_NAME']
     
     client = AsyncIOMotorClient(mongo_url)
     db = client[db_name]
@@ -58,7 +58,6 @@ async def create_superadmin():
     print("SUPERADMIN CREATO CON SUCCESSO!")
     print("=" * 50)
     print(f"Email:    {DEFAULT_EMAIL}")
-    print(f"Password: {DEFAULT_PASSWORD}")
     print("=" * 50)
     print("IMPORTANTE: Cambia la password dopo il primo login!")
     print("=" * 50)

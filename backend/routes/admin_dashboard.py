@@ -16,10 +16,8 @@ def get_dashboard_html() -> str:
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Bancomanda Admin — Dashboard Superadmin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/api/landing/assets/fonts.css">
+    <link rel="stylesheet" href="/api/landing/assets/fa.min.css">
     <style>
         :root {
             /* Palette Bancomanda: rosso corallo del logo + blu notte della login */

@@ -350,6 +350,14 @@ export const setupApi = {
   },
 };
 
+// Conferma password account per funzioni protette (nessun retry: un errore conta come un tentativo)
+export const authApi = {
+  verifyPassword: async (password: string) => {
+    const response = await api.post('/auth/verify-password', { password }, { _retry: true } as any);
+    return response.data;
+  },
+};
+
 // Nome e logo del locale (stampa menu)
 export const tenantApi = {
   getBranding: async (): Promise<{ name: string; logo: string | null }> => {

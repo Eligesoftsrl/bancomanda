@@ -1,9 +1,10 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Response
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import re
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -20,29 +21,18 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=False)  # NON sovrascrivere le variabili di produzione
 
 # MongoDB connection
-mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+mongo_url = os.environ['MONGO_URL']
+DB_NAME = os.environ['DB_NAME']
 
-# DB_NAME viene passato da Emergent in produzione
-# In preview usa il default catering-dashboard-3
-DB_NAME = os.environ.get('DB_NAME', 'catering-dashboard-3')
-
-print(f"MONGO_URL: {mongo_url[:50]}...")
-print(f"DB_NAME: {DB_NAME}")
-
-try:
-    client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
-    raw_db = client[DB_NAME]
-    print(f"MongoDB client initialized successfully")
-except Exception as e:
-    print(f"ERROR connecting to MongoDB: {e}")
-    # Fallback to localhost if Atlas fails
-    client = AsyncIOMotorClient('mongodb://localhost:27017')
-    raw_db = client[DB_NAME]
-    print(f"Fallback to localhost")
+# Mai stampare l'URL: contiene utente e password del database
+print(f"MongoDB: database '{DB_NAME}'")
+client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
+raw_db = client[DB_NAME]
 
 from tenancy import ScopedDatabase, TenantContextMiddleware
 from tenant_profile import FtpNotConfigured, current_tenant_doc, encrypt_secret, ftp_config, ftp_error_message, ftp_upload_menu_json, logo_data_url, menu_message
 from auth.jwt_handler import hash_password
+from auth.dependencies import CurrentUser, require_roles
 
 # Collezioni dati filtrate automaticamente per locale (vedi tenancy.py)
 db = ScopedDatabase(raw_db)
@@ -79,6 +69,8 @@ api_router.include_router(public_router)
 
 # Landing page is served under /api/landing (e alla radice del dominio del server)
 api_router.include_router(landing_router)
+from routes.legal import router as legal_router
+api_router.include_router(legal_router)
 from routes.landing import render_landing
 
 
@@ -98,15 +90,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Debug endpoint to check DB connection
-@api_router.get("/debug/db-info")
-async def get_db_info():
-    """Returns info about current database connection"""
-    return {
-        "database_name": DB_NAME,
-        "mongo_url": mongo_url.replace(mongo_url.split("@")[-1].split("/")[0] if "@" in mongo_url else "", "***") if "@" in mongo_url else mongo_url,
-        "collections": await db.list_collection_names()
-    }
-
 # ============ MODELS ============
 
 # Helper for ObjectId
@@ -1551,9 +1534,10 @@ async def get_customers(search: Optional[str] = None, limit: int = 5000):
     query = {}
     if search:
         # Cerca sia per nome che per partita IVA
+        pattern = re.escape(search[:100])  # testo letterale: niente regex dall'utente (ReDoS)
         query["$or"] = [
-            {"name": {"$regex": search, "$options": "i"}},
-            {"partitaIva": {"$regex": search, "$options": "i"}}
+            {"name": {"$regex": pattern, "$options": "i"}},
+            {"partitaIva": {"$regex": pattern, "$options": "i"}}
         ]
     
     customers = await db.customers.find(query).sort("name", 1).limit(limit).to_list(limit)
@@ -1876,7 +1860,7 @@ SCHEMA_REFERENCE = {
 
 # ============ SETUP/MIGRATION ENDPOINT ============
 @api_router.post("/setup")
-async def setup_database():
+async def setup_database(user: CurrentUser = Depends(require_roles("tenant_admin"))):
     """
     Allinea il database allo SCHEMA_REFERENCE:
     - Crea collezioni mancanti
@@ -2088,7 +2072,7 @@ async def setup_database():
         await db.orders.create_index([("status", 1)])
         await db.dishes.create_index([("categoryId", 1)])
         await db.dishes.create_index([("active", 1)])
-        await db.daily_menus.create_index([("date", 1)], unique=True)
+        await db.daily_menus.create_index([("tenant_id", 1), ("date", 1)], unique=True)
         logger.info("[SETUP] Indici creati/verificati")
     except Exception as e:
         logger.warning(f"[SETUP] Errore creazione indici: {e}")
@@ -2107,7 +2091,7 @@ async def setup_database():
     return results
 
 @api_router.get("/setup/status")
-async def setup_status():
+async def setup_status(user: CurrentUser = Depends(require_roles("tenant_admin"))):
     """Verifica lo stato del database rispetto allo SCHEMA_REFERENCE"""
     # Collezioni esistenti
     existing_collections = await db.list_collection_names()
@@ -2157,7 +2141,6 @@ async def setup_status():
     )
     
     return {
-        "database": DB_NAME,
         "schema_version": "1.0",
         "collections": {
             "categories": categories,
@@ -2237,9 +2220,7 @@ async def public_menu_html():
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, follow">
     <title>Menu del giorno — {date_display}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/api/landing/assets/fonts.css">
     <style>
         * {{ box-sizing: border-box; }}
         body {{
@@ -2303,13 +2284,63 @@ async def public_menu_html():
 
 app.add_middleware(TenantContextMiddleware, db=raw_db)
 
+HTML_CSP = (
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data: https:; font-src 'self'; connect-src 'self'; object-src 'none'; "
+    "base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+)
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    h = response.headers
+    h.setdefault("X-Content-Type-Options", "nosniff")
+    h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    h.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+    h.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    h.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+    # Nessuna pagina può essere incorporata in siti altrui (clickjacking)
+    h.setdefault("X-Frame-Options", "DENY")
+    if h.get("content-type", "").startswith("text/html"):
+        h.setdefault("Content-Security-Policy", HTML_CSP)
+    return response
+
+
+# Autenticazione con header Authorization (niente cookie): le credenziali CORS non servono
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def ensure_tenant_indexes():
+    """Indici per locale: unicità per (locale, data) e slug, mai indici globali che bloccano altri locali."""
+    specs = [
+        ("tenants", [("slug", 1)], {"unique": True}),
+        ("daily_menus", [("tenant_id", 1), ("date", 1)], {"unique": True}),
+        ("orders", [("tenant_id", 1), ("menuDate", 1)], {}),
+        ("users", [("email", 1)], {"unique": True}),
+        ("demo_requests", [("created_at", 1)], {"expireAfterSeconds": 730 * 24 * 3600}),
+        ("login_attempts", [("identifier", 1)], {}),
+        ("login_attempts", [("last_attempt", 1)], {"expireAfterSeconds": 24 * 3600}),
+    ]
+    for col, keys, opts in specs:
+        try:
+            await raw_db[col].create_index(keys, **opts)
+        except Exception as e:
+            logger.error(f"[INDEX] {col} {keys}: {e}")
+    # Indice globale su 'date' (vecchio /setup) impedirebbe ad altri locali di creare menu nelle stesse date
+    try:
+        if "date_1" in await raw_db.daily_menus.index_information():
+            await raw_db.daily_menus.drop_index("date_1")
+            logger.info("[INDEX] rimosso indice globale daily_menus.date_1")
+    except Exception as e:
+        logger.error(f"[INDEX] daily_menus date_1: {e}")
+
 
 @app.on_event("startup")
 async def encrypt_pending_ftp_passwords():
