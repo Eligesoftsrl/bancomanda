@@ -40,7 +40,7 @@ async def create_demo_request(body: DemoRequestCreate, request: Request):
     db = request.app.state.db
     now = datetime.now(timezone.utc)
     if not body.privacy_accepted:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Per inviare la richiesta devi accettare l'informativa privacy")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Per inviare la richiesta devi accettare l'informativa privacy")
 
     # Check for duplicate recent requests (same email in last 24h)
     recent = await db.demo_requests.find_one({

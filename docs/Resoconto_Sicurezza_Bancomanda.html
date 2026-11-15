@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Resoconto sicurezza e privacy · Bancomanda</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; color: #0f172a; font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  .cover { background: #141d2c; color: #f8fafc; padding: 22px 26px; border-radius: 12px; margin-bottom: 18px; }
+  .cover .brand { color: #f5595a; font-weight: 700; letter-spacing: .08em; font-size: 9pt; text-transform: uppercase; }
+  .cover h1 { font-size: 21pt; margin: 6px 0 4px; line-height: 1.15; }
+  .cover p { margin: 0; color: #cbd5e1; font-size: 9.5pt; }
+  .kpis { display: flex; gap: 10px; margin: 14px 0 6px; }
+  .kpi { flex: 1; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; }
+  .kpi b { display: block; font-size: 17pt; color: #141d2c; }
+  .kpi span { font-size: 8.5pt; color: #475569; }
+  .kpi.ok b { color: #059669; }
+  h2 { font-size: 13pt; margin: 20px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #f5595a; }
+  h3 { font-size: 11pt; margin: 14px 0 6px; }
+  p, li { color: #334155; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 8.8pt; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #e2e8f0; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #f2f0eb; font-weight: 600; color: #0f172a; }
+  .sev { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 7.8pt; font-weight: 700; color: #fff; white-space: nowrap; }
+  .crit { background: #b91c1c; } .high { background: #ea580c; } .med { background: #d97706; } .low { background: #64748b; }
+  .ok { color: #059669; font-weight: 600; }
+  .note { background: #faf9f6; border-left: 4px solid #f5595a; padding: 8px 12px; border-radius: 6px; margin: 8px 0; }
+  footer { margin-top: 18px; font-size: 8pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="brand">Bancomanda · Eligesoft srl</div>
+  <h1>Resoconto di sicurezza, privacy (GDPR) e AI Act</h1>
+  <p>Verifica del 15 novembre 2026 · Ambiente analizzato: copia di prova (preview), mai la produzione</p>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><b>42</b><span>attacchi simulati automatici</span></div>
+  <div class="kpi ok"><b>0</b><span>falle aperte dopo le correzioni</span></div>
+  <div class="kpi"><b>19</b><span>problemi trovati e risolti (codice)</span></div>
+  <div class="kpi"><b>5</b><span>librerie aggiornate o rimosse</span></div>
+</div>
+
+<h2>1. Come è stata fatta la verifica</h2>
+<ul>
+  <li><b>Attacco simulato</b> (script <code>backend/tests/security/pentest.py</code>, 42 controlli): accesso senza login, token falsificati, percorsi alterati, accesso ai dati di un altro ristorante, iniezione di codice, ricerche malevole, enumerazione degli account, forza bruta sulle password, SSRF dal test FTP, intestazioni di sicurezza e CORS.</li>
+  <li><b>Analisi statica del codice</b> con regole equivalenti a SonarQube per la sicurezza: Bandit (Python), Ruff e Oxlint (JavaScript/TypeScript), ricerca di password scritte nel codice.</li>
+  <li><b>Analisi delle librerie</b> (come SonarQube SCA): pip-audit per il server, yarn audit per l'app.</li>
+  <li><b>Test di regressione</b>: 86 test automatici sul server (isolamento tra ristoranti, accesso, impostazioni, sicurezza/GDPR) e prova completa dell'app e della pagina iniziale nel browser.</li>
+</ul>
+
+<h2>2. Falle trovate e come sono state chiuse</h2>
+<table>
+  <thead><tr><th>#</th><th>Gravità</th><th>Problema</th><th>Correzione</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><span class="sev crit">Critica</span></td><td>La password delle impostazioni Report (<i>eligesoft</i>) era scritta dentro l'app: chiunque poteva leggerla scaricando il sito.</td><td>Ora lo sblocco usa la password dell'account, verificata dal server; blocco dopo 5 errori.</td></tr>
+    <tr><td>2</td><td><span class="sev crit">Critica</span></td><td>Una pagina di diagnostica mostrava nome del database e collezioni; all'avvio il server stampava l'indirizzo del database.</td><td>Pagina rimossa; i log non mostrano più dati di connessione.</td></tr>
+    <tr><td>3</td><td><span class="sev high">Alta</span></td><td>Chi si registrava da solo riceveva subito l'accesso, prima dell'approvazione del superadmin.</td><td>Il locale resta bloccato finché non viene approvato.</td></tr>
+    <tr><td>4</td><td><span class="sev high">Alta</span></td><td>Le funzioni di manutenzione del database erano usabili da qualsiasi utente collegato.</td><td>Solo il titolare, solo sui dati del proprio locale.</td></tr>
+    <tr><td>5</td><td><span class="sev high">Alta</span></td><td>Testo malevolo nei nomi di clienti, piatti o note poteva eseguire codice nelle stampe di comande e menu (XSS).</td><td>Tutto il testo inserito viene neutralizzato prima della stampa e nella dashboard superadmin.</td></tr>
+    <tr><td>6</td><td><span class="sev high">Alta</span></td><td>Il "Prova collegamento FTP" poteva essere usato per contattare servizi interni del server (SSRF).</td><td>Bloccati tutti gli indirizzi interni e privati.</td></tr>
+    <tr><td>7</td><td><span class="sev high">Alta</span></td><td>Indice unico per data dei menu condiviso: un locale poteva impedire agli altri di creare il menu dello stesso giorno.</td><td>Unicità per locale + data.</td></tr>
+    <tr><td>8</td><td><span class="sev med">Media</span></td><td>La ricerca clienti interpretava il testo come espressione regolare: ricerche lente o "trova tutto".</td><td>Il testo viene cercato alla lettera (max 100 caratteri).</td></tr>
+    <tr><td>9</td><td><span class="sev med">Media</span></td><td>Dai tempi di risposta del login si capiva se un'email era registrata.</td><td>Tempi identici per email esistenti e inesistenti.</td></tr>
+    <tr><td>10</td><td><span class="sev med">Media</span></td><td>Il blocco dopo password errate si aggirava cambiando indirizzo IP.</td><td>Secondo contatore per account: 5 errori per IP, 10 per account, blocco 15 minuti.</td></tr>
+    <tr><td>11</td><td><span class="sev med">Media</span></td><td>Mancavano le intestazioni di sicurezza (incorporamento in siti truffa, HTTPS obbligatorio, contenuti consentiti).</td><td>Aggiunte su server, pagina iniziale e app (Vercel).</td></tr>
+    <tr><td>12</td><td><span class="sev med">Media</span></td><td>CORS permetteva richieste con credenziali da qualsiasi sito.</td><td>Credenziali CORS disattivate (l'accesso usa il token, non i cookie).</td></tr>
+    <tr><td>13</td><td><span class="sev med">Media</span></td><td>Un logo costruito ad arte (immagine "bomba") poteva esaurire la memoria del server.</td><td>Limite di 25 megapixel oltre ai 5 MB.</td></tr>
+    <tr><td>14</td><td><span class="sev med">Media</span></td><td>La registrazione rivelava se un'email o un indirizzo del locale esistevano anche senza consenso privacy.</td><td>Il consenso viene controllato per primo.</td></tr>
+    <tr><td>15</td><td><span class="sev low">Bassa</span></td><td>In assenza della chiave di firma degli accessi il server ne inventava una (accessi persi a ogni riavvio, errore nascosto).</td><td>La chiave è obbligatoria; il server non parte senza.</td></tr>
+    <tr><td>16</td><td><span class="sev low">Bassa</span></td><td>Il riconoscimento dei percorsi pubblici era per prefisso di testo ("/api/admin" copriva anche "/api/administrator").</td><td>Confronto per segmento di percorso.</td></tr>
+    <tr><td>17</td><td><span class="sev low">Bassa</span></td><td>Lo script di creazione del superadmin conteneva una password predefinita.</td><td>Credenziali solo da variabili d'ambiente.</td></tr>
+    <tr><td>18</td><td><span class="sev low">Bassa</span></td><td>La manutenzione restituiva il nome interno del database.</td><td>Campo rimosso.</td></tr>
+    <tr><td>19</td><td><span class="sev low">Bassa</span></td><td>I tentativi di accesso falliti restavano nel database per sempre.</td><td>Cancellazione automatica dopo 24 ore.</td></tr>
+  </tbody>
+</table>
+
+<h3>Librerie</h3>
+<table>
+  <thead><tr><th>Libreria</th><th>Problema noto</th><th>Azione</th></tr></thead>
+  <tbody>
+    <tr><td>FastAPI / Starlette (server)</td><td>Blocco del server con invii di file enormi, intestazione Host non validata</td><td>Aggiornate a FastAPI 0.163.1 / Starlette 1.10.0</td></tr>
+    <tr><td>PyMongo / Motor (database)</td><td>7 vulnerabilità note</td><td>Aggiornate a PyMongo 4.20.0 / Motor 3.7.1</td></tr>
+    <tr><td>python-jose</td><td>Vulnerabilità senza correzione; libreria non usata</td><td>Rimossa</td></tr>
+    <tr><td>emergentintegrations / litellm (librerie IA)</td><td>26 vulnerabilità note; mai usate dall'app</td><td>Tolte dal pacchetto installato in produzione</td></tr>
+    <tr><td>Axios (app)</td><td>11 vulnerabilità gravi</td><td>Aggiornata a 1.21.1</td></tr>
+  </tbody>
+</table>
+
+<h2>3. Privacy (GDPR) sulla pagina iniziale</h2>
+<table>
+  <thead><tr><th>Requisito</th><th>Stato</th></tr></thead>
+  <tbody>
+    <tr><td>Informativa privacy (artt. 13-14 GDPR) con titolare Eligesoft srl, finalità, basi giuridiche, tempi di conservazione, fornitori (Vercel, Railway), trasferimenti extra UE, diritti e reclamo al Garante</td><td class="ok">Pubblicata su /api/legal/privacy, collegata dal footer e dai moduli</td></tr>
+    <tr><td>Consenso nel modulo "Richiedi demo" e nella registrazione</td><td class="ok">Casella obbligatoria; data e versione dell'informativa salvate con la richiesta</td></tr>
+    <tr><td>Conservazione limitata (art. 5)</td><td class="ok">Richieste demo cancellate in automatico dopo 24 mesi</td></tr>
+    <tr><td>Nessun invio dell'IP dei visitatori a terzi</td><td class="ok">Caratteri (Google Fonts) e icone (Font Awesome) ora ospitati sul nostro server</td></tr>
+    <tr><td>Cookie</td><td class="ok">Solo strumenti tecnici; avviso informativo alla prima visita (chiusura ricordata nel browser); nessun cookie di profilazione o statistica</td></tr>
+    <tr><td>Dati dei clienti dei ristoranti</td><td class="ok">Eligesoft indicata come responsabile del trattamento (art. 28); dati separati per ristorante</td></tr>
+    <tr><td>Dati identificativi dell'azienda nel footer</td><td class="ok">Ragione sociale, P. IVA 04532690650, sede</td></tr>
+  </tbody>
+</table>
+
+<h2>4. AI Act (Regolamento UE 2024/1689)</h2>
+<p>Bancomanda <b>non usa sistemi di intelligenza artificiale</b>: ordini, report, menu e stampe derivano da regole e calcoli definiti, senza decisioni automatizzate sulle persone. Gli obblighi dell'AI Act quindi non si applicano; la dichiarazione è pubblicata nella sezione 7 dell'informativa. Le librerie IA presenti per errore nel pacchetto del server sono state tolte, così la dichiarazione corrisponde anche al software installato.</p>
+
+<h2>5. Rischi residui e raccomandazioni</h2>
+<ul>
+  <li><b>FTP del sito del ristorante</b>: l'app usa sempre il collegamento cifrato (FTPS); se il server del sito non lo supporta, ripiega su FTP semplice e la password viaggia in chiaro. Conviene verificare con il provider (es. Aruba) che FTPS sia attivo.</li>
+  <li><b>Password superadmin di produzione</b>: se è ancora quella iniziale, va cambiata.</li>
+  <li><b>Blocco degli accessi</b>: 10 password errate bloccano l'account per 15 minuti anche se le prova qualcun altro. È una scelta voluta, comune nei gestionali.</li>
+  <li><b>Richieste demo</b>: per tua scelta non c'è un limite anti-spam generale; resta il blocco di una richiesta per email ogni 24 ore.</li>
+  <li><b>Strumenti di compilazione</b> (Expo CLI e simili): yarn audit segnala avvisi in librerie usate solo per compilare l'app, che non finiscono nell'app pubblicata.</li>
+  <li><b>Documenti organizzativi GDPR</b> a cura di Eligesoft: registro dei trattamenti (art. 30), accordo sul trattamento dei dati (DPA) con ogni ristorante, accordi con Vercel e Railway.</li>
+  <li><b>Pubblicazione</b>: le correzioni sono nella copia di prova; arrivano in produzione con la prossima pubblicazione (Railway + Vercel).</li>
+</ul>
+
+<footer>Eligesoft srl · Human Technology · P. IVA 04532690650 · Via San Pietro 16, 84014 Nocera Inferiore (SA) · Documento riservato</footer>
+</body>
+</html>

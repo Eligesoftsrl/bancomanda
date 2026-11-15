@@ -221,7 +221,7 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 
 ## Backlog
 - P1: fuso orario/numerazione ordini per locale (oggi Europe/Rome per tutti)
-- P2: spezzare `(tabs)/index.tsx`; password impostazioni Report per locale (oggi `eligesoft` uguale per tutti)
+- P2: spezzare `(tabs)/index.tsx`; migrare `@app.on_event` a lifespan (deprecato con Starlette 1.x, funziona); mostrare il messaggio delle richieste demo nella dashboard superadmin
 
 ## Allineamento dati Giorgio Bistrot — 2026-11-12 ✅
 - `scripts/migrate_legacy.py --sync`: aggiorna/aggiunge per `_id` con `$set` (vecchia app vince sui campi che ha), non cancella nulla, mantiene i campi presenti solo su Railway (es. `isPublished/publishedAt` dei menu pubblicati dalla nuova app).
@@ -246,3 +246,14 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Segnalati, NON fatti (fuori richiesta): Esc per chiudere le modali su desktop; badge stato nello storico ordini cliente mostra sempre "In Attesa" (mappa solo completato/annullato); `data-testid` invece di `testID` in unpaid-orders.tsx; modali inutilizzate in index.tsx.
 - 2026-11-13: storico ordini cliente (`customers.tsx`) ora mostra lo stato reale con gli stessi colori della schermata Ordini (`ORDER_STATUS_STYLE`: in attesa, in preparazione, pronto, sospeso, consegnato, + completato/annullato). Verificato con 5 ordini di prova (poi cancellati).
 - 2026-11-13 ~17:47 UTC: quarto `--sync` → +2 categorie ("Base Fit", "Proteine Fit"), +10 piatti, 6 piatti aggiornati. Nessun conflitto. Parità: 11 cat, 430 piatti, 259 clienti, 6.033 ordini, 151 menu.
+
+## Sicurezza, GDPR e AI Act — 2026-11-15 ✅ (iteration_16)
+- Attacco simulato `backend/tests/security/pentest.py <URL>` (solo preview): 42 controlli, 0 falle. Test sicurezza/GDPR: `backend/tests/test_security_gdpr.py` (15). Regressione multitenant 71/71.
+- Resoconto per l'utente: `/app/docs/Resoconto_Sicurezza_Bancomanda.pdf` (+ .html sorgente). 19 problemi risolti + librerie.
+- Correzioni principali: password Report `eligesoft` rimossa dall'app → `POST /api/auth/verify-password` (password account, 5 errori = 429); endpoint debug rimosso, URL DB non stampato; register senza token (locale in_attesa) e consenso privacy controllato per primo; /setup e /setup/status solo tenant_admin, senza campo `database`; escape HTML nelle stampe (index.tsx, menu.tsx) e nella dashboard superadmin (codifica anche virgolette); SSRF FTP bloccato (`ensure_public_host`); ricerca clienti con `re.escape`; login con bcrypt sempre eseguito (no enumerazione); blocco 5 errori IP+email e 10 per account (15 min) — in preview l'IP di uscita alterna tra 2 indirizzi; indice daily_menus (tenant_id, date); logo max 25 MP; JWT_SECRET obbligatorio; script superadmin senza password nel codice; indici login_attempts (identifier + TTL 24h).
+- Intestazioni: middleware `security_headers` in server.py (nosniff, X-Frame-Options DENY ovunque, Referrer-Policy, Permissions-Policy, HSTS, COOP, CSP su HTML); vercel.json headers per `/app/:path*`. CORS senza credenziali.
+- Librerie: FastAPI 0.163.1, Starlette 1.10.0, PyMongo 4.20.0, Motor 3.7.1, pillow esplicito; rimossi python-jose e emergentintegrations (non usati; l'app NON usa IA); axios 1.21.1. Starlette 1.x: usare `HTTP_422_UNPROCESSABLE_CONTENT`.
+- GDPR: `/api/legal/privacy` (routes/legal.py, titolare Eligesoft srl, P.IVA 04532690650, sez. cookie e AI Act); caselle obbligatorie privacy in demo e registrazione (salvati `privacy_accepted_at`, `privacy_version`); richieste demo TTL 24 mesi; font e icone locali (`/api/landing/assets/fonts.css`, `fa.min.css`); avviso cookie informativo sulla landing (`cookie-notice`, localStorage `bm_cookie_notice_v1`). Limite anti-spam demo NON attivato per scelta utente (resta 1 richiesta/email/24h).
+- metro.config.js: `resolver.blockList` per cartelle native/cache (fix ENOSPC inotify in preview).
+- Pulizia dati di test preview: `/root/cleanup_preview.py` (solo DB locale; tenant pentest-*/reg-*/TEST_*).
+- Da fare in produzione: pubblicare (Railway + Vercel); cambiare la password superadmin se è ancora quella iniziale; verificare FTPS sul server FTP del sito del locale.

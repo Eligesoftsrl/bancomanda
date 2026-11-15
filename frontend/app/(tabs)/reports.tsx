@@ -425,6 +425,7 @@ export default function ReportsScreen() {
               onChangeText={setPassword}
               onSubmitEditing={handlePasswordSubmit}
               autoFocus
+              testID="settings-password-input"
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -439,6 +440,7 @@ export default function ReportsScreen() {
               <TouchableOpacity
                 style={styles.loginButton}
                 onPress={handlePasswordSubmit}
+                testID="settings-password-submit"
               >
                 <Text style={styles.loginButtonText}>Accedi</Text>
               </TouchableOpacity>
@@ -475,10 +477,6 @@ export default function ReportsScreen() {
 
                 {setupStatus ? (
                   <View style={styles.statusContainer}>
-                    <View style={styles.statusRow}>
-                      <Text style={styles.statusLabel}>Database:</Text>
-                      <Text style={styles.statusValue}>{setupStatus.database}</Text>
-                    </View>
                     <View style={styles.statusRow}>
                       <Text style={styles.statusLabel}>Stato:</Text>
                       <View style={[
@@ -557,6 +555,7 @@ export default function ReportsScreen() {
             <TouchableOpacity
               style={styles.settingsButton}
               onPress={() => setShowPasswordModal(true)}
+              testID="report-settings-button"
             >
               <Ionicons name="settings-outline" size={24} color="#64748b" />
             </TouchableOpacity>

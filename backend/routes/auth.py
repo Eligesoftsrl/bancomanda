@@ -145,7 +145,14 @@ async def register(body: RegisterRequest, request: Request):
     """
     db = request.app.state.db
     email = body.email.lower()
-    
+
+    # Prima di tutto il consenso: senza, nessuna informazione su email o slug esistenti
+    if not body.privacy_accepted:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Per registrarti devi confermare di aver letto l'informativa privacy"
+        )
+
     # Check if email already exists
     existing = await db.users.find_one({"email": email})
     if existing:
@@ -167,12 +174,6 @@ async def register(body: RegisterRequest, request: Request):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Questo slug è già in uso. Scegli un identificativo diverso."
-        )
-    
-    if not body.privacy_accepted:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Per registrarti devi confermare di aver letto l'informativa privacy"
         )
 
     now = datetime.now(timezone.utc)

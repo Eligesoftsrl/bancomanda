@@ -52,7 +52,7 @@ async def create_superadmin():
         "last_login": None,
     }
     
-    result = await db.users.insert_one(user_doc)
+    await db.users.insert_one(user_doc)
     
     print("=" * 50)
     print("SUPERADMIN CREATO CON SUCCESSO!")

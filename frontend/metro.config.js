@@ -19,6 +19,13 @@ config.cacheStores = [
 // // Alternative: use a more aggressive exclusion pattern
 // config.resolver.blacklistRE = /node_modules\/.*\/(android|ios|windows|macos|__tests__|\.git|.*\.android\.js|.*\.ios\.js)$/;
 
+// Do not watch native-only package folders and local caches (inotify watcher limit in preview)
+config.resolver.blockList = [
+  /.*\/node_modules\/(.*\/node_modules\/)?(@[^/]+\/)?[^/]+\/(android|ios|windows|macos|prebuilds|__tests__)(\/.*)?$/,
+  /.*\/\.metro-cache\/.*/,
+  /.*\/\.ruff_cache\/.*/,
+];
+
 // Reduce the number of workers to decrease resource usage
 config.maxWorkers = 2;
 

@@ -145,7 +145,7 @@ class TestTenantLifecycle:
             "email": "test_x@example.com", "password": "short", "name": "AB"})
         assert r.status_code == 422
         r2 = requests.post(f"{BASE_URL}/api/auth/register", json={
-            "email": f"test_{uuid.uuid4().hex[:6]}@example.com", "password": "TestPass123!", "name": "AB"})
+            "email": f"test_{uuid.uuid4().hex[:6]}@example.com", "password": "TestPass123!", "name": "AB", "privacy_accepted": True})
         assert r2.status_code == 400
 
     def test_superadmin_create_tenant(self, sa_headers):

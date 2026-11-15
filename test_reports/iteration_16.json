@@ -1,0 +1,51 @@
+{
+  "summary": "Iterazione 16 - sicurezza + GDPR + aggiornamento dipendenze. Pentest: FALLE 0/42. Regressione multitenant (isolation/auth/settings): 71/71 pass. Nuovo file test_security_gdpr.py: 15/15 pass (consenso privacy su demo-request e register, register senza token + tenant in_attesa -> 403 -> attivazione -> 200, blocco login su tenant usa-e-getta (429 entro 10 tentativi, anche con password corretta), verify-password 200/401/429, header di sicurezza su landing/privacy/admin dashboard/public menu + CSP su HTML, /setup/status senza 'database', indici login_attempts (identifier + TTL last_attempt), CRUD piatti/clienti/ordini, menus/reports, upload logo multipart). Frontend: landing (avviso cookie, persistenza localStorage, link info -> /api/legal/privacy#cookie, mobile 390px senza overflow), form demo bloccato senza checkbox e alert di successo con checkbox, checkbox obbligatoria nel modal Registrati, footer Eligesoft P.IVA, nessuna richiesta a googleapis/cdnjs, Font Awesome self-hosted caricato; pagina privacy con titolare, sezione cookie e AI Act; XSS nella dashboard superadmin mostrato come testo, nessun dialog; app Expo: tab Ordini/Menu/Piatti/Clienti/Report senza errori, modal Area Riservata con nuovo testo, 'eligesoft' -> 401 (modal resta aperto), 'Password123!' -> 200 e apre Impostazioni Admin. BLOCCANTE AMBIENTALE trovato e aggirato: il dev server Expo andava in crash-loop con ENOSPC (limite inotify watcher del nodo esaurito, solo ~6800 watch disponibili su 12288, non modificabile con sysctl); aggiunto resolver.blockList in metro.config.js per non osservare cartelle native/cache.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/register", "issue": "Il controllo privacy_accepted avviene DOPO i controlli email/slug esistenti: senza consenso un attaccante ottiene 409 'Email già registrata' / 'slug già in uso' (piccola enumerazione). Spostare il check privacy prima."},
+      {"endpoint": "Lockout login", "issue": "Il blocco per-account (10 errori) permette a chiunque di bloccare per 15 minuti un account noto (DoS mirato). Trade-off accettabile ma da documentare; _client_ip usa il primo valore di X-Forwarded-For (spoofabile) - mitigato dal contatore per account."},
+      {"endpoint": "server.py startup", "issue": "@app.on_event('startup') è deprecato in FastAPI 0.163/Starlette 1.x (funziona ancora, indici creati) - migrare a lifespan."},
+      {"endpoint": "tests multitenant", "issue": "I test test_multitenant_auth/test_tenant_settings lasciano tenant TEST_Locale*/TEST_SA* nel DB (8 rimasti) e il pentest lascia richieste demo 'Pentest'/'Spam' e tenant pentest-*/reg-*: nessuna pulizia automatica."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Report > Impostazioni Admin (setup modal)", "issue": "Mostra ancora la riga 'Database:' con valore vuoto perché il backend non restituisce più il campo 'database' (reports.tsx ~481: setupStatus.database). Rimuovere la riga.", "selector": "text=Database:", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard superadmin > Richieste Demo", "issues": ["Il campo 'message' della richiesta demo non è visualizzato nella tabella (il superadmin non può leggerlo)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_security_gdpr.py",
+    "/app/backend/tests/security/pentest.py",
+    "/app/test_reports/pytest/iter16_security.xml",
+    "/app/test_reports/pytest/iter16_regression.xml"
+  ],
+  "action_items": [
+    "Rimuovere la riga 'Database:' (setupStatus.database) dal modal Impostazioni Admin in app/(tabs)/reports.tsx",
+    "Verificare/mantenere la modifica a metro.config.js (resolver.blockList per cartelle native android/ios/windows/macos/prebuilds/__tests__ alla radice dei pacchetti + .metro-cache/.ruff_cache): senza di essa Expo non parte in preview per ENOSPC inotify. Controllare che il build web/nativo non ne risenta",
+    "Spostare il controllo privacy_accepted in /api/auth/register prima dei controlli di esistenza email/slug",
+    "Opzionale: migrare @app.on_event a lifespan; mostrare il messaggio nelle richieste demo superadmin; pulizia dati dei test automatici"
+  ],
+  "critical_code_review_comments": [
+    "escapeHtml in admin_dashboard.py (div.textContent->innerHTML) non codifica le virgolette: sicuro nel testo delle celle ma non in contesti attributo (es. img src=\"${escapeHtml(url)}\", onclick='${escapeHtml(id)}'); oggi i valori sono id/URL generati dal server, ma conviene un escape che codifichi anche \" e '",
+    "_register_failed_attempt azzera count al momento del blocco: dopo i 15 minuti l'attaccante riparte con 5/10 tentativi - accettabile",
+    "Security headers aggiunti via middleware, CSP solo su text/html, CORS allow_credentials=False con auth Bearer (nessun cookie): coerente. Hash bcrypt $2b$ verificato; seed superadmin solo se mancante",
+    "server.py supera di molto le 700 righe: suddividere in moduli"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_security_gdpr.py (nuovo)",
+    "/app/frontend/app/(tabs)/reports.tsx (solo testID: report-settings-button, settings-password-input, settings-password-submit)",
+    "/app/frontend/metro.config.js (resolver.blockList per ridurre i file watcher - fix ambiente ENOSPC)"
+  ],
+  "success_rate": {"backend": "100% (42/42 pentest, 71/71 regressione, 15/15 sicurezza/GDPR)", "frontend": "~97% (tutti i flussi richiesti ok; 1 bug UI minore)"},
+  "test_credentials": "Da /app/memory/test_credentials.md: superadmin admin@banco.app, Pizzeria Napoli titolare@pizzeria-napoli.it / Password123!. Giorgio Bistrot non toccato.",
+  "seed_data_creation": "Tenant usa-e-getta test-sec-*/test-reg-* (eliminati con utenti e login_attempts dal teardown), richieste demo test_demo_*/test_xss_iter16/test_ui_* (eliminate), 1 piatto/cliente/ordine TEST_ su Napoli (eliminati). Nessun blocco rimasto su Napoli/Giorgio.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Eseguire: REACT_APP_BACKEND_URL=<preview> pytest -p no:xdist /app/backend/tests/test_security_gdpr.py (usa Mongo locale per cleanup). Expo dev server soffre di ENOSPC inotify sul nodo: se il preview resta su 'Booting up', controllare /var/log/supervisor/expo.err.log e metro.config.js blockList. Il bundle Expo impiega ~1-2 minuti dopo restart.",
+  "rca of the issue": "Expo crash-loop: Error ENOSPC 'System limit for number of file watchers reached' in @expo/metro-file-map FallbackWatcher (watchman assente). fs.inotify.max_user_watches=12288 condiviso a livello di nodo, ~6800 disponibili; il progetto ha ~7550 cartelle. Mitigazione: blockList (usato anche come ignorePatternForWatch) per escludere ~950 cartelle native + cache; dopo restart Expo RUNNING e preview 200."
+}
