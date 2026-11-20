@@ -231,6 +231,7 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Nota: `RAILWAY_MONGO_URL` ora è disponibile direttamente nell'ambiente della shell (os.environ), non sempre in /proc del backend.
 - In caso di differenze ambigue (es. pagato su Railway ma non nella vecchia app) chiedere all'utente prima del sync: il sync dà sempre ragione alla vecchia app.
 - 2026-11-13 ~14:15 UTC (fine servizio): terzo `--sync` → +31 ordini, 34 aggiornati (2 del 13/11 tornati "non pagato" come nella vecchia app: #13 Vitolo, #1 Jamila), menu 13/11 aggiornato. Parità: 6.033 ordini, 151 menu, 420 piatti, 259 clienti. Ultimo ordine 12:31 UTC.
+- 2026-11-20 ~16:31 UTC: quinto `--sync` (prima confronto in sola lettura `/root/sync_diff.py`, nessun conflitto: Railway non aveva dati propri) → +199 ordini (14/11: 23, 18/11: 55, 19/11: 64, 20/11: 57), 5 ordini aggiornati a pagato, +7 piatti (1 aggiornato), +1 cliente (Rossella Utic), +4 menu. Parità: 11 cat, 437 piatti, 260 clienti, 6.232 ordini, 155 menu, 1 mancata vendita; tutti validati con i modelli dell'app (`/root/verify_railway.py`). Ultimo ordine: 20/11 13:32 UTC (#58). L'utente vuole passare alla nuova app domenica: rifare un `--sync` subito prima del passaggio.
 
 ## Fix modale piatto su desktop — 2026-11-13 ✅
 - `app/(tabs)/dishes.tsx`: ScrollView con `flexShrink: 1` e barra visibile su web; tasto "Crea Piatto / Salva Modifiche" spostato FUORI dallo scroll (sempre visibile in fondo alla modale).
