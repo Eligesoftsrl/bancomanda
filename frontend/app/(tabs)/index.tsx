@@ -63,6 +63,7 @@ export default function OrdersScreen() {
   const router = useRouter();
   
   const { selectedDate, setSelectedDate, currentMenu, setCurrentMenu, orders, setOrders, customers, setCustomers } = useAppStore();
+  const activeCustomers = useMemo(() => customers.filter(c => !c.archived), [customers]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
@@ -550,7 +551,7 @@ export default function OrdersScreen() {
       setOrders(ordersData);
       
       // Load customers
-      const customersData = await customersApi.getAll();
+      const customersData = await customersApi.getAll({ scope: 'all' });
       setCustomers(customersData);
 
       setLastSyncAt(Date.now());
@@ -570,7 +571,7 @@ export default function OrdersScreen() {
       const [menuRes, ordersData, customersData] = await Promise.allSettled([
         menusApi.getByDate(selectedDate),
         ordersApi.getAll(selectedDate),
-        customersApi.getAll(),
+        customersApi.getAll({ scope: 'all' }),
       ]);
       if (menuRes.status === 'fulfilled') setCurrentMenu(menuRes.value);
       else if ((menuRes.reason as any)?.response?.status === 404) setCurrentMenu(null);
@@ -1232,7 +1233,7 @@ export default function OrdersScreen() {
                   >
                     <Text style={styles.customerOptionText}>Nessun cliente (Anonimo)</Text>
                   </TouchableOpacity>
-                  {customers
+                  {activeCustomers
                     .filter(c => c.name.toLowerCase().includes(customerSearchQuery.toLowerCase()))
                     .map(customer => (
                       <TouchableOpacity
@@ -1385,7 +1386,7 @@ export default function OrdersScreen() {
               >
                 <Text style={styles.customerItemText}>Nessun cliente</Text>
               </TouchableOpacity>
-              {customers
+              {activeCustomers
                 .filter(customer => 
                   customerSearchQuery.trim() === '' || 
                   customer.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
@@ -1409,7 +1410,7 @@ export default function OrdersScreen() {
                   </TouchableOpacity>
                 ))
               }
-              {customers.filter(customer => 
+              {activeCustomers.filter(customer => 
                 customerSearchQuery.trim() === '' || 
                 customer.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
                 (customer.phone && customer.phone.includes(customerSearchQuery))
@@ -1639,7 +1640,7 @@ export default function OrdersScreen() {
                           >
                             <Text style={styles.customerOptionText}>Anonimo</Text>
                           </TouchableOpacity>
-                          {customers
+                          {activeCustomers
                             .filter(c => c.name.toLowerCase().includes(editCustomerSearchQuery.toLowerCase()))
                             .map(c => (
                               <TouchableOpacity

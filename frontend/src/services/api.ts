@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, Category, OptionGroup, CompositionEntry } from '../types';
+import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, DailyRevenuePoint, Category, OptionGroup, CompositionEntry } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { API_URL } from './config';
 
@@ -267,8 +267,20 @@ export const missedSalesApi = {
 
 // Customers API
 export const customersApi = {
-  getAll: async (limit = 5000): Promise<Customer[]> => {
-    const response = await api.get(`/customers?limit=${limit}`);
+  getAll: async (opts: { scope?: 'active' | 'archived' | 'all'; withStats?: boolean } = {}): Promise<Customer[]> => {
+    const params = new URLSearchParams({ limit: '5000', scope: opts.scope || 'active' });
+    if (opts.withStats) params.append('with_stats', 'true');
+    const response = await api.get(`/customers?${params.toString()}`);
+    return response.data;
+  },
+
+  archive: async (ids: string[]): Promise<{ archived: number }> => {
+    const response = await api.post('/customers/archive', { ids });
+    return response.data;
+  },
+
+  restore: async (ids: string[]): Promise<{ restored: number }> => {
+    const response = await api.post('/customers/restore', { ids });
     return response.data;
   },
   
@@ -316,6 +328,10 @@ export const reportsApi = {
   
   getRangeSummary: async (startDate: string, endDate: string): Promise<{ totalOrders: number; totalRevenue: number }> => {
     const response = await api.get(`/reports/range-summary?start_date=${startDate}&end_date=${endDate}`);
+    return response.data;
+  },
+  getDailyRevenue: async (startDate: string, endDate: string): Promise<DailyRevenuePoint[]> => {
+    const response = await api.get(`/reports/daily-revenue?start_date=${startDate}&end_date=${endDate}`);
     return response.data;
   },
   getMissedSalesSummary: async (startDate?: string, endDate?: string) => {

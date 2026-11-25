@@ -65,6 +65,12 @@ class ScopedCollection:
     async def update_one(self, filter, update, *args, **kwargs):
         return await self._col.update_one(_scope(filter), update, *args, **kwargs)
 
+    async def update_many(self, filter, update, *args, **kwargs):
+        return await self._col.update_many(_scope(filter), update, *args, **kwargs)
+
+    def aggregate(self, pipeline, *args, **kwargs):
+        return self._col.aggregate([{"$match": tenant_filter()}] + list(pipeline), *args, **kwargs)
+
     async def delete_one(self, filter, *args, **kwargs):
         return await self._col.delete_one(_scope(filter), *args, **kwargs)
 

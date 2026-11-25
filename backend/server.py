@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from bson import ObjectId
 import asyncio
@@ -330,6 +330,13 @@ class CustomerUpdate(BaseModel):
 class Customer(CustomerBase):
     id: str
     createdAt: datetime
+    archived: bool = False
+    archivedAt: Optional[datetime] = None
+    lastOrderDate: Optional[str] = None
+    ordersCount: int = 0
+
+class CustomerIds(BaseModel):
+    ids: List[str] = Field(..., min_length=1, max_length=2000)
 
 # ============ ROUTES - CATEGORIES ============
 
@@ -1611,9 +1618,44 @@ async def create_customer(customer: CustomerCreate):
     customer_dict["id"] = str(result.inserted_id)
     return Customer(**customer_dict)
 
+def _customer_object_ids(ids: List[str]) -> List[ObjectId]:
+    if not all(ObjectId.is_valid(i) for i in ids):
+        raise HTTPException(status_code=400, detail="Identificativo cliente non valido")
+    return [ObjectId(i) for i in ids]
+
+async def _customer_order_stats() -> dict:
+    """Ultimo giorno d'ordine e numero ordini per cliente (annullati esclusi)"""
+    pipeline = [
+        {"$match": {"customerId": {"$nin": [None, ""]}, "status": {"$ne": "annullato"}}},
+        {"$group": {"_id": "$customerId", "last": {"$max": "$menuDate"}, "count": {"$sum": 1}}},
+    ]
+    return {r["_id"]: r async for r in db.orders.aggregate(pipeline)}
+
+@api_router.post("/customers/archive")
+async def archive_customers(body: CustomerIds):
+    result = await db.customers.update_many(
+        {"_id": {"$in": _customer_object_ids(body.ids)}},
+        {"$set": {"archived": True, "archivedAt": datetime.now(timezone.utc)}},
+    )
+    return {"archived": result.modified_count}
+
+@api_router.post("/customers/restore")
+async def restore_customers(body: CustomerIds):
+    result = await db.customers.update_many(
+        {"_id": {"$in": _customer_object_ids(body.ids)}},
+        {"$set": {"archived": False, "archivedAt": None}},
+    )
+    return {"restored": result.modified_count}
+
 @api_router.get("/customers", response_model=List[Customer])
-async def get_customers(search: Optional[str] = None, limit: int = 5000):
+async def get_customers(search: Optional[str] = None, limit: int = 5000, scope: str = "active", with_stats: bool = False):
+    if scope not in ("active", "archived", "all"):
+        raise HTTPException(status_code=400, detail="Filtro non valido")
     query = {}
+    if scope == "active":
+        query["archived"] = {"$ne": True}
+    elif scope == "archived":
+        query["archived"] = True
     if search:
         # Cerca sia per nome che per partita IVA
         pattern = re.escape(search[:100])  # testo letterale: niente regex dall'utente (ReDoS)
@@ -1623,7 +1665,14 @@ async def get_customers(search: Optional[str] = None, limit: int = 5000):
         ]
     
     customers = await db.customers.find(query).sort("name", 1).limit(limit).to_list(limit)
-    return [Customer(id=str(c["_id"]), **{k: v for k, v in c.items() if k != "_id"}) for c in customers]
+    stats = await _customer_order_stats() if with_stats else {}
+    out = []
+    for c in customers:
+        cid = str(c["_id"])
+        data = {k: v for k, v in c.items() if k not in ("_id", "lastOrderDate", "ordersCount")}
+        st = stats.get(cid)
+        out.append(Customer(id=cid, **data, lastOrderDate=st["last"] if st else None, ordersCount=st["count"] if st else 0))
+    return out
 
 @api_router.get("/customers/{customer_id}", response_model=Customer)
 async def get_customer(customer_id: str):
@@ -1854,6 +1903,32 @@ async def get_range_summary(start_date: str, end_date: str):
         {"_id": 0, "total": 1},
     ).to_list(None)
     return {"totalOrders": len(orders), "totalRevenue": round(sum(o.get("total", 0) for o in orders), 2)}
+
+@api_router.get("/reports/daily-revenue")
+async def get_daily_revenue(start_date: str, end_date: str):
+    """Incasso e numero ordini giorno per giorno nel periodo (giorni senza ordini = 0)"""
+    try:
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data non valida")
+    if end < start:
+        raise HTTPException(status_code=400, detail="La data finale precede quella iniziale")
+    if (end - start).days > 731:
+        raise HTTPException(status_code=400, detail="Periodo troppo lungo (massimo 2 anni)")
+    pipeline = [
+        {"$match": {"menuDate": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "annullato"}}},
+        {"$group": {"_id": "$menuDate", "orders": {"$sum": 1}, "revenue": {"$sum": "$total"}}},
+    ]
+    by_day = {r["_id"]: r async for r in db.orders.aggregate(pipeline)}
+    days = []
+    d = start
+    while d <= end:
+        key = d.isoformat()
+        r = by_day.get(key)
+        days.append({"date": key, "totalOrders": r["orders"] if r else 0, "totalRevenue": round(r["revenue"], 2) if r else 0})
+        d += timedelta(days=1)
+    return days
 
 @api_router.get("/reports/missed-sales-summary")
 async def get_missed_sales_summary(start_date: Optional[str] = None, end_date: Optional[str] = None):

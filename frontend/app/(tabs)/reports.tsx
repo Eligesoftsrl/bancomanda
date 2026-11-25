@@ -21,12 +21,13 @@ import { it } from 'date-fns/locale';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { useAppStore } from '../../src/store/appStore';
 import { reportsApi, missedSalesApi, setupApi, ordersApi, kitchenApi, porzionaturApi, authApi, KitchenGroup } from '../../src/services/api';
-import { DailySummary, MissedSale, Order } from '../../src/types';
+import { DailySummary, DailyRevenuePoint, MissedSale, Order } from '../../src/types';
 import { AccountButton } from '../../src/components/AccountButton';
 import { C, FONT } from '../../src/theme/tokens';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { DatePill } from '../../src/components/ui2/DatePill';
 import { StatCard } from '../../src/components/ui2/StatCard';
+import { RevenueChart } from '../../src/components/reports/RevenueChart';
 
 // Configure Italian locale for react-native-calendars
 LocaleConfig.locales['it'] = {
@@ -83,6 +84,8 @@ export default function ReportsScreen() {
     missedSalesTotal: number;
     missedSalesQuantity: number;
   } | null>(null);
+
+  const [dailyRevenue, setDailyRevenue] = useState<DailyRevenuePoint[]>([]);
 
   // Unpaid orders
   const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([]);
@@ -210,12 +213,14 @@ export default function ReportsScreen() {
     try {
       setIsLoading(true);
       
-      const [topData, missedSummary, totals] = await Promise.all([
+      const [topData, missedSummary, totals, perDay] = await Promise.all([
         reportsApi.getTopDishes(startDate, endDate, 10),
         reportsApi.getMissedSalesSummary(startDate, endDate),
         reportsApi.getRangeSummary(startDate, endDate),
+        reportsApi.getDailyRevenue(startDate, endDate),
       ]);
       setTopDishes(topData);
+      setDailyRevenue(perDay);
       setRangeStats({
         totalOrders: totals.totalOrders,
         totalRevenue: totals.totalRevenue,
@@ -692,6 +697,8 @@ export default function ReportsScreen() {
             label="Mancate vendite"
           />
         </View>
+
+        {reportMode === 'range' && <RevenueChart data={dailyRevenue} loading={isLoading} />}
 
         {/* Daily-only sections */}
         {reportMode === 'daily' && (

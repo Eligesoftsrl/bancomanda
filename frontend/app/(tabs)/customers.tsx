@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useAppStore } from '../../src/store/appStore';
 import { customersApi } from '../../src/services/api';
@@ -25,6 +25,13 @@ import { C, FONT } from '../../src/theme/tokens';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { HeaderButton } from '../../src/components/ui2/HeaderButton';
 import { useWideLayout } from '../../src/theme/layout';
+import { ConfirmDialog } from '../../src/components/ui2/ConfirmDialog';
+import { CustomerFilterChips, CustomerView } from '../../src/components/customers/CustomerFilterChips';
+import { CustomerViewBanner } from '../../src/components/customers/CustomerViewBanner';
+
+// Senza ordini da 6 mesi: ultimo ordine (o creazione, se non ha mai ordinato) prima della soglia
+const isInactive = (c: Customer, cutoff: string) =>
+  !c.archived && (c.lastOrderDate || (c.createdAt || '').slice(0, 10)) < cutoff;
 
 // Stessi colori della schermata Ordini
 const ORDER_STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = {
@@ -42,7 +49,16 @@ export default function CustomersScreen() {
   const { contentWidth } = useWideLayout();
   const cols = contentWidth >= 1180 ? 3 : contentWidth >= 700 ? 2 : 1;
   const cellW = `${100 / cols}%` as const;
-  const { customers, setCustomers } = useAppStore();
+  const setStoreCustomers = useAppStore((st) => st.setCustomers);
+  // Lista locale con statistiche (la schermata Ordini aggiorna lo store senza statistiche)
+  const [customers, setCustomersState] = useState<Customer[]>([]);
+  const setCustomers = (list: Customer[]) => {
+    setCustomersState(list);
+    setStoreCustomers(list);
+  };
+  const [view, setView] = useState<CustomerView>('active');
+  const [archiveTarget, setArchiveTarget] = useState<Customer[] | null>(null);
+  const [archiving, setArchiving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -65,7 +81,7 @@ export default function CustomersScreen() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await customersApi.getAll();
+      const data = await customersApi.getAll({ scope: 'all', withStats: true });
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -174,12 +190,55 @@ export default function CustomersScreen() {
     }
   };
 
-  const filteredCustomers = customers.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.partitaIva?.toLowerCase().includes(searchQuery.toLowerCase())
+  const cutoff = format(subMonths(new Date(), 6), 'yyyy-MM-dd');
+  const groups = useMemo(() => ({
+    active: customers.filter(c => !c.archived),
+    inactive: customers.filter(c => isInactive(c, cutoff)),
+    archived: customers.filter(c => c.archived),
+  }), [customers, cutoff]);
+  const counts = { active: groups.active.length, inactive: groups.inactive.length, archived: groups.archived.length };
+
+  const q = searchQuery.toLowerCase();
+  const filteredCustomers = groups[view].filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.phone?.toLowerCase().includes(q) ||
+    c.email?.toLowerCase().includes(q) ||
+    c.partitaIva?.toLowerCase().includes(q)
   );
+
+  const setArchived = (ids: string[], archived: boolean) =>
+    setCustomers(customers.map(c => (ids.includes(c.id) ? { ...c, archived } : c)));
+
+  const confirmArchive = async () => {
+    if (!archiveTarget) return;
+    const ids = archiveTarget.map(c => c.id);
+    setArchiving(true);
+    try {
+      const res = await customersApi.archive(ids);
+      setArchived(ids, true);
+      notify(res.archived === 1 ? 'Cliente archiviato' : `${res.archived} clienti archiviati`);
+      setArchiveTarget(null);
+    } catch (error: any) {
+      notify(error.response?.data?.detail || "Impossibile archiviare", 'error');
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const restoreCustomer = async (customer: Customer) => {
+    try {
+      await customersApi.restore([customer.id]);
+      setArchived([customer.id], false);
+      notify(`${customer.name} ripristinato`);
+    } catch (error: any) {
+      notify(error.response?.data?.detail || 'Impossibile ripristinare', 'error');
+    }
+  };
+
+  const lastOrderLabel = (c: Customer) =>
+    c.lastOrderDate
+      ? `Ultimo ordine ${format(new Date(c.lastOrderDate), 'd MMM yyyy', { locale: it })} · ${c.ordersCount} ${c.ordersCount === 1 ? 'ordine' : 'ordini'}`
+      : 'Nessun ordine';
 
   if (isLoading) {
     return (
@@ -201,6 +260,7 @@ export default function CustomersScreen() {
         testID="customers-header"
         right={<HeaderButton icon="add" label="Nuovo cliente" tone="primary" onPress={openCreateModal} testID="customers-new-button" />}
       >
+        <View style={styles.headerTools}>
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={18} color="#5A6A85" />
             <TextInput
@@ -212,6 +272,8 @@ export default function CustomersScreen() {
               testID="customers-search-input"
             />
           </View>
+          <CustomerFilterChips value={view} counts={counts} onChange={setView} />
+        </View>
       </PageHeader>
 
       {/* Content */}
@@ -222,18 +284,21 @@ export default function CustomersScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
+        {view !== 'active' && (
+          <CustomerViewBanner view={view} count={filteredCustomers.length} onArchiveAll={() => setArchiveTarget(filteredCustomers)} />
+        )}
         {filteredCustomers.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="people-outline" size={64} color="#5A6A85" />
+          <View style={styles.emptyState} testID="customers-empty-state">
+            <Ionicons name={view === 'archived' ? 'archive-outline' : 'people-outline'} size={64} color="#5A6A85" />
             <Text style={styles.emptyStateText}>
-              {searchQuery ? 'Nessun risultato' : 'Nessun cliente'}
+              {searchQuery ? 'Nessun risultato' : view === 'archived' ? 'Nessun cliente archiviato' : view === 'inactive' ? 'Tutti i clienti hanno ordinato negli ultimi 6 mesi' : 'Nessun cliente'}
             </Text>
           </View>
         ) : (
           <View style={styles.customerGrid}>
           {filteredCustomers.map((customer) => (
             <View key={customer.id} style={[styles.gridCell, { width: cellW }]}>
-            <View style={styles.customerCard} testID={`customer-card-${customer.id}`}>
+            <View style={[styles.customerCard, customer.archived && styles.customerCardArchived]} testID={`customer-card-${customer.id}`}>
               <View style={styles.customerHeader}>
                 <View style={styles.customerAvatar}>
                   <Text style={styles.customerAvatarText}>
@@ -268,6 +333,10 @@ export default function CustomersScreen() {
                       <Text style={styles.contactText}>{customer.address}</Text>
                     </View>
                   )}
+                  <View style={[styles.lastOrderPill, isInactive(customer, cutoff) && styles.lastOrderPillOld]} testID={`customer-last-order-${customer.id}`}>
+                    <Ionicons name="receipt-outline" size={13} color={isInactive(customer, cutoff) ? C.warningFg : C.text2} />
+                    <Text style={[styles.lastOrderText, isInactive(customer, cutoff) && { color: C.warningFg }]}>{lastOrderLabel(customer)}</Text>
+                  </View>
                 </View>
               </View>
               
@@ -292,6 +361,25 @@ export default function CustomersScreen() {
                   <Ionicons name="create-outline" size={18} color={C.primaryDark} />
                   <Text style={[styles.actionButtonText, { color: C.primaryDark }]}>Modifica</Text>
                 </TouchableOpacity>
+                {customer.archived ? (
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.restoreButton]}
+                    onPress={() => restoreCustomer(customer)}
+                    testID={`customer-restore-${customer.id}`}
+                  >
+                    <Ionicons name="arrow-undo-outline" size={18} color={C.success} />
+                    <Text style={[styles.actionButtonText, { color: C.success }]}>Ripristina</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.archiveIconButton}
+                    onPress={() => setArchiveTarget([customer])}
+                    testID={`customer-archive-${customer.id}`}
+                    accessibilityLabel="Archivia cliente"
+                  >
+                    <Ionicons name="archive-outline" size={19} color={C.warningFg} />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
             </View>
@@ -299,6 +387,17 @@ export default function CustomersScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ConfirmDialog
+        visible={!!archiveTarget}
+        title={archiveTarget && archiveTarget.length > 1 ? `Archiviare ${archiveTarget.length} clienti?` : `Archiviare ${archiveTarget?.[0]?.name || ''}?`}
+        message="Spariranno dalla lista e dalla scelta cliente negli ordini. Gli ordini passati restano intatti e puoi ripristinarli dal filtro Archiviati."
+        confirmLabel="Archivia"
+        busy={archiving}
+        onConfirm={confirmArchive}
+        onCancel={() => setArchiveTarget(null)}
+        testID="customers-archive-dialog"
+      />
 
       {/* Create/Edit Modal */}
       <Modal visible={showModal} animationType="slide" transparent>
@@ -512,6 +611,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  headerTools: { gap: 10 },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -661,6 +761,40 @@ const styles = StyleSheet.create({
   },
   historyButton: {
     backgroundColor: C.secondarySoft,
+  },
+  restoreButton: {
+    backgroundColor: C.successSoft,
+  },
+  archiveIconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.warningSoft,
+  },
+  customerCardArchived: {
+    backgroundColor: C.hover,
+  },
+  lastOrderPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 5,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: C.sunken,
+  },
+  lastOrderPillOld: {
+    backgroundColor: C.warningSoft,
+  },
+  lastOrderText: {
+    fontFamily: FONT,
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.text2,
   },
   editButton: {
     backgroundColor: C.primarySoft,

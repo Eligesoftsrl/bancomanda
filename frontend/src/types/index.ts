@@ -130,6 +130,16 @@ export interface Customer {
   requiresInvoice: boolean;
   notes: string;
   createdAt: string;
+  archived?: boolean;
+  archivedAt?: string | null;
+  lastOrderDate?: string | null;
+  ordersCount?: number;
+}
+
+export interface DailyRevenuePoint {
+  date: string;
+  totalOrders: number;
+  totalRevenue: number;
 }
 
 export interface DailySummary {
