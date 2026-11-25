@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, Platform, StyleSheet, Text } from 'react-native';
+import { FONT } from '../theme/tokens';
 
 const useNative = Platform.OS !== 'web';
 
@@ -50,5 +51,5 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   logo: { width: 128, height: 128, borderRadius: 30 },
-  title: { color: '#ffffff', fontSize: 34, fontWeight: '800', letterSpacing: -0.5, marginTop: 22 },
+  title: { fontFamily: FONT, color: '#ffffff', fontSize: 34, fontWeight: '800', letterSpacing: -0.5, marginTop: 22 },
 });

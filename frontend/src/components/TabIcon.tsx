@@ -16,7 +16,7 @@ export const TabIcon = ({ name, focused }: { name: string; focused: boolean }) =
     <View style={styles.wrap}>
       <Animated.View style={[styles.pill, pill]} />
       <Animated.View style={icon}>
-        <Ionicons name={(focused ? name : `${name}-outline`) as any} size={22} color={focused ? C.brand : C.text2} />
+        <Ionicons name={(focused ? name : `${name}-outline`) as any} size={22} color={focused ? C.primary : C.text2} />
       </Animated.View>
     </View>
   );
@@ -24,5 +24,5 @@ export const TabIcon = ({ name, focused }: { name: string; focused: boolean }) =
 
 const styles = StyleSheet.create({
   wrap: { width: 60, height: 32, alignItems: 'center', justifyContent: 'center' },
-  pill: { position: 'absolute', width: 60, height: 32, borderRadius: 16, backgroundColor: C.brandSoft },
+  pill: { position: 'absolute', width: 60, height: 32, borderRadius: 16, backgroundColor: C.primarySoft },
 });

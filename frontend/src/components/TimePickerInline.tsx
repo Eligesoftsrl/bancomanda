@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FONT } from '../theme/tokens';
 
 interface TimePickerInlineProps {
   value: string; // formato "HH:MM"
@@ -52,7 +53,7 @@ export const TimePickerInline: React.FC<TimePickerInlineProps> = ({
       onPress={openPicker}
       testID={`${testIDPrefix}-trigger`}
     >
-      <Ionicons name="time-outline" size={22} color="#FFBC0D" />
+      <Ionicons name="time-outline" size={22} color="#FFAE1F" />
       <Text style={[styles.triggerText, !value && styles.placeholderText]}>
         {value || 'Tocca per scegliere'}
       </Text>
@@ -65,10 +66,10 @@ export const TimePickerInline: React.FC<TimePickerInlineProps> = ({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           testID={`${testIDPrefix}-clear`}
         >
-          <Ionicons name="close-circle" size={20} color="#64748b" />
+          <Ionicons name="close-circle" size={20} color="#5A6A85" />
         </TouchableOpacity>
       )}
-      <Ionicons name="chevron-down" size={18} color="#64748b" />
+      <Ionicons name="chevron-down" size={18} color="#5A6A85" />
     </TouchableOpacity>
   );
 
@@ -77,14 +78,14 @@ export const TimePickerInline: React.FC<TimePickerInlineProps> = ({
     return (
       <View>
         <View style={styles.webInputWrap}>
-          <Ionicons name="time-outline" size={22} color="#FFBC0D" />
+          <Ionicons name="time-outline" size={22} color="#FFAE1F" />
           {React.createElement('input' as any, {
             type: 'time',
             value: value || '',
             onChange: (e: any) => onChange(e.target.value),
             style: {
               background: 'transparent',
-              color: '#1a202c',
+              color: '#2A3547',
               border: 'none',
               padding: '12px 4px',
               fontSize: 18,
@@ -98,7 +99,7 @@ export const TimePickerInline: React.FC<TimePickerInlineProps> = ({
           })}
           {!!value && (
             <TouchableOpacity onPress={() => onChange('')} testID={`${testIDPrefix}-clear`}>
-              <Ionicons name="close-circle" size={20} color="#64748b" />
+              <Ionicons name="close-circle" size={20} color="#5A6A85" />
             </TouchableOpacity>
           )}
         </View>
@@ -131,7 +132,7 @@ export const TimePickerInline: React.FC<TimePickerInlineProps> = ({
                   if (selectedDate) setTempDate(selectedDate);
                 }}
                 themeVariant="light"
-                textColor="#1a202c"
+                textColor="#2A3547"
                 locale="it-IT"
                 is24Hour
                 style={styles.iosPicker}
@@ -170,22 +171,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 14,
   },
   triggerText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 17,
     fontWeight: '700',
     flex: 1,
     letterSpacing: 1,
   },
   placeholderText: {
-    color: '#64748b',
+    color: '#5A6A85',
     fontWeight: '400',
     letterSpacing: 0,
   },
@@ -193,9 +195,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
     borderRadius: 10,
     paddingHorizontal: 14,
   },
@@ -217,19 +219,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   iosTitle: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 16,
     fontWeight: '700',
   },
   iosCancelText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 16,
   },
   iosConfirmText: {
-    color: '#FFBC0D',
+    fontFamily: FONT,
+    color: '#FFAE1F',
     fontSize: 16,
     fontWeight: '700',
   },

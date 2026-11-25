@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ALLERGENS, PRESET_TAGS } from '../utils/dishLabels';
+import { FONT } from '../theme/tokens';
 
 const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
@@ -39,7 +40,7 @@ export const DishLabelsPicker = ({ tags, allergens, onChangeTags, onChangeAllerg
       <Text style={styles.label}>Allergeni ({allergens.length})</Text>
       <View style={styles.wrap}>
         {ALLERGENS.map((a) => (
-          <Chip key={a.id} label={a.label} active={allergens.includes(a.id)} color="#DB0007"
+          <Chip key={a.id} label={a.label} active={allergens.includes(a.id)} color="#00A1FF"
             onPress={() => onChangeAllergens(toggle(allergens, a.id))} testID={`allergen-chip-${a.id}`} />
         ))}
       </View>
@@ -47,7 +48,7 @@ export const DishLabelsPicker = ({ tags, allergens, onChangeTags, onChangeAllerg
       <Text style={styles.label}>Tag</Text>
       <View style={styles.wrap}>
         {PRESET_TAGS.map((t) => (
-          <Chip key={t.id} label={t.label} active={tags.includes(t.id)} color="#00754A"
+          <Chip key={t.id} label={t.label} active={tags.includes(t.id)} color="#0E9F80"
             onPress={() => onChangeTags(toggle(tags, t.id))} testID={`tag-chip-${t.id}`} />
         ))}
         {customTags.map((t) => (
@@ -63,7 +64,7 @@ export const DishLabelsPicker = ({ tags, allergens, onChangeTags, onChangeAllerg
           value={customTag}
           onChangeText={setCustomTag}
           placeholder="Aggiungi un tag tuo, es. Ricetta della nonna"
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#98A4B8"
           onSubmitEditing={addCustomTag}
           returnKeyType="done"
           maxLength={40}
@@ -78,7 +79,7 @@ export const DishLabelsPicker = ({ tags, allergens, onChangeTags, onChangeAllerg
 };
 
 const styles = StyleSheet.create({
-  label: { color: '#64748b', fontSize: 14, marginBottom: 8, marginTop: 16 },
+  label: { fontFamily: FONT, color: '#5A6A85', fontSize: 14, marginBottom: 8, marginTop: 16 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row',
@@ -88,22 +89,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#dde4ee',
-    backgroundColor: '#f5f7fa',
+    borderColor: '#E0E6EB',
+    backgroundColor: '#F4F7FB',
   },
-  customChip: { backgroundColor: '#5423E7', borderColor: '#5423E7' },
-  chipText: { color: '#334155', fontSize: 13, fontWeight: '500' },
+  customChip: { backgroundColor: '#8965E5', borderColor: '#8965E5' },
+  chipText: { fontFamily: FONT, color: '#2A3547', fontSize: 13, fontWeight: '500' },
   chipTextActive: { color: '#ffffff', fontWeight: '600' },
   customRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   customInput: {
+    fontFamily: FONT,
     flex: 1,
-    backgroundColor: '#f5f7fa',
-    color: '#1a202c',
+    backgroundColor: '#F4F7FB',
+    color: '#2A3547',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 999,
     fontSize: 15,
   },
-  addBtn: { backgroundColor: '#5423E7', borderRadius: 10, padding: 11 },
+  addBtn: { backgroundColor: '#8965E5', borderRadius: 10, padding: 11 },
   addBtnDisabled: { opacity: 0.4 },
 });

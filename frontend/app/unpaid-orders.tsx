@@ -14,13 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ordersApi, customersApi } from '../src/services/api';
 import { Order, Customer } from '../src/types';
+import { FONT } from '../src/theme/tokens';
 
 const STATUS_COLORS: Record<string, string> = {
-  in_attesa: '#FFBC0D',
-  in_preparazione: '#3498db',
-  pronto: '#00754A',
-  sospeso: '#DB0007',
-  consegnato: '#94a3b8',
+  in_attesa: '#FFAE1F',
+  in_preparazione: '#00A1FF',
+  pronto: '#0E9F80',
+  sospeso: '#F2545B',
+  consegnato: '#98A4B8',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -112,7 +113,7 @@ export default function UnpaidOrdersScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#DB0007" />
+          <ActivityIndicator size="large" color="#00A1FF" />
           <Text style={styles.loadingText}>Caricamento ordini...</Text>
         </View>
       </SafeAreaView>
@@ -129,7 +130,7 @@ export default function UnpaidOrdersScreen() {
           onPress={goBack}
           data-testid="back-button"
         >
-          <Ionicons name="arrow-back" size={24} color="#1a202c" />
+          <Ionicons name="arrow-back" size={24} color="#2A3547" />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Ordini Non Pagati</Text>
@@ -154,7 +155,7 @@ export default function UnpaidOrdersScreen() {
       <ScrollView style={styles.ordersList} data-testid="unpaid-orders-list">
         {unpaidOrders.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="checkmark-circle" size={64} color="#00754A" />
+            <Ionicons name="checkmark-circle" size={64} color="#0E9F80" />
             <Text style={styles.emptyStateText}>Nessun ordine non pagato</Text>
             <Text style={styles.emptyStateSubtext}>Tutti gli ordini sono stati saldati</Text>
           </View>
@@ -178,7 +179,7 @@ export default function UnpaidOrdersScreen() {
               
               <View style={styles.orderCardBody}>
                 <View style={styles.orderInfoRow}>
-                  <Ionicons name="calendar-outline" size={16} color="#64748b" />
+                  <Ionicons name="calendar-outline" size={16} color="#5A6A85" />
                   <Text style={styles.orderInfoText}>
                     {new Date(order.menuDate).toLocaleDateString('it-IT', {
                       weekday: 'short',
@@ -188,7 +189,7 @@ export default function UnpaidOrdersScreen() {
                   </Text>
                 </View>
                 <View style={styles.orderInfoRow}>
-                  <Ionicons name="restaurant-outline" size={16} color="#64748b" />
+                  <Ionicons name="restaurant-outline" size={16} color="#5A6A85" />
                   <Text style={styles.orderInfoText}>
                     {order.items.length} piatt{order.items.length === 1 ? 'o' : 'i'}
                   </Text>
@@ -200,7 +201,7 @@ export default function UnpaidOrdersScreen() {
                   style={styles.viewButton}
                   onPress={() => openOrderDetail(order)}
                 >
-                  <Ionicons name="eye-outline" size={18} color="#3498db" />
+                  <Ionicons name="eye-outline" size={18} color="#00A1FF" />
                   <Text style={styles.viewButtonText}>Dettagli</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -234,7 +235,7 @@ export default function UnpaidOrdersScreen() {
               onPress={closeDetailModal}
               data-testid="close-detail-modal"
             >
-              <Ionicons name="close" size={28} color="#1a202c" />
+              <Ionicons name="close" size={28} color="#2A3547" />
             </TouchableOpacity>
             <View style={styles.modalTitleContainer}>
               <Text style={styles.modalTitle}>Ordine #{selectedOrder?.orderNumber}</Text>
@@ -255,7 +256,7 @@ export default function UnpaidOrdersScreen() {
                 <View style={styles.detailSection}>
                   <Text style={styles.detailSectionTitle}>Informazioni Ordine</Text>
                   <View style={styles.detailRow}>
-                    <Ionicons name="calendar-outline" size={18} color="#64748b" />
+                    <Ionicons name="calendar-outline" size={18} color="#5A6A85" />
                     <Text style={styles.detailText}>
                       {new Date(selectedOrder.menuDate).toLocaleDateString('it-IT', {
                         weekday: 'long',
@@ -266,7 +267,7 @@ export default function UnpaidOrdersScreen() {
                     </Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <Ionicons name="time-outline" size={18} color="#64748b" />
+                    <Ionicons name="time-outline" size={18} color="#5A6A85" />
                     <Text style={styles.detailText}>
                       {new Date(selectedOrder.createdAt).toLocaleTimeString('it-IT', {
                         hour: '2-digit',
@@ -279,7 +280,7 @@ export default function UnpaidOrdersScreen() {
                       <Ionicons 
                         name={selectedOrder.channel === 'whatsapp' ? 'logo-whatsapp' : selectedOrder.channel === 'telefono' ? 'call' : 'person'} 
                         size={18} 
-                        color="#64748b" 
+                        color="#5A6A85" 
                       />
                       <Text style={styles.detailText}>
                         {selectedOrder.channel === 'whatsapp' ? 'WhatsApp' : selectedOrder.channel === 'telefono' ? 'Telefono' : 'Di Persona'}
@@ -337,7 +338,7 @@ export default function UnpaidOrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
   },
   loadingContainer: {
     flex: 1,
@@ -345,7 +346,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     marginTop: 12,
     fontSize: 16,
   },
@@ -355,7 +357,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   backButton: {
     width: 44,
@@ -370,46 +372,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   headerSubtitle: {
+    fontFamily: FONT,
     fontSize: 14,
-    color: '#DB0007',
+    color: '#00A1FF',
     marginTop: 2,
   },
   summaryCard: {
     flexDirection: 'row',
     backgroundColor: '#ffffff',
     margin: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   summaryItem: {
     flex: 1,
     alignItems: 'center',
   },
   summaryLabel: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 12,
     marginBottom: 4,
   },
   summaryValue: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 24,
     fontWeight: 'bold',
   },
   summaryValueBig: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 24,
     fontWeight: 'bold',
   },
   summaryDivider: {
     width: 1,
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     marginHorizontal: 16,
   },
   ordersList: {
@@ -421,23 +428,25 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyStateText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
   },
   emptyStateSubtext: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
     marginTop: 8,
   },
   orderCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   orderCardHeader: {
     flexDirection: 'row',
@@ -451,9 +460,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   orderNumber: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -461,14 +471,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 11,
     fontWeight: '600',
   },
   orderTotal: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#DB0007',
+    color: '#00A1FF',
   },
   orderCardBody: {
     flexDirection: 'row',
@@ -481,14 +493,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   orderInfoText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 13,
   },
   orderCardActions: {
     flexDirection: 'row',
     gap: 12,
     borderTopWidth: 1,
-    borderTopColor: '#dde4ee',
+    borderTopColor: '#E0E6EB',
     paddingTop: 12,
   },
   viewButton: {
@@ -498,11 +511,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: 'rgba(52, 152, 219, 0.15)',
+    borderRadius: 999,
+    backgroundColor: '#E5F5FF',
   },
   viewButtonText: {
-    color: '#3498db',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -513,17 +527,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#00754A',
+    borderRadius: 999,
+    backgroundColor: '#0E9F80',
   },
   payButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -532,7 +547,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   modalCloseButton: {
     width: 44,
@@ -547,9 +562,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     marginBottom: 4,
   },
   modalContent: {
@@ -558,16 +574,17 @@ const styles = StyleSheet.create({
   },
   detailSection: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   detailSectionTitle: {
+    fontFamily: FONT,
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: '#5A6A85',
     textTransform: 'uppercase',
     marginBottom: 12,
   },
@@ -578,7 +595,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   detailText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
   },
   itemRow: {
@@ -587,7 +605,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   itemInfo: {
     flexDirection: 'row',
@@ -596,16 +614,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   itemName: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
     flex: 1,
   },
   itemQty: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
   },
   itemPrice: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -614,24 +635,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#DB0007',
+    borderColor: '#00A1FF',
   },
   totalLabel: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   totalValue: {
+    fontFamily: FONT,
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#DB0007',
+    color: '#00A1FF',
   },
   notesText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 14,
     lineHeight: 20,
   },
@@ -640,12 +664,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#00754A',
-    borderRadius: 12,
+    backgroundColor: '#0E9F80',
+    borderRadius: 999,
     paddingVertical: 16,
     marginTop: 8,
   },
   payFullButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',

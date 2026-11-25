@@ -11,6 +11,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { dismissToast, notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +23,10 @@ import { useAppStore } from '../../src/store/appStore';
 import { reportsApi, missedSalesApi, setupApi, ordersApi, kitchenApi, porzionaturApi, authApi, KitchenGroup } from '../../src/services/api';
 import { DailySummary, MissedSale, Order } from '../../src/types';
 import { AccountButton } from '../../src/components/AccountButton';
+import { C, FONT } from '../../src/theme/tokens';
+import { PageHeader } from '../../src/components/ui2/PageHeader';
+import { DatePill } from '../../src/components/ui2/DatePill';
+import { StatCard } from '../../src/components/ui2/StatCard';
 
 // Configure Italian locale for react-native-calendars
 LocaleConfig.locales['it'] = {
@@ -51,6 +56,7 @@ interface SetupStatus {
 }
 
 export default function ReportsScreen() {
+  const isCompactR = useWindowDimensions().width < 768;
   const { selectedDate, setSelectedDate } = useAppStore();
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -204,18 +210,15 @@ export default function ReportsScreen() {
     try {
       setIsLoading(true);
       
-      // Load top dishes for range
-      const topData = await reportsApi.getTopDishes(startDate, endDate, 10);
+      const [topData, missedSummary, totals] = await Promise.all([
+        reportsApi.getTopDishes(startDate, endDate, 10),
+        reportsApi.getMissedSalesSummary(startDate, endDate),
+        reportsApi.getRangeSummary(startDate, endDate),
+      ]);
       setTopDishes(topData);
-      
-      // Load missed sales summary for range
-      const missedSummary = await reportsApi.getMissedSalesSummary(startDate, endDate);
-      
-      // Calculate total orders and revenue from daily summaries
-      // For now we use the missed sales summary data
       setRangeStats({
-        totalOrders: missedSummary.totalMissedSales || 0,
-        totalRevenue: 0, // Would need a separate endpoint
+        totalOrders: totals.totalOrders,
+        totalRevenue: totals.totalRevenue,
         missedSalesTotal: missedSummary.totalMissedSales || 0,
         missedSalesQuantity: missedSummary.byDish?.reduce((acc: number, d: any) => acc + (d.totalQuantity || d.count || 0), 0) || 0,
       });
@@ -386,7 +389,7 @@ export default function ReportsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#DB0007" />
+          <ActivityIndicator size="large" color="#00A1FF" />
           <Text style={styles.loadingText}>Caricamento...</Text>
         </View>
       </SafeAreaView>
@@ -405,7 +408,7 @@ export default function ReportsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Ionicons name="lock-closed" size={40} color="#DB0007" />
+              <Ionicons name="lock-closed" size={40} color="#F2545B" />
               <Text style={styles.modalTitle}>Area Riservata</Text>
               <Text style={styles.modalSubtitle}>
                 Inserisci la password del tuo account (la stessa usata per accedere)
@@ -414,7 +417,7 @@ export default function ReportsScreen() {
             <TextInput
               style={styles.passwordInput}
               placeholder="Password"
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#5A6A85"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -456,7 +459,7 @@ export default function ReportsScreen() {
             <View style={styles.setupModalHeader}>
               <Text style={styles.setupModalTitle}>Impostazioni Admin</Text>
               <TouchableOpacity onPress={closeSetupModal}>
-                <Ionicons name="close" size={28} color="#1a202c" />
+                <Ionicons name="close" size={28} color="#2A3547" />
               </TouchableOpacity>
             </View>
 
@@ -466,7 +469,7 @@ export default function ReportsScreen() {
                 <View style={styles.setupSectionHeader}>
                   <Text style={styles.setupSectionTitle}>Stato Database</Text>
                   <TouchableOpacity onPress={checkSetupStatus}>
-                    <Ionicons name="refresh" size={20} color="#DB0007" />
+                    <Ionicons name="refresh" size={20} color="#00A1FF" />
                   </TouchableOpacity>
                 </View>
 
@@ -485,7 +488,7 @@ export default function ReportsScreen() {
                     </View>
                     {setupStatus.issues.missing_initialPortions > 0 && (
                       <View style={styles.warningBox}>
-                        <Ionicons name="warning" size={18} color="#FFBC0D" />
+                        <Ionicons name="warning" size={18} color="#FFAE1F" />
                         <Text style={styles.warningText}>
                           {setupStatus.issues.missing_initialPortions} piatti senza porzioni iniziali
                         </Text>
@@ -493,7 +496,7 @@ export default function ReportsScreen() {
                     )}
                   </View>
                 ) : (
-                  <ActivityIndicator size="small" color="#DB0007" />
+                  <ActivityIndicator size="small" color="#00A1FF" />
                 )}
               </View>
 
@@ -524,10 +527,12 @@ export default function ReportsScreen() {
       </Modal>
 
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle}>Report e Statistiche</Text>
+      <PageHeader
+        title="Report e Statistiche"
+        subtitle="Incassi, cucina e andamento dei piatti"
+        testID="reports-header"
+        right={
+          <>
             <TouchableOpacity
               style={styles.reportSyncIndicator}
               onPress={silentSyncReports}
@@ -544,19 +549,17 @@ export default function ReportsScreen() {
                 reportFreshness === 'error' && styles.reportSyncLabelError,
               ]}>{reportFreshnessLabel}</Text>
             </TouchableOpacity>
-          </View>
-          <View style={styles.headerRight}>
             <AccountButton />
             <TouchableOpacity
               style={styles.settingsButton}
               onPress={() => setShowPasswordModal(true)}
               testID="report-settings-button"
             >
-              <Ionicons name="settings-outline" size={24} color="#64748b" />
+              <Ionicons name="settings-outline" size={22} color="#5A6A85" />
             </TouchableOpacity>
-          </View>
-        </View>
-        
+          </>
+        }
+      >
         {/* Mode Selector */}
         <View style={styles.modeSelector}>
           <TouchableOpacity
@@ -580,15 +583,7 @@ export default function ReportsScreen() {
         {/* Date Selector */}
         {reportMode === 'daily' ? (
           <View style={styles.dateSelector}>
-            <TouchableOpacity onPress={() => changeDate(-1)} style={styles.dateButton}>
-              <Ionicons name="chevron-back" size={24} color="#1a202c" />
-            </TouchableOpacity>
-            <Text style={styles.dateText}>
-              {format(new Date(selectedDate), 'EEEE d MMMM yyyy', { locale: it })}
-            </Text>
-            <TouchableOpacity onPress={() => changeDate(1)} style={styles.dateButton}>
-              <Ionicons name="chevron-forward" size={24} color="#1a202c" />
-            </TouchableOpacity>
+            <DatePill selectedDate={selectedDate} onChange={changeDate} compact={isCompactR} idPrefix="report-" />
           </View>
         ) : (
           <View style={styles.rangeDateSelector}>
@@ -648,56 +643,52 @@ export default function ReportsScreen() {
               }}
               testID="open-calendar-button"
             >
-              <Ionicons name="calendar-outline" size={20} color="#DB0007" />
+              <Ionicons name="calendar-outline" size={20} color="#00A1FF" />
               <Text style={styles.dateRangeButtonText}>
                 {format(new Date(startDate), 'd MMM yyyy', { locale: it })}
                 {'  →  '}
                 {format(new Date(endDate), 'd MMM yyyy', { locale: it })}
               </Text>
-              <Ionicons name="chevron-down" size={18} color="#64748b" />
+              <Ionicons name="chevron-down" size={18} color="#5A6A85" />
             </TouchableOpacity>
           </View>
         )}
-      </View>
+      </PageHeader>
 
       {/* Content */}
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#DB0007" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
         {/* Summary Cards */}
         <View style={styles.summaryGrid}>
-          <View style={[styles.summaryCard, styles.ordersCard]}>
-            <Ionicons name="receipt-outline" size={32} color="#3498db" />
-            <Text style={styles.summaryValue}>
-              {reportMode === 'daily' ? (summary?.totalOrders || 0) : (rangeStats?.totalOrders || 0)}
-            </Text>
-            <Text style={styles.summaryLabel}>
-              {reportMode === 'daily' ? 'Ordini Totali' : 'Ordini Periodo'}
-            </Text>
-          </View>
-          
-          <View style={[styles.summaryCard, styles.revenueCard]}>
-            <Ionicons name="cash-outline" size={32} color="#00754A" />
-            <Text style={[styles.summaryValue, { color: '#00754A' }]}>
-              {reportMode === 'daily' 
-                ? (summary?.totalRevenue || 0).toFixed(2) 
-                : (rangeStats?.totalRevenue || 0).toFixed(2)} €
-            </Text>
-            <Text style={styles.summaryLabel}>
-              {reportMode === 'daily' ? 'Incasso Giorno' : 'Incasso Periodo'}
-            </Text>
-          </View>
-          
-          <View style={[styles.summaryCard, styles.missedCard]}>
-            <Ionicons name="alert-circle-outline" size={32} color="#DB0007" />
-            <Text style={[styles.summaryValue, { color: '#DB0007' }]}>
-              {totalMissedQuantity}
-            </Text>
-            <Text style={styles.summaryLabel}>Mancate Vendite</Text>
-          </View>
+          <StatCard
+            icon="receipt-outline"
+            tone="primary"
+            index={0}
+            testID="report-stat-orders"
+            value={reportMode === 'daily' ? (summary?.totalOrders || 0) : (rangeStats?.totalOrders || 0)}
+            label={reportMode === 'daily' ? 'Ordini totali' : 'Ordini periodo'}
+          />
+          <StatCard
+            icon="cash-outline"
+            tone="success"
+            index={1}
+            testID="report-stat-revenue"
+            value={`${(reportMode === 'daily' ? (summary?.totalRevenue || 0) : (rangeStats?.totalRevenue || 0)).toFixed(2)} €`}
+            label={reportMode === 'daily' ? 'Incasso giorno' : 'Incasso periodo'}
+          />
+          <StatCard
+            icon="alert-circle-outline"
+            tone="error"
+            index={2}
+            testID="report-stat-missed"
+            value={totalMissedQuantity}
+            label="Mancate vendite"
+          />
         </View>
 
         {/* Daily-only sections */}
@@ -715,7 +706,7 @@ export default function ReportsScreen() {
                         channel === 'telefono' ? 'call' : 'person'
                       }
                       size={24}
-                      color="#DB0007"
+                      color="#00A1FF"
                     />
                     <Text style={styles.channelCount}>{count as number}</Text>
                     <Text style={styles.channelLabel}>{CHANNEL_LABELS[channel] || channel}</Text>
@@ -731,7 +722,7 @@ export default function ReportsScreen() {
             <View style={styles.section} testID="porzionatura-section">
               <View style={styles.kitchenHeader}>
                 <View style={styles.kitchenHeaderLeft}>
-                  <View style={[styles.kitchenIconBubble, { backgroundColor: '#5423E7' }]}>
+                  <View style={[styles.kitchenIconBubble, { backgroundColor: '#8965E5' }]}>
                     <Ionicons name="scale-outline" size={22} color="#fff" />
                   </View>
                   <View>
@@ -742,12 +733,12 @@ export default function ReportsScreen() {
                   </View>
                 </View>
                 <TouchableOpacity onPress={() => loadPorzionatura()} style={styles.kitchenRefreshBtn} testID="porzionatura-refresh">
-                  <Ionicons name="refresh" size={20} color="#5423E7" />
+                  <Ionicons name="refresh" size={20} color="#8965E5" />
                 </TouchableOpacity>
               </View>
 
               {isLoadingPorzionatura ? (
-                <ActivityIndicator size="small" color="#5423E7" style={{ marginVertical: 16 }} />
+                <ActivityIndicator size="small" color="#8965E5" style={{ marginVertical: 16 }} />
               ) : porzionaturaGroups.length === 0 ? (
                 <Text style={styles.noDataText}>Nessun piatto da porzionare per oggi.</Text>
               ) : (
@@ -765,7 +756,7 @@ export default function ReportsScreen() {
                           <Ionicons
                             name={isOpen ? 'chevron-down' : 'chevron-forward'}
                             size={18}
-                            color="#64748b"
+                            color="#5A6A85"
                           />
                           <Text style={styles.kitchenGroupName}>{group.dishName}</Text>
                         </View>
@@ -780,11 +771,11 @@ export default function ReportsScreen() {
                         // Ogni riga ha il proprio status da entry.portionStatuses[p]
                         const portionStatuses = entry.portionStatuses || Array(entry.quantity).fill(entry.itemStatus || 'pending');
                         const serviceMap: Record<string, { label: string; color: string }> = {
-                          da_consegnare: { label: 'Da consegnare', color: '#DB0007' },
-                          da_ritirare: { label: 'Da ritirare', color: '#FFBC0D' },
-                          in_sede: { label: 'In sede', color: '#00754A' },
+                          da_consegnare: { label: 'Da consegnare', color: '#00A1FF' },
+                          da_ritirare: { label: 'Da ritirare', color: '#FFAE1F' },
+                          in_sede: { label: 'In sede', color: '#0E9F80' },
                         };
-                        const svc = serviceMap[entry.serviceType] || { label: entry.serviceType, color: '#64748b' };
+                        const svc = serviceMap[entry.serviceType] || { label: entry.serviceType, color: '#5A6A85' };
                         return Array.from({ length: entry.quantity }).map((_, portionIdx) => {
                           const portionStatus = portionStatuses[portionIdx] || 'pending';
                           const isReady = portionStatus === 'ready';
@@ -794,7 +785,7 @@ export default function ReportsScreen() {
                               style={[styles.kitchenEntry, isReady && styles.kitchenEntryReady]}
                               testID={`porz-entry-${entry.orderId}-${entry.itemIndex}-${portionIdx}`}
                             >
-                              <View style={[styles.kitchenQtyBubble, { backgroundColor: '#EEE8FF', borderColor: '#5423E7' }]}>
+                              <View style={[styles.kitchenQtyBubble, { backgroundColor: '#EEE8FF', borderColor: '#8965E5' }]}>
                                 <Text style={styles.kitchenQty}>1x</Text>
                               </View>
                               <View style={styles.kitchenEntryInfo}>
@@ -805,7 +796,7 @@ export default function ReportsScreen() {
                                   </Text>
                                   {entry.deliveryTime ? (
                                     <View style={styles.kitchenTimeBadge}>
-                                      <Ionicons name="time-outline" size={12} color="#64748b" />
+                                      <Ionicons name="time-outline" size={12} color="#5A6A85" />
                                       <Text style={styles.kitchenTimeText}>{entry.deliveryTime}</Text>
                                     </View>
                                   ) : null}
@@ -839,8 +830,8 @@ export default function ReportsScreen() {
                                   </>
                                 ) : (
                                   <>
-                                    <Ionicons name="checkmark" size={18} color="#5423E7" />
-                                    <Text style={[styles.kitchenCompleteBtnText, { color: '#5423E7' }]}>Pronto</Text>
+                                    <Ionicons name="checkmark" size={18} color="#8965E5" />
+                                    <Text style={[styles.kitchenCompleteBtnText, { color: '#8965E5' }]}>Pronto</Text>
                                   </>
                                 )}
                               </TouchableOpacity>
@@ -894,13 +885,13 @@ export default function ReportsScreen() {
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity onPress={loadKitchen} style={styles.kitchenRefreshBtn} testID="kitchen-refresh">
-                <Ionicons name="refresh" size={20} color="#5423E7" />
+              <TouchableOpacity onPress={() => loadKitchen()} style={styles.kitchenRefreshBtn} testID="kitchen-refresh">
+                <Ionicons name="refresh" size={20} color="#8965E5" />
               </TouchableOpacity>
             </View>
 
             {isLoadingKitchen ? (
-              <ActivityIndicator size="small" color="#FFBC0D" style={{ marginVertical: 16 }} />
+              <ActivityIndicator size="small" color="#FFAE1F" style={{ marginVertical: 16 }} />
             ) : kitchenGroups.length === 0 ? (
               <Text style={styles.noDataText}>Nessun piatto in cucina per oggi.{"\n"}Marca i piatti negli ordini con l&apos;icona 👨‍🍳 per farli comparire qui.</Text>
             ) : (
@@ -917,11 +908,11 @@ export default function ReportsScreen() {
                   {group.entries.map((entry) => {
                     const isReady = entry.itemStatus === 'ready';
                     const serviceMap: Record<string, { label: string; color: string }> = {
-                      da_consegnare: { label: 'Da consegnare', color: '#DB0007' },
-                      da_ritirare: { label: 'Da ritirare', color: '#FFBC0D' },
-                      in_sede: { label: 'In sede', color: '#00754A' },
+                      da_consegnare: { label: 'Da consegnare', color: '#00A1FF' },
+                      da_ritirare: { label: 'Da ritirare', color: '#FFAE1F' },
+                      in_sede: { label: 'In sede', color: '#0E9F80' },
                     };
-                    const svc = serviceMap[entry.serviceType] || { label: entry.serviceType, color: '#64748b' };
+                    const svc = serviceMap[entry.serviceType] || { label: entry.serviceType, color: '#5A6A85' };
                     return (
                       <View
                         key={`${entry.orderId}-${entry.itemIndex}`}
@@ -939,7 +930,7 @@ export default function ReportsScreen() {
                             </Text>
                             {entry.deliveryTime ? (
                               <View style={styles.kitchenTimeBadge}>
-                                <Ionicons name="time-outline" size={12} color="#64748b" />
+                                <Ionicons name="time-outline" size={12} color="#5A6A85" />
                                 <Text style={styles.kitchenTimeText}>{entry.deliveryTime}</Text>
                               </View>
                             ) : null}
@@ -973,7 +964,7 @@ export default function ReportsScreen() {
                             </>
                           ) : (
                             <>
-                              <Ionicons name="checkmark" size={18} color="#00754A" />
+                              <Ionicons name="checkmark" size={18} color="#0E9F80" />
                               <Text style={styles.kitchenCompleteBtnText}>Completa</Text>
                             </>
                           )}
@@ -991,7 +982,7 @@ export default function ReportsScreen() {
         <View style={styles.section} testID="unpaid-orders-section">
           <View style={styles.unpaidHeader}>
             <View style={styles.unpaidHeaderLeft}>
-              <Ionicons name="card-outline" size={22} color="#DB0007" />
+              <Ionicons name="card-outline" size={22} color="#F2545B" />
               <Text style={styles.sectionTitle}>
                 {reportMode === 'daily' ? 'Ordini Non Pagati del Giorno' : 'Ordini Non Pagati nel Periodo'}
               </Text>
@@ -1004,7 +995,7 @@ export default function ReportsScreen() {
           </View>
           
           {isLoadingUnpaid ? (
-            <ActivityIndicator size="small" color="#DB0007" style={{ marginVertical: 16 }} />
+            <ActivityIndicator size="small" color="#F2545B" style={{ marginVertical: 16 }} />
           ) : unpaidOrders.length === 0 ? (
             <Text style={styles.noDataText}>
               {reportMode === 'daily' ? 'Nessun ordine non pagato oggi' : 'Nessun ordine non pagato nel periodo'}
@@ -1140,7 +1131,7 @@ export default function ReportsScreen() {
                 if (!calendarStart) return {};
                 if (calendarStart && !calendarEnd) {
                   return {
-                    [calendarStart]: { startingDay: true, endingDay: true, color: '#DB0007', textColor: '#fff' }
+                    [calendarStart]: { startingDay: true, endingDay: true, color: '#00A1FF', textColor: '#fff' }
                   };
                 }
                 // Build the range
@@ -1151,7 +1142,7 @@ export default function ReportsScreen() {
                 while (cur <= end) {
                   const d = format(cur, 'yyyy-MM-dd');
                   marked[d] = {
-                    color: '#DB0007',
+                    color: '#00A1FF',
                     textColor: '#fff',
                     ...(d === calendarStart ? { startingDay: true } : {}),
                     ...(d === calendarEnd ? { endingDay: true } : {}),
@@ -1179,14 +1170,14 @@ export default function ReportsScreen() {
               theme={{
                 calendarBackground: '#ffffff',
                 backgroundColor: '#ffffff',
-                textSectionTitleColor: '#64748b',
-                dayTextColor: '#1a202c',
-                monthTextColor: '#1a202c',
-                arrowColor: '#DB0007',
-                todayTextColor: '#DB0007',
-                selectedDayBackgroundColor: '#DB0007',
+                textSectionTitleColor: '#5A6A85',
+                dayTextColor: '#2A3547',
+                monthTextColor: '#2A3547',
+                arrowColor: '#00A1FF',
+                todayTextColor: '#00A1FF',
+                selectedDayBackgroundColor: '#00A1FF',
                 selectedDayTextColor: '#fff',
-                textDisabledColor: '#94a3b8',
+                textDisabledColor: '#98A4B8',
               }}
               firstDay={1}
             />
@@ -1224,7 +1215,7 @@ export default function ReportsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
   },
   loadingContainer: {
     flex: 1,
@@ -1232,7 +1223,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     marginTop: 10,
     fontSize: 16,
   },
@@ -1240,12 +1232,13 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   headerTitle: {
+    fontFamily: FONT,
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     textAlign: 'center',
   },
   headerTitleRow: {
@@ -1259,59 +1252,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 14,
+    minHeight: 44,
+    borderRadius: 999,
+    backgroundColor: '#F6F9FC',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E0E6EB',
   },
   reportSyncDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#9CA3AF',
+    backgroundColor: '#98A4B8',
   },
-  reportSyncDotFresh: { backgroundColor: '#00754A' },
-  reportSyncDotStale: { backgroundColor: '#FFBC0D' },
-  reportSyncDotError: { backgroundColor: '#DB0007' },
+  reportSyncDotFresh: { backgroundColor: '#0E9F80' },
+  reportSyncDotStale: { backgroundColor: '#FFAE1F' },
+  reportSyncDotError: { backgroundColor: '#F2545B' },
   reportSyncLabel: {
+    fontFamily: FONT,
     fontSize: 11,
-    color: '#64748b',
+    color: '#5A6A85',
     fontWeight: '600',
   },
   reportSyncLabelError: {
-    color: '#DB0007',
+    color: '#F2545B',
     fontWeight: '700',
   },
   dateSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
+    justifyContent: 'flex-start',
   },
   dateButton: {
     padding: 8,
   },
   dateText: {
+    fontFamily: FONT,
     fontSize: 18,
-    color: '#DB0007',
+    color: '#00A1FF',
     fontWeight: '600',
     marginHorizontal: 16,
     textTransform: 'capitalize',
   },
   content: {
     flex: 1,
+  },
+  contentInner: {
     padding: 16,
+    paddingBottom: 32,
   },
   summaryGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginBottom: 16,
   },
   summaryCard: {
     flex: 1,
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
   },
@@ -1319,32 +1318,37 @@ const styles = StyleSheet.create({
   revenueCard: {},
   missedCard: {},
   summaryValue: {
+    fontFamily: FONT,
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     marginTop: 8,
   },
   summaryLabel: {
+    fontFamily: FONT,
     fontSize: 12,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 4,
     textAlign: 'center',
   },
   section: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 14,
+    padding: 18,
     marginBottom: 16,
-    shadowColor: '#5423E7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: '#5A6A85',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
     elevation: 2,
   },
   sectionTitle: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#2A3547',
     marginBottom: 16,
   },
   channelGrid: {
@@ -1353,24 +1357,27 @@ const styles = StyleSheet.create({
   },
   channelCard: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 10,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 14,
     padding: 16,
     alignItems: 'center',
   },
   channelCount: {
+    fontFamily: FONT,
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     marginTop: 8,
   },
   channelLabel: {
+    fontFamily: FONT,
     fontSize: 12,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 4,
   },
   noDataText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
     textAlign: 'center',
     paddingVertical: 20,
@@ -1381,25 +1388,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   dishSaleInfo: {
     flex: 1,
   },
   dishSaleName: {
+    fontFamily: FONT,
     fontSize: 15,
-    color: '#1a202c',
+    color: '#2A3547',
     fontWeight: '500',
   },
   dishSaleQty: {
+    fontFamily: FONT,
     fontSize: 13,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 2,
   },
   dishSaleRevenue: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#00754A',
+    color: '#0E9F80',
   },
   menuAvailRow: {
     flexDirection: 'row',
@@ -1407,25 +1417,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   menuAvailName: {
+    fontFamily: FONT,
     fontSize: 15,
-    color: '#1a202c',
+    color: '#2A3547',
   },
   availBadge: {
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
   availBadgeEmpty: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
   },
   availBadgeLow: {
-    backgroundColor: '#FFBC0D',
+    backgroundColor: '#FFAE1F',
   },
   availBadgeText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '700',
@@ -1435,18 +1447,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   rankBadge: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
   rankText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 14,
@@ -1455,13 +1468,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topDishName: {
+    fontFamily: FONT,
     fontSize: 15,
-    color: '#1a202c',
+    color: '#2A3547',
     fontWeight: '500',
   },
   topDishStats: {
+    fontFamily: FONT,
     fontSize: 13,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 2,
   },
   missedSaleRow: {
@@ -1470,19 +1485,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   missedSaleInfo: {
     flex: 1,
   },
   missedSaleName: {
+    fontFamily: FONT,
     fontSize: 15,
-    color: '#1a202c',
+    color: '#2A3547',
     fontWeight: '500',
   },
   missedSaleDetails: {
+    fontFamily: FONT,
     fontSize: 13,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 2,
   },
   reasonBadge: {
@@ -1491,44 +1508,50 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   reasonExhausted: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
   },
   reasonNotInMenu: {
-    backgroundColor: '#FFBC0D',
+    backgroundColor: '#FFAE1F',
   },
   reasonText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 11,
     fontWeight: '600',
   },
   modeSelector: {
     flexDirection: 'row',
-    marginTop: 12,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 10,
+    backgroundColor: C.sunken,
+    borderRadius: 999,
     padding: 4,
+    maxWidth: 440,
+    width: '100%',
   },
   modeButton: {
     flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: 'center',
   },
   modeButtonActive: {
-    backgroundColor: '#DB0007',
+    backgroundColor: C.primary,
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
   modeButtonText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '700',
   },
   modeButtonTextActive: {
     color: '#ffffff',
   },
   rangeDateSelector: {
-    marginTop: 12,
-    gap: 8,
+    gap: 10,
   },
   dateRangeRow: {
     flexDirection: 'row',
@@ -1536,24 +1559,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dateRangeLabel: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
     width: 35,
   },
   dateRangeText: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 15,
     fontWeight: '600',
     minWidth: 100,
     textAlign: 'center',
   },
   missedQuantityBadge: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
   missedQuantityText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '600',
@@ -1565,15 +1591,17 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 2,
-    borderTopColor: '#DB0007',
+    borderTopColor: '#F2545B',
   },
   missedTotalLabel: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 14,
     fontWeight: '600',
   },
   missedTotalValue: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#F2545B',
     fontSize: 24,
     fontWeight: 'bold',
   },
@@ -1594,20 +1622,21 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFBC0D',
+    backgroundColor: '#FFAE1F',
     justifyContent: 'center',
     alignItems: 'center',
   },
   kitchenSubtitle: {
+    fontFamily: FONT,
     fontSize: 12,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 2,
   },
   kitchenRefreshBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EFF4FA',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1617,7 +1646,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#FFBC0D',
+    borderLeftColor: '#FFAE1F',
   },
   kitchenGroupHeader: {
     flexDirection: 'row',
@@ -1626,12 +1655,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#E0E6EB',
   },
   kitchenGroupName: {
+    fontFamily: FONT,
     fontSize: 17,
     fontWeight: '800',
-    color: '#1a202c',
+    color: '#2A3547',
     flex: 1,
     letterSpacing: 0.3,
   },
@@ -1642,12 +1672,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   kitchenGroupBadge: {
-    backgroundColor: '#5423E7',
+    backgroundColor: '#8965E5',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
   },
   kitchenGroupBadgeText: {
+    fontFamily: FONT,
     color: '#fff',
     fontSize: 13,
     fontWeight: '700',
@@ -1672,13 +1703,13 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EFF4FA',
     borderWidth: 2,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   kitchenCheckReady: {
-    backgroundColor: '#00754A',
-    borderColor: '#00754A',
+    backgroundColor: '#0E9F80',
+    borderColor: '#0E9F80',
   },
   kitchenQtyBubble: {
     width: 42,
@@ -1688,7 +1719,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFF7E0',
     borderWidth: 2,
-    borderColor: '#FFBC0D',
+    borderColor: '#FFAE1F',
   },
   kitchenCompleteBtn: {
     flexDirection: 'row',
@@ -1696,33 +1727,36 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 999,
     backgroundColor: '#fff',
     borderWidth: 1.5,
-    borderColor: '#00754A',
+    borderColor: '#0E9F80',
     minWidth: 92,
     justifyContent: 'center',
   },
   kitchenCompleteBtnText: {
-    color: '#00754A',
+    fontFamily: FONT,
+    color: '#0E9F80',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   kitchenCompleteBtnDone: {
-    backgroundColor: '#00754A',
-    borderColor: '#00754A',
+    backgroundColor: '#0E9F80',
+    borderColor: '#0E9F80',
   },
   kitchenCompleteBtnDoneText: {
+    fontFamily: FONT,
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   kitchenQty: {
+    fontFamily: FONT,
     fontSize: 15,
     fontWeight: '800',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   kitchenEntryInfo: {
     flex: 1,
@@ -1735,14 +1769,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   kitchenEntryText: {
+    fontFamily: FONT,
     fontSize: 14,
-    color: '#1a202c',
+    color: '#2A3547',
     fontWeight: '600',
     flex: 1,
   },
   kitchenEntryTextReady: {
     textDecorationLine: 'line-through',
-    color: '#64748b',
+    color: '#5A6A85',
   },
   kitchenEntryMeta: {
     flexDirection: 'row',
@@ -1756,6 +1791,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   kitchenServiceText: {
+    fontFamily: FONT,
     color: '#fff',
     fontSize: 10,
     fontWeight: '700',
@@ -1765,25 +1801,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#EFF4FA',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
   },
   kitchenTimeText: {
+    fontFamily: FONT,
     fontSize: 11,
-    color: '#64748b',
+    color: '#5A6A85',
     fontWeight: '600',
   },
   kitchenEntryComposition: {
+    fontFamily: FONT,
     fontSize: 14,
     fontWeight: '700',
-    color: '#00754A',
+    color: '#0E9F80',
     flexBasis: '100%',
   },
   kitchenEntryNote: {
+    fontFamily: FONT,
     fontSize: 11,
-    color: '#64748b',
+    color: '#5A6A85',
     fontStyle: 'italic',
     flex: 1,
   },
@@ -1800,7 +1839,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   unpaidBadge: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1808,6 +1847,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   unpaidBadgeText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontWeight: '700',
     fontSize: 13,
@@ -1816,38 +1856,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 10,
     marginBottom: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#DB0007',
+    borderLeftColor: '#F2545B',
   },
   unpaidOrderInfo: {
     flex: 1,
     marginRight: 12,
   },
   unpaidOrderCustomer: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 2,
   },
   unpaidOrderMeta: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 12,
   },
   markPaidBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   markPaidBtnText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
@@ -1859,15 +1902,17 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 2,
-    borderTopColor: '#DB0007',
+    borderTopColor: '#F2545B',
   },
   unpaidTotalLabel: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 14,
     fontWeight: '600',
   },
   unpaidTotalValue: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#F2545B',
     fontSize: 22,
     fontWeight: 'bold',
   },
@@ -1878,7 +1923,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingsButton: {
-    padding: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.sunken,
   },
   headerRight: {
     flexDirection: 'row',
@@ -1894,15 +1944,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   presetChip: {
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: '#c5d0e0',
   },
   presetChipText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1911,15 +1962,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   dateRangeButtonText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1934,14 +1986,16 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { overflowY: 'auto' as any } }),
   },
   calendarTitle: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 4,
   },
   calendarSubtitle: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 12,
@@ -1955,23 +2009,25 @@ const styles = StyleSheet.create({
   calendarCancelBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#dde4ee',
+    borderRadius: 999,
+    backgroundColor: '#E0E6EB',
     alignItems: 'center',
   },
   calendarCancelBtnText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontWeight: '600',
     fontSize: 14,
   },
   calendarApplyBtn: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#DB0007',
+    borderRadius: 999,
+    backgroundColor: '#00A1FF',
     alignItems: 'center',
   },
   calendarApplyBtnText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontWeight: '700',
     fontSize: 14,
@@ -1982,7 +2038,7 @@ const styles = StyleSheet.create({
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(42, 53, 71, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -2001,22 +2057,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   modalTitle: {
+    fontFamily: FONT,
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     marginTop: 16,
   },
   modalSubtitle: {
+    fontFamily: FONT,
     fontSize: 14,
-    color: '#64748b',
+    color: '#5A6A85',
     textAlign: 'center',
     marginTop: 8,
   },
   passwordInput: {
-    backgroundColor: '#f5f7fa',
-    borderRadius: 10,
+    fontFamily: FONT,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 12,
     padding: 14,
-    color: '#1a202c',
+    color: '#2A3547',
     fontSize: 16,
     marginBottom: 16,
   },
@@ -2026,24 +2085,26 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 16,
     fontWeight: '600',
   },
   loginButton: {
     flex: 1,
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: 'center',
   },
   loginButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
@@ -2062,19 +2123,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   setupModalTitle: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   setupModalBody: {
     padding: 16,
   },
   setupSection: {
-    backgroundColor: '#f5f7fa',
-    borderRadius: 12,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
   },
@@ -2085,9 +2147,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   setupSectionTitle: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   statusContainer: {
     gap: 10,
@@ -2098,11 +2161,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusLabel: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
   },
   statusValue: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -2112,12 +2177,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusOk: {
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
   },
   statusWarning: {
-    backgroundColor: '#FFBC0D',
+    backgroundColor: '#FFAE1F',
   },
   statusBadgeText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '600',
@@ -2125,14 +2191,15 @@ const styles = StyleSheet.create({
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(243, 156, 18, 0.15)',
+    backgroundColor: '#FFF4E0',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     gap: 8,
     marginTop: 4,
   },
   warningText: {
-    color: '#FFBC0D',
+    fontFamily: FONT,
+    color: '#FFAE1F',
     fontSize: 13,
     flex: 1,
   },
@@ -2140,21 +2207,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#3498db',
+    backgroundColor: '#00A1FF',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 999,
     gap: 8,
   },
   setupButtonDisabled: {
     opacity: 0.6,
   },
   setupButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
   setupHint: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 10,

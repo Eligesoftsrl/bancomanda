@@ -11,8 +11,8 @@ import { CHANNELS, STATUS_LABELS, serviceOf } from './orderMeta';
 
 const Chip = ({ icon, label, tone, testID }: { icon: string; label: string; tone?: 'amber'; testID?: string }) => (
   <View style={[styles.chip, tone === 'amber' && styles.chipAmber]} testID={testID}>
-    <Ionicons name={icon as any} size={13} color={tone === 'amber' ? C.amber : C.text2} />
-    <Text style={[styles.chipText, tone === 'amber' && { color: C.amber }]}>{label}</Text>
+    <Ionicons name={icon as any} size={13} color={tone === 'amber' ? C.warningFg : C.text2} />
+    <Text style={[styles.chipText, tone === 'amber' && { color: C.warningFg }]}>{label}</Text>
   </View>
 );
 
@@ -39,7 +39,7 @@ export const OrderTicket = ({ order, selected, onOpen, onPrint, onTogglePayment,
           <View style={styles.numPill}><Text style={styles.num}>#{order.orderNumber}</Text></View>
         </View>
         <PressableScale style={styles.printBtn} onPress={(e) => onPrint(e)} testID={`order-print-${order.id}`} accessibilityLabel="Stampa comanda">
-          <Ionicons name="print-outline" size={18} color={C.blue} />
+          <Ionicons name="print-outline" size={18} color={C.primary} />
         </PressableScale>
         <View style={[styles.badge, { backgroundColor: st.bg, borderColor: st.bd }]} testID={`order-status-${order.id}`}>
           <View style={[styles.badgeDot, { backgroundColor: st.solid }]} />
@@ -68,7 +68,7 @@ export const OrderTicket = ({ order, selected, onOpen, onPrint, onTogglePayment,
 
       {!!order.notes && (
         <View style={styles.notes} testID={`order-notes-${order.id}`}>
-          <Ionicons name="chatbubble-ellipses-outline" size={14} color={C.blue} />
+          <Ionicons name="chatbubble-ellipses-outline" size={14} color={C.primary} />
           <Text style={styles.notesText} numberOfLines={2}>{order.notes}</Text>
         </View>
       )}
@@ -82,9 +82,9 @@ export const OrderTicket = ({ order, selected, onOpen, onPrint, onTogglePayment,
             testID={`order-payment-toggle-${order.id}`}
           >
             <Animated.View key={order.isPaid ? 'paid' : 'unpaid'} entering={ZoomIn.springify().damping(10).stiffness(280)}>
-              <Ionicons name={order.isPaid ? 'checkmark-circle' : 'card-outline'} size={15} color={order.isPaid ? C.green : C.brand} />
+              <Ionicons name={order.isPaid ? 'checkmark-circle' : 'card-outline'} size={15} color={order.isPaid ? C.success : C.primary} />
             </Animated.View>
-            <Text style={[styles.payText, { color: order.isPaid ? C.green : C.brand }]}>{order.isPaid ? 'Pagato' : 'Da pagare'}</Text>
+            <Text style={[styles.payText, { color: order.isPaid ? C.success : C.primary }]}>{order.isPaid ? 'Pagato' : 'Da pagare'}</Text>
           </PressableScale>
           <Text style={styles.time}>{format(new Date(order.createdAt), 'HH:mm')}</Text>
         </View>
@@ -98,33 +98,33 @@ const styles = StyleSheet.create({
     backgroundColor: C.surface, borderRadius: R.lg, borderWidth: 1, borderColor: C.border,
     paddingVertical: 16, paddingLeft: 20, paddingRight: 16, overflow: 'hidden', ...elevation(1),
   },
-  cardSelected: { borderColor: C.brand, borderWidth: 1.5 },
+  cardSelected: { borderColor: C.primary, borderWidth: 1.5 },
   accent: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 5 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0 },
   name: { fontFamily: FONT, fontSize: 17, fontWeight: '800', color: C.text, letterSpacing: -0.3, flexShrink: 1 },
   numPill: { backgroundColor: C.sunken, borderRadius: R.pill, paddingHorizontal: 8, paddingVertical: 2 },
   num: { fontFamily: FONT, fontSize: 12, fontWeight: '700', color: C.text2, fontVariant: ['tabular-nums'] },
-  printBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.blueSoft, alignItems: 'center', justifyContent: 'center' },
+  printBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 5 },
   badgeDot: { width: 7, height: 7, borderRadius: 4 },
   badgeText: { fontFamily: FONT, fontSize: 12, fontWeight: '800', letterSpacing: 0.2 },
   meta: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.sunken, borderRadius: R.pill, paddingHorizontal: 9, paddingVertical: 4 },
-  chipAmber: { backgroundColor: C.yellowSoft },
+  chipAmber: { backgroundColor: C.warningSoft },
   chipText: { fontFamily: FONT, fontSize: 12, fontWeight: '600', color: C.text2 },
   items: { marginTop: 12, gap: 3 },
   itemLine: { fontFamily: FONT, fontSize: 14, lineHeight: 20, color: C.text, fontWeight: '500' },
-  qty: { fontWeight: '800', color: C.brand },
-  itemNote: { color: C.blue, fontWeight: '500', fontSize: 13 },
-  notes: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: C.blueSoft, borderRadius: R.sm, paddingHorizontal: 10, paddingVertical: 7 },
+  qty: { fontWeight: '800', color: C.primary },
+  itemNote: { fontFamily: FONT, color: C.primary, fontWeight: '500', fontSize: 13 },
+  notes: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, backgroundColor: C.primarySoft, borderRadius: R.sm, paddingHorizontal: 10, paddingVertical: 7 },
   notesText: { fontFamily: FONT, flex: 1, fontSize: 13, color: C.text2, fontStyle: 'italic' },
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.border, borderStyle: 'dashed' },
   total: { fontFamily: FONT, fontSize: 20, fontWeight: '800', color: C.text, letterSpacing: -0.4, fontVariant: ['tabular-nums'] },
   footerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   payPill: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: R.pill, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6, minHeight: 32 },
-  payPaid: { backgroundColor: C.greenSoft, borderColor: '#A7E3C6' },
-  payUnpaid: { backgroundColor: C.brandSoft, borderColor: '#FECACA' },
+  payPaid: { backgroundColor: C.successSoft, borderColor: '#A9E6D6' },
+  payUnpaid: { backgroundColor: C.primarySoft, borderColor: '#F9C4C6' },
   payText: { fontFamily: FONT, fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
   time: { fontFamily: FONT, fontSize: 13, fontWeight: '600', color: C.muted, fontVariant: ['tabular-nums'] },
 });

@@ -314,6 +314,10 @@ export const reportsApi = {
     return response.data;
   },
   
+  getRangeSummary: async (startDate: string, endDate: string): Promise<{ totalOrders: number; totalRevenue: number }> => {
+    const response = await api.get(`/reports/range-summary?start_date=${startDate}&end_date=${endDate}`);
+    return response.data;
+  },
   getMissedSalesSummary: async (startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
     if (startDate) params.append('start_date', startDate);

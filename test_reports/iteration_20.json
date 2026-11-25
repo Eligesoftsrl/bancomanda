@@ -1,0 +1,44 @@
+{
+  "summary": "Tested the frontend and backend of the Orders redesign, quick customer from Modifica anagrafica, wrapping dish categories, Report fixes and /api/reports/top-dishes. Done on the preview with Pizzeria Napoli (writes) and Giorgio Bistrot (read only: empty-menu state). All requested features work. Header, date pill (OGGI chip, prev/next reloads the list), counters and filters (re-click goes back to Tutti, Tutti hides consegnati), cards (delivery 'Ora: 12:30', notes, composition, print does not open the detail, payment pill toggles Pagato/Da pagare without opening the detail), search and clear, skeleton loading (orders-loading seen with a slowed API), empty states ('Nessun menu' plus 'Vai al Menu' goes to /menu; filter empty state), Porzioni modal, and creating a new order (Telefono + notes, card appears, detail opens). Order detail: the composer requires TEST_Base ('Scegli TEST_Base'); the dish was added (total 5.50) and the status change works. Quick customer: the button is present, the name is prefilled from the search, empty name shows a toast, Annulla closes the form, 'Crea e seleziona' creates the customer and fills Intestatario, and save is persisted (API customerId set, list card and Clienti show it). The button is NOT in the Nuovo Ordine modal. Delete with confirmation works and portions come back. Tab bar navigates. Dish category selector wraps (flex-wrap, 12 chips on 6 rows, no overflow); the last category was saved correctly. Reports open in about 1.3s. The calendar button text is rgb(26,32,44) on rgb(245,247,250). Grid: 3 columns at 1920, 2 at 1400/1180, 1 at 900/390. On the phone the counters scroll horizontally and no page overflows.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/reports/top-dishes", "issue": "The query parameters are start_date/end_date, not date_from/date_to as the review request says (the frontend uses the right names). The 'annullato' exclusion was checked in the code only: the status API cannot set 'annullato', so it is never reachable in practice."},
+      {"endpoint": "/api/customers", "issue": "There is no DELETE endpoint, so test customers (TEST_Quick Cliente id 6b07074d513bcd11a7b83a9c) cannot be cleaned up through the API."},
+      {"endpoint": "/api/reports/missed-sales-summary", "issue": "Still capped with to_list(10000) and with no projection (same slowness pattern that was just fixed for top-dishes)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Reports Periodo mode (pre-existing, reports.tsx loadRangeData)", "issue": "The 'Ordini Periodo' card shows the count of missed sales (rangeStats.totalOrders = missedSummary.totalMissedSales) and the period revenue is hard-coded to 0. Seen: Ordini Periodo 0 while the top dishes for the same period show 3 portions / 22.50 EUR.", "selector": "reports range stats", "priority": "MEDIUM"},
+      {"component": "Porzioni Disponibili modal (web)", "issue": "Escape does not close the modal (only the X does)", "selector": "portions-dashboard-btn modal", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Order detail", "issues": ["The QuickCustomerForm inputs/buttons and the dish composer (dish-composer) use the system/Arial font instead of Plus Jakarta Sans, which looks inconsistent with the redesigned screen", "The delivery time uses the browser's native <input type=time> ('--:-- --', and on the phone it shows '12:30 PM' in a serif font, 12h format in an Italian app)", "Composer footer 'Prezzo €' field shows 0.00 while the header says 'da 5.50 €'", "Phone 390: in Riepilogo the item name 'TEST_Piatto Fit' wraps word by word because the 4 action icons squeeze it", "The trash/print/close buttons in the detail header have no data-testid"]},
+      {"screen": "Orders at 900px", "issues": ["The counter label 'IN PREPARAZIONE' is cut to 'IN PREPARAZI...'"]},
+      {"screen": "Orders header", "issues": ["sync-indicator is 36px tall (<44px touch target)"]},
+      {"screen": "Orders filter empty state", "issues": ["With a status filter active, the empty state says 'Tocca \"Nuovo ordine\" per iniziare', which is misleading"]},
+      {"screen": "Other tabs", "issues": ["Menu/Piatti/Report still use the old system font and style (expected, not redesigned yet)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_reports_top_dishes.py", "/app/test_reports/pytest/pytest_iter20.xml"],
+  "action_items": [
+    "Fix the Reports Periodo totals: show real orders and revenue for the period (they are now the missed-sales count and 0)",
+    "Optionally add a projection and remove the cap in /reports/missed-sales-summary",
+    "Apply the app font to QuickCustomerForm and dish-composer; consider a styled time picker instead of the native one",
+    "Add data-testid to the trash/print/close buttons in the order detail header",
+    "Consider a DELETE /api/customers/{id} (or document why it is missing)"
+  ],
+  "critical_code_review_comments": [
+    "reports.tsx loadRangeData: totalOrders is taken from missed sales and totalRevenue is hard-coded to 0 (wrong data shown to the user)",
+    "server.py get_top_dishes: item['dishName'].strip() raises a KeyError if an item has no dishId and no dishName; use .get",
+    "app/(tabs)/index.tsx is very large (>2300 lines); split the order detail modal and the edit header into components"
+  ],
+  "updated_files": ["/app/backend/tests/test_reports_top_dishes.py"],
+  "success_rate": {"backend": "100% (37/37 incl. tenant isolation regression)", "frontend": "~95% (all requested flows pass; issues are minor or pre-existing)"},
+  "seed_data_creation": "Pizzeria Napoli: TEST order #2 (created, then deleted via UI), TEST_TopDishes order (deleted by the fixture), dish TEST_WrapCat Dish (soft-deactivated via DELETE), customer TEST_Quick Cliente (id 6b07074d513bcd11a7b83a9c, still there because there is no delete endpoint). Giorgio Bistrot: read only, nothing changed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pizzeria Napoli today (2026-11-25) has a menu with only TEST_Piatto Fit (composable) and order #1 TEST_Composizione. The top-dishes test adds a free item 'TEST_TopFree' when no plain dish is in the menu. The order detail opens by clicking order-total-<id>. The delete trash icon has no testid (on the phone it is at about 248,38). Seeing the skeleton needs page.route delays on /api/orders and /api/menus/date."
+}

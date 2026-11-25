@@ -6,6 +6,7 @@ import { notify } from '../../store/toastStore';
 import { OptionGroup } from '../../types';
 import { euro, ruleLabel } from '../../utils/composition';
 import { GroupDraft, OptionGroupEditor } from './OptionGroupEditor';
+import { FONT } from '../../theme/tokens';
 
 const toDraft = (g?: OptionGroup, order = 0): GroupDraft =>
   g
@@ -80,14 +81,14 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
           <View style={styles.header}>
             {draft ? (
               <TouchableOpacity onPress={() => setDraft(null)} style={styles.back} testID="option-groups-back-btn">
-                <Ionicons name="chevron-back" size={20} color="#1a202c" />
+                <Ionicons name="chevron-back" size={20} color="#2A3547" />
                 <Text style={styles.title}>{draft.id ? 'Modifica gruppo' : 'Nuovo gruppo'}</Text>
               </TouchableOpacity>
             ) : (
               <Text style={styles.title}>Gruppi di scelta</Text>
             )}
             <TouchableOpacity onPress={close} testID="option-groups-close-btn">
-              <Ionicons name="close" size={24} color="#1a202c" />
+              <Ionicons name="close" size={24} color="#2A3547" />
             </TouchableOpacity>
           </View>
 
@@ -109,7 +110,7 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
                         {g.options.map((o) => `${o.name} ${euro(o.price)}`).join(' · ')}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+                    <Ionicons name="chevron-forward" size={20} color="#98A4B8" />
                   </TouchableOpacity>
                 ))}
               </>
@@ -144,20 +145,20 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.55)', justifyContent: 'center', alignItems: 'center', padding: 16 },
   sheet: { width: '100%', maxWidth: 640, maxHeight: '92%', backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E0E6EB' },
   back: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  title: { fontSize: 18, fontWeight: '800', color: '#1a202c' },
+  title: { fontFamily: FONT, fontSize: 18, fontWeight: '800', color: '#2A3547' },
   body: { paddingHorizontal: 16, paddingVertical: 8 },
-  intro: { fontSize: 13, color: '#64748b', marginVertical: 8 },
-  empty: { fontSize: 14, color: '#94a3b8', marginVertical: 16, textAlign: 'center' },
-  groupCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 10 },
-  groupName: { fontSize: 16, fontWeight: '800', color: '#1a202c' },
-  groupRule: { fontSize: 12, color: '#00754A', fontWeight: '600', marginTop: 2 },
-  groupOptions: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  footer: { flexDirection: 'row', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: '#e2e8f0', justifyContent: 'flex-end' },
+  intro: { fontFamily: FONT, fontSize: 13, color: '#5A6A85', marginVertical: 8 },
+  empty: { fontFamily: FONT, fontSize: 14, color: '#98A4B8', marginVertical: 16, textAlign: 'center' },
+  groupCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#E0E6EB', marginBottom: 10 },
+  groupName: { fontFamily: FONT, fontSize: 16, fontWeight: '800', color: '#2A3547' },
+  groupRule: { fontFamily: FONT, fontSize: 12, color: '#0E9F80', fontWeight: '600', marginTop: 2 },
+  groupOptions: { fontFamily: FONT, fontSize: 12, color: '#5A6A85', marginTop: 4 },
+  footer: { flexDirection: 'row', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: '#E0E6EB', justifyContent: 'flex-end' },
   btn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 999 },
-  btnPrimary: { backgroundColor: '#DB0007' },
-  btnPrimaryText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  btnDanger: { borderWidth: 1, borderColor: '#DB0007' },
-  btnDangerText: { color: '#DB0007', fontWeight: '700', fontSize: 14 },
+  btnPrimary: { backgroundColor: '#00A1FF' },
+  btnPrimaryText: { fontFamily: FONT, color: '#fff', fontWeight: '800', fontSize: 15 },
+  btnDanger: { borderWidth: 1, borderColor: '#F2545B' },
+  btnDangerText: { fontFamily: FONT, color: '#F2545B', fontWeight: '700', fontSize: 14 },
 });

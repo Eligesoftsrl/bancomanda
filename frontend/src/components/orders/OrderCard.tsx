@@ -3,13 +3,14 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { Order } from '../../types';
+import { FONT } from '../../theme/tokens';
 
 const STATUS_COLORS: Record<string, string> = {
-  in_attesa: '#FFBC0D',
-  in_preparazione: '#3498db',
-  pronto: '#00754A',
-  sospeso: '#5423E7',
-  consegnato: '#00754A',
+  in_attesa: '#FFAE1F',
+  in_preparazione: '#00A1FF',
+  pronto: '#0E9F80',
+  sospeso: '#8965E5',
+  consegnato: '#0E9F80',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -31,7 +32,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onPress, onTogglePa
     <TouchableOpacity
       style={[
         styles.orderCard,
-        { borderLeftColor: STATUS_COLORS[order.status] || '#666' }
+        { borderLeftColor: STATUS_COLORS[order.status] || '#98A4B8' }
       ]}
       onPress={() => onPress(order)}
       data-testid={`order-card-${order.orderNumber}`}
@@ -69,7 +70,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onPress, onTogglePa
             <Ionicons 
               name="card" 
               size={14} 
-              color={order.isPaid ? "#00754A" : "#DB0007"} 
+              color={order.isPaid ? "#0E9F80" : "#00A1FF"} 
             />
           </TouchableOpacity>
           <Text style={styles.orderTime}>
@@ -84,7 +85,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onPress, onTogglePa
 const styles = StyleSheet.create({
   orderCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderLeftWidth: 4,
@@ -101,7 +102,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   orderNumber: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -111,19 +113,22 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 11,
     fontWeight: '600',
   },
   customerName: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
   },
   orderCardBody: {
     marginBottom: 8,
   },
   orderItems: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 13,
   },
   orderCardFooter: {
@@ -132,7 +137,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   orderTotal: {
-    color: '#00754A',
+    fontFamily: FONT,
+    color: '#0E9F80',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -149,13 +155,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   paymentTogglePaid: {
-    backgroundColor: 'rgba(39, 174, 96, 0.2)',
+    backgroundColor: '#E1F7F1',
   },
   paymentToggleUnpaid: {
-    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+    backgroundColor: '#FDECEC',
   },
   orderTime: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 13,
   },
 });

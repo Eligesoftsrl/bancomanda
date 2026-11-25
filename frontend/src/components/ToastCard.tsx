@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Text, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useToastStore } from '../store/toastStore';
+import { FONT } from '../theme/tokens';
 
 // Avviso animato: errori restano più a lungo, un tocco lo chiude
 export const ToastCard = () => {
@@ -43,14 +44,14 @@ const styles = StyleSheet.create({
     width: '92%',
     maxWidth: 560,
     borderRadius: 14,
-    shadowColor: '#0f172a',
+    shadowColor: '#2A3547',
     shadowOpacity: 0.25,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
   inner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16 },
-  success: { backgroundColor: '#00754A' },
-  error: { backgroundColor: '#DB0007' },
-  text: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
+  success: { backgroundColor: '#0E9F80' },
+  error: { backgroundColor: '#F2545B' },
+  text: { fontFamily: FONT, color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { labelFor } from '../utils/dishLabels';
+import { FONT } from '../theme/tokens';
 
 // Riepilogo compatto di tag e allergeni nella scheda piatto
 export const DishLabelsSummary = ({ tags = [], allergens = [], dishId }: { tags?: string[]; allergens?: string[]; dishId: string }) => {
@@ -28,7 +29,7 @@ const styles = StyleSheet.create({
   pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   tag: { backgroundColor: '#e6f4ee' },
   allergen: { backgroundColor: '#fdecec', flexShrink: 1 },
-  text: { fontSize: 12, fontWeight: '600' },
-  tagText: { color: '#00754A' },
+  text: { fontFamily: FONT, fontSize: 12, fontWeight: '600' },
+  tagText: { color: '#0E9F80' },
   allergenText: { color: '#b00006' },
 });

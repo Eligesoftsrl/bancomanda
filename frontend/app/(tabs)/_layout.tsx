@@ -1,4 +1,6 @@
 import { Tabs } from 'expo-router';
+import { SideNav } from '../../src/components/SideNav';
+import { useWideLayout } from '../../src/theme/layout';
 import { TabIcon } from '../../src/components/TabIcon';
 import { C, FONT } from '../../src/theme/tokens';
 import React, { useEffect, useState, useRef } from 'react';
@@ -11,6 +13,7 @@ export default function TabLayout() {
   const selectedDate = useAppStore((s) => s.selectedDate);
   const [pendingKitchen, setPendingKitchen] = useState(0);
   const intervalRef = useRef<any>(null);
+  const { wide } = useWideLayout();
 
   const refreshCount = async () => {
     // Il contatore riflette il giorno CORRENTE reale (non selectedDate scelta dall'utente),
@@ -43,10 +46,12 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={wide ? (props) => <SideNav {...props} /> : undefined}
       screenOptions={{
         headerShown: false,
+        tabBarPosition: wide ? 'left' : 'bottom',
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: C.brand,
+        tabBarActiveTintColor: C.primary,
         tabBarInactiveTintColor: C.text2,
         tabBarLabelStyle: styles.tabLabel,
       }}
@@ -105,7 +110,7 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'ios' ? 90 : 74,
     paddingBottom: Platform.OS === 'ios' ? 28 : 10,
     paddingTop: 8,
-    shadowColor: '#0F172A',
+    shadowColor: '#2A3547',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.06,
     shadowRadius: 18,
@@ -118,7 +123,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     fontFamily: FONT,
-    backgroundColor: C.brand,
+    backgroundColor: C.error,
     color: '#ffffff',
     fontSize: 11,
     fontWeight: '700',

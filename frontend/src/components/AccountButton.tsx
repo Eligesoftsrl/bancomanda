@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { FONT } from '../theme/tokens';
 
 // Esci con doppio tocco (niente modali annidati su tablet)
 export const AccountButton = () => {
@@ -23,7 +24,7 @@ export const AccountButton = () => {
         <Text style={styles.tenant} numberOfLines={1} testID="account-tenant-name">{user.tenant_name}</Text>
       )}
       <TouchableOpacity style={styles.keyButton} onPress={() => setShowPassword(true)} testID="change-password-button">
-        <Ionicons name="key-outline" size={18} color="#475569" />
+        <Ionicons name="key-outline" size={18} color="#5A6A85" />
         <Text style={styles.keyText}>Password</Text>
       </TouchableOpacity>
       <ChangePasswordModal visible={showPassword} onClose={() => setShowPassword(false)} />
@@ -32,7 +33,7 @@ export const AccountButton = () => {
         onPress={() => (confirming ? logout() : setConfirming(true))}
         testID="logout-button"
       >
-        <Ionicons name="log-out-outline" size={18} color={confirming ? '#ffffff' : '#DB0007'} />
+        <Ionicons name="log-out-outline" size={18} color={confirming ? '#ffffff' : '#F2545B'} />
         <Text style={[styles.text, confirming && styles.textConfirm]}>{confirming ? 'Tocca per uscire' : 'Esci'}</Text>
       </TouchableOpacity>
     </View>
@@ -41,7 +42,7 @@ export const AccountButton = () => {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  tenant: { fontSize: 13, fontWeight: '600', color: '#64748b', maxWidth: 180 },
+  tenant: { fontFamily: FONT, fontSize: 13, fontWeight: '600', color: '#5A6A85', maxWidth: 180 },
   keyButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -50,10 +51,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
     backgroundColor: '#ffffff',
   },
-  keyText: { color: '#475569', fontWeight: '600', fontSize: 14 },
+  keyText: { fontFamily: FONT, color: '#5A6A85', fontWeight: '600', fontSize: 14 },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
     borderColor: '#f3c1c3',
     backgroundColor: '#fff5f5',
   },
-  buttonConfirm: { backgroundColor: '#DB0007', borderColor: '#DB0007' },
-  text: { color: '#DB0007', fontWeight: '700', fontSize: 14 },
+  buttonConfirm: { backgroundColor: '#00A1FF', borderColor: '#00A1FF' },
+  text: { fontFamily: FONT, color: '#00A1FF', fontWeight: '700', fontSize: 14 },
   textConfirm: { color: '#ffffff' },
 });

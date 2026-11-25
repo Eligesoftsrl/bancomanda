@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from '
 import { Ionicons } from '@expo/vector-icons';
 import { OptionGroup } from '../../types';
 import { euro } from '../../utils/composition';
+import { FONT } from '../../theme/tokens';
 
 interface Props {
   groups: OptionGroup[];
@@ -27,7 +28,7 @@ export const TodayOptionsToggles = ({ groups, unavailable, onChange }: Props) =>
                 const out = unavailable.includes(id);
                 return (
                   <TouchableOpacity key={id} style={[styles.chip, out && styles.chipOut]} onPress={() => toggle(id)} testID={`today-option-${id}`}>
-                    <Ionicons name={out ? 'close-circle' : 'checkmark-circle'} size={16} color={out ? '#fff' : '#00754A'} />
+                    <Ionicons name={out ? 'close-circle' : 'checkmark-circle'} size={16} color={out ? '#fff' : '#0E9F80'} />
                     <Text style={[styles.chipText, out && styles.chipTextOut]}>{o.name}</Text>
                     <Text style={[styles.chipPrice, out && styles.chipTextOut]}>{out ? 'esaurito' : euro(o.price)}</Text>
                   </TouchableOpacity>
@@ -43,15 +44,15 @@ export const TodayOptionsToggles = ({ groups, unavailable, onChange }: Props) =>
 
 const styles = StyleSheet.create({
   wrap: { marginTop: 12, gap: 4 },
-  title: { fontSize: 15, fontWeight: '800', color: '#1a202c' },
-  hint: { fontSize: 12, color: '#64748b' },
+  title: { fontFamily: FONT, fontSize: 15, fontWeight: '800', color: '#2A3547' },
+  hint: { fontFamily: FONT, fontSize: 12, color: '#5A6A85' },
   scroll: { maxHeight: 240, marginTop: 4 },
   group: { marginBottom: 8, gap: 6 },
-  groupName: { fontSize: 13, fontWeight: '700', color: '#334155' },
+  groupName: { fontFamily: FONT, fontSize: 13, fontWeight: '700', color: '#2A3547' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#00754A', backgroundColor: '#EAF6F0' },
-  chipOut: { backgroundColor: '#DB0007', borderColor: '#DB0007' },
-  chipText: { fontSize: 14, fontWeight: '700', color: '#1a202c' },
-  chipPrice: { fontSize: 12, color: '#475569' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#0E9F80', backgroundColor: '#EAF6F0' },
+  chipOut: { backgroundColor: '#00A1FF', borderColor: '#00A1FF' },
+  chipText: { fontFamily: FONT, fontSize: 14, fontWeight: '700', color: '#2A3547' },
+  chipPrice: { fontFamily: FONT, fontSize: 12, color: '#5A6A85' },
   chipTextOut: { color: '#fff' },
 });

@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { FONT } from '../../theme/tokens';
 
 interface CustomItemModalProps {
   visible: boolean;
@@ -47,7 +48,7 @@ export const CustomItemModal: React.FC<CustomItemModalProps> = ({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Piatto Libero</Text>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#1a202c" />
+              <Ionicons name="close" size={24} color="#2A3547" />
             </TouchableOpacity>
           </View>
           
@@ -58,7 +59,7 @@ export const CustomItemModal: React.FC<CustomItemModalProps> = ({
               value={name}
               onChangeText={setName}
               placeholder="Es: Piatto speciale del cliente"
-              placeholderTextColor="#888"
+              placeholderTextColor="#98A4B8"
             />
             
             <View style={styles.row}>
@@ -69,7 +70,7 @@ export const CustomItemModal: React.FC<CustomItemModalProps> = ({
                   value={price}
                   onChangeText={setPrice}
                   placeholder="0.00"
-                  placeholderTextColor="#888"
+                  placeholderTextColor="#98A4B8"
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -110,7 +111,7 @@ export const CustomItemModal: React.FC<CustomItemModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(42, 53, 71, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -127,10 +128,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   modalTitle: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 18,
     fontWeight: '700',
   },
@@ -138,13 +140,15 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   label: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 13,
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#f5f7fa',
-    color: '#1a202c',
+    fontFamily: FONT,
+    backgroundColor: '#F4F7FB',
+    color: '#2A3547',
     fontSize: 16,
     padding: 14,
     borderRadius: 10,
@@ -161,12 +165,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     borderRadius: 10,
     padding: 8,
   },
   quantityBtn: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     width: 40,
     height: 40,
     borderRadius: 8,
@@ -174,6 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quantityText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 20,
     fontWeight: '700',
@@ -182,13 +187,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 999,
     marginTop: 10,
     gap: 8,
   },
   addBtnText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '700',

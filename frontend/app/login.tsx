@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore, formatApiError } from '../src/store/authStore';
+import { FONT } from '../src/theme/tokens';
 
 const BrandPanel = ({ wide }: { wide: boolean }) => (
   <View style={[styles.brand, wide ? styles.brandWide : styles.brandNarrow]}>
@@ -63,7 +64,7 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="nome@locale.it"
-              placeholderTextColor="#94a3b8"
+              placeholderTextColor="#98A4B8"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -79,7 +80,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 placeholder="La tua password"
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor="#98A4B8"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -88,13 +89,13 @@ export default function LoginScreen() {
                 testID="login-password-input"
               />
               <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)} testID="login-toggle-password">
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color="#64748b" />
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color="#5A6A85" />
               </TouchableOpacity>
             </View>
 
             {!!error && (
               <View style={styles.errorBox} testID="login-error">
-                <Ionicons name="alert-circle" size={18} color="#DB0007" />
+                <Ionicons name="alert-circle" size={18} color="#F2545B" />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -115,29 +116,30 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f7fa' },
+  container: { flex: 1, backgroundColor: '#F4F7FB' },
   inner: { flex: 1 },
   innerWide: { flexDirection: 'row' },
-  brand: { backgroundColor: '#1a202c', padding: 40, justifyContent: 'center' },
+  brand: { backgroundColor: '#2A3547', padding: 40, justifyContent: 'center' },
   brandWide: { flex: 1, paddingHorizontal: 64 },
   brandNarrow: { paddingVertical: 32, alignItems: 'center' },
   brandLogo: { width: 72, height: 72, borderRadius: 18, marginBottom: 20 },
-  brandName: { color: '#ffffff', fontSize: 40, fontWeight: '800', letterSpacing: -0.5 },
-  brandTagline: { color: '#cbd5e1', fontSize: 17, lineHeight: 25, marginTop: 12, maxWidth: 380 },
+  brandName: { fontFamily: FONT, color: '#ffffff', fontSize: 40, fontWeight: '800', letterSpacing: -0.5 },
+  brandTagline: { fontFamily: FONT, color: '#CFD6DB', fontSize: 17, lineHeight: 25, marginTop: 12, maxWidth: 380 },
   formWrap: { flex: 1, justifyContent: 'center', padding: 32 },
   form: { width: '100%', maxWidth: 420, alignSelf: 'center' },
-  title: { fontSize: 28, fontWeight: '700', color: '#1a202c' },
-  subtitle: { fontSize: 15, color: '#64748b', marginTop: 8, marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '600', color: '#334155', marginBottom: 8, marginTop: 16 },
+  title: { fontFamily: FONT, fontSize: 28, fontWeight: '700', color: '#2A3547' },
+  subtitle: { fontFamily: FONT, fontSize: 15, color: '#5A6A85', marginTop: 8, marginBottom: 24 },
+  label: { fontFamily: FONT, fontSize: 14, fontWeight: '600', color: '#2A3547', marginBottom: 8, marginTop: 16 },
   input: {
+    fontFamily: FONT,
     backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 17,
-    color: '#1a202c',
+    color: '#2A3547',
   },
   passwordRow: { flexDirection: 'row', alignItems: 'center' },
   passwordInput: { flex: 1, paddingRight: 52 },
@@ -151,14 +153,14 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 16,
   },
-  errorText: { color: '#b00006', fontSize: 14, flex: 1 },
+  errorText: { fontFamily: FONT, color: '#b00006', fontSize: 14, flex: 1 },
   button: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 28,
   },
   buttonDisabled: { opacity: 0.7 },
-  buttonText: { color: '#ffffff', fontSize: 17, fontWeight: '700' },
+  buttonText: { fontFamily: FONT, color: '#ffffff', fontSize: 17, fontWeight: '700' },
 });

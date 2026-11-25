@@ -27,8 +27,15 @@ import { OptionGroupsManager } from '../../src/components/composable/OptionGroup
 import { ComposableDishFields } from '../../src/components/composable/ComposableDishFields';
 import { OptionGroup } from '../../src/types';
 import { fromPrice, groupsForDish, euro } from '../../src/utils/composition';
+import { C, FONT } from '../../src/theme/tokens';
+import { PageHeader } from '../../src/components/ui2/PageHeader';
+import { HeaderButton } from '../../src/components/ui2/HeaderButton';
+import { useWideLayout } from '../../src/theme/layout';
 
 export default function DishesScreen() {
+  const { contentWidth } = useWideLayout();
+  const cols = contentWidth >= 1180 ? 3 : contentWidth >= 700 ? 2 : 1;
+  const cellW = `${100 / cols}%` as const;
   const { dishes, setDishes } = useAppStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -322,7 +329,7 @@ export default function DishesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#DB0007" />
+          <ActivityIndicator size="large" color="#00A1FF" />
           <Text style={styles.loadingText}>Caricamento...</Text>
         </View>
       </SafeAreaView>
@@ -333,47 +340,34 @@ export default function DishesScreen() {
     <SafeAreaView style={styles.container}>
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Anagrafica Piatti</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={[styles.filterButton, showInactive && styles.filterButtonActive]}
-            onPress={() => setShowInactive(!showInactive)}
-          >
-            <Ionicons name={showInactive ? 'eye' : 'eye-off'} size={16} color={showInactive ? '#ffffff' : '#1a202c'} />
-            <Text style={[styles.filterButtonText, !showInactive && { color: '#1a202c' }]}>
-              {showInactive ? 'Tutti' : 'Attivi'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryButton} onPress={openCreateCategoryModal} testID="dishes-categories-button">
-            <Ionicons name="pricetag" size={16} color="#fff" />
-            <Text style={styles.categoryButtonText}>Categorie</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.categoryButton, { backgroundColor: '#00754A' }]} onPress={() => setShowGroupsModal(true)} testID="dishes-option-groups-button">
-            <Ionicons name="layers" size={16} color="#fff" />
-            <Text style={styles.categoryButtonText}>Gruppi</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.addButton} onPress={openCreateDishModal} testID="dishes-new-button">
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={styles.addButtonText}>Nuovo</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageHeader
+        title="Piatti"
+        subtitle="Anagrafica, categorie e gruppi di scelta"
+        testID="dishes-header"
+        right={
+          <>
+            <HeaderButton icon={showInactive ? 'eye' : 'eye-off-outline'} label={showInactive ? 'Tutti' : 'Attivi'} onPress={() => setShowInactive(!showInactive)} active={showInactive} testID="dishes-show-inactive-button" />
+            <HeaderButton icon="pricetag-outline" label="Categorie" tone="secondary" onPress={openCreateCategoryModal} testID="dishes-categories-button" />
+            <HeaderButton icon="layers-outline" label="Gruppi" tone="success" onPress={() => setShowGroupsModal(true)} testID="dishes-option-groups-button" />
+            <HeaderButton icon="add" label="Nuovo piatto" tone="primary" onPress={openCreateDishModal} testID="dishes-new-button" />
+          </>
+        }
+      />
 
       {/* Search Bar (OP07) */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color="#64748b" style={styles.searchIcon} />
+        <Ionicons name="search" size={18} color="#5A6A85" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Cerca piatto..."
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor="#98A4B8"
           value={searchQuery}
           onChangeText={setSearchQuery}
           testID="dishes-search-input"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.searchClear}>
-            <Ionicons name="close-circle" size={18} color="#64748b" />
+            <Ionicons name="close-circle" size={18} color="#5A6A85" />
           </TouchableOpacity>
         )}
       </View>
@@ -407,13 +401,14 @@ export default function DishesScreen() {
       {/* Content */}
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#DB0007" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
         {dishes.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="fast-food-outline" size={64} color="#64748b" />
+            <Ionicons name="fast-food-outline" size={64} color="#5A6A85" />
             <Text style={styles.emptyStateText}>Nessun piatto trovato</Text>
             <Text style={styles.emptyStateSubtext}>Crea il tuo primo piatto</Text>
           </View>
@@ -423,13 +418,15 @@ export default function DishesScreen() {
             return (
             <View key={categoryName} style={styles.categorySection}>
               <Text style={styles.categorySectionTitle}>{categoryName}</Text>
+              <View style={styles.dishGrid}>
               {categoryDishes.map((dish) => (
-                <View key={dish.id} style={[styles.dishCard, !dish.active && styles.dishCardInactive]}>
+                <View key={dish.id} style={[styles.gridCell, { width: cellW }]}>
+                <View style={[styles.dishCard, !dish.active && styles.dishCardInactive]} testID={`dish-card-${dish.id}`}>
                   <View style={styles.dishHeader}>
                     <View style={styles.dishNameRow}>
                       <Text style={styles.dishName}>{dish.name}</Text>
                       {dish.isFavorite && (
-                        <Ionicons name="heart" size={18} color="#DB0007" style={styles.favoriteIcon} />
+                        <Ionicons name="heart" size={18} color="#00A1FF" style={styles.favoriteIcon} />
                       )}
                     </View>
                     {!dish.active && (
@@ -447,7 +444,7 @@ export default function DishesScreen() {
 
                   {dish.isComposable && (
                     <View style={styles.composableBadge} testID={`dish-composable-badge-${dish.id}`}>
-                      <Ionicons name="layers" size={14} color="#00754A" />
+                      <Ionicons name="layers" size={14} color="#0E9F80" />
                       <Text style={styles.composableBadgeText}>
                         Componibile · {groupsForDish(dish, optionGroups).map(g => g.name).join(' + ') || 'nessun gruppo'}
                       </Text>
@@ -469,30 +466,34 @@ export default function DishesScreen() {
                       onPress={() => openEditDishModal(dish)}
                       testID={`dish-edit-${dish.id}`}
                     >
-                      <Ionicons name="create-outline" size={18} color="#ffffff" />
-                      <Text style={styles.dishActionText}>Modifica</Text>
+                      <Ionicons name="create-outline" size={18} color={C.primaryDark} />
+                      <Text style={[styles.dishActionText, { color: C.primaryDark }]}>Modifica</Text>
                     </TouchableOpacity>
                     
                     {dish.active ? (
                       <TouchableOpacity
                         style={[styles.dishActionButton, styles.deactivateButton]}
                         onPress={() => handleDeactivateDish(dish)}
+                        testID={`dish-deactivate-${dish.id}`}
                       >
-                        <Ionicons name="eye-off-outline" size={18} color="#ffffff" />
-                        <Text style={styles.dishActionText}>Disattiva</Text>
+                        <Ionicons name="eye-off-outline" size={18} color={C.errorFg} />
+                        <Text style={[styles.dishActionText, { color: C.errorFg }]}>Disattiva</Text>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
                         style={[styles.dishActionButton, styles.activateButton]}
                         onPress={() => handleReactivateDish(dish)}
+                        testID={`dish-reactivate-${dish.id}`}
                       >
-                        <Ionicons name="eye-outline" size={18} color="#ffffff" />
-                        <Text style={styles.dishActionText}>Riattiva</Text>
+                        <Ionicons name="eye-outline" size={18} color={C.success} />
+                        <Text style={[styles.dishActionText, { color: C.success }]}>Riattiva</Text>
                       </TouchableOpacity>
                     )}
                   </View>
                 </View>
+                </View>
               ))}
+              </View>
             </View>
           )})
         )}
@@ -531,7 +532,7 @@ export default function DishesScreen() {
                 {editingDish ? 'Modifica Piatto' : 'Nuovo Piatto'}
               </Text>
               <TouchableOpacity onPress={() => { setShowDishModal(false); resetDishForm(); }}>
-                <Ionicons name="close" size={24} color="#1a202c" />
+                <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
 
@@ -546,7 +547,7 @@ export default function DishesScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder="Es: Pasta al pomodoro"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5A6A85"
                 testID="dish-name-input"
               />
 
@@ -581,7 +582,7 @@ export default function DishesScreen() {
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Descrizione del piatto..."
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5A6A85"
                 multiline
               />
 
@@ -591,7 +592,7 @@ export default function DishesScreen() {
                 value={basePrice}
                 onChangeText={setBasePrice}
                 placeholder="Es: 8.50"
-                placeholderTextColor="#64748b"
+                placeholderTextColor="#5A6A85"
                 keyboardType="decimal-pad"
                 testID="dish-price-input"
               />
@@ -604,7 +605,7 @@ export default function DishesScreen() {
                 <Ionicons 
                   name={isFavorite ? "heart" : "heart-outline"} 
                   size={24} 
-                  color={isFavorite ? "#DB0007" : "#64748b"} 
+                  color={isFavorite ? "#00A1FF" : "#5A6A85"} 
                 />
                 <View style={styles.favoriteToggleText}>
                   <Text style={[styles.favoriteToggleLabel, isFavorite && styles.favoriteToggleLabelActive]}>
@@ -658,7 +659,7 @@ export default function DishesScreen() {
                 {editingCategory ? 'Modifica Categoria' : 'Nuova Categoria'}
               </Text>
               <TouchableOpacity onPress={() => { setShowCategoryModal(false); resetCategoryForm(); }}>
-                <Ionicons name="close" size={24} color="#1a202c" />
+                <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
 
@@ -668,7 +669,7 @@ export default function DishesScreen() {
               value={categoryName}
               onChangeText={setCategoryName}
               placeholder="Es: Primi, Secondi, Dolci..."
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#5A6A85"
             />
 
             <Text style={styles.inputLabel}>Ordine</Text>
@@ -677,7 +678,7 @@ export default function DishesScreen() {
               value={categoryOrder}
               onChangeText={setCategoryOrder}
               placeholder="1"
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#5A6A85"
               keyboardType="number-pad"
             />
 
@@ -713,7 +714,7 @@ export default function DishesScreen() {
                     <Text style={styles.categoryOrderText}>{category.order}</Text>
                   </View>
                   <Text style={styles.categoryListItemText}>{category.name}</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#64748b" />
+                  <Ionicons name="chevron-forward" size={20} color="#5A6A85" />
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -727,7 +728,7 @@ export default function DishesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
   },
   loadingContainer: {
     flex: 1,
@@ -735,7 +736,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     marginTop: 10,
     fontSize: 16,
   },
@@ -751,13 +753,14 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   toastSuccess: {
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
   },
   toastError: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
   },
   toastText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
@@ -767,12 +770,13 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   headerTitle: {
+    fontFamily: FONT,
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -784,15 +788,16 @@ const styles = StyleSheet.create({
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   filterButtonActive: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#00A1FF',
   },
   filterButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     marginLeft: 6,
     fontWeight: '500',
@@ -801,12 +806,13 @@ const styles = StyleSheet.create({
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#5423E7',
+    backgroundColor: '#8965E5',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   categoryButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     marginLeft: 6,
     fontWeight: '500',
@@ -815,22 +821,20 @@ const styles = StyleSheet.create({
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
   },
   addButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontWeight: '600',
     marginLeft: 6,
     fontSize: 13,
   },
   categoryFilterWrapper: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
-    height: 56,
+    height: 60,
   },
   categoryFilterContent: {
     paddingHorizontal: 16,
@@ -840,26 +844,34 @@ const styles = StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#dde4ee',
-    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: 999,
     marginRight: 8,
-    height: 36,
+    height: 38,
     justifyContent: 'center',
   },
   categoryChipActive: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
+    borderColor: '#00A1FF',
   },
   categoryChipText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
     fontWeight: '500',
   },
   categoryChipTextActive: {
-    color: '#1a202c',
+    color: '#ffffff',
+    fontWeight: '700',
   },
   content: {
     flex: 1,
+  },
+  contentInner: {
     padding: 16,
+    paddingBottom: 32,
   },
   emptyState: {
     flex: 1,
@@ -868,12 +880,14 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyStateText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 18,
     marginTop: 16,
   },
   emptyStateSubtext: {
-    color: '#94a3b8',
+    fontFamily: FONT,
+    color: '#98A4B8',
     fontSize: 14,
     marginTop: 8,
   },
@@ -881,21 +895,26 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   categorySectionTitle: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: '600',
-    color: '#DB0007',
+    color: '#00A1FF',
     marginBottom: 12,
     paddingLeft: 4,
   },
+  dishGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
+  gridCell: { paddingHorizontal: 6, marginBottom: 12 },
   dishCard: {
+    flex: 1,
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    shadowColor: '#5423E7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    shadowColor: '#5A6A85',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
     elevation: 2,
   },
   dishCardInactive: {
@@ -908,63 +927,69 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   dishName: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     flex: 1,
   },
   inactiveBadge: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
   inactiveBadgeText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 10,
     fontWeight: '600',
   },
   dishDescription: {
+    fontFamily: FONT,
     fontSize: 13,
-    color: '#64748b',
+    color: '#5A6A85',
     marginBottom: 8,
   },
   dishPrice: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#00754A',
+    color: '#0E9F80',
     marginBottom: 12,
   },
   dishActions: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 'auto',
   },
   dishActionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
+    minHeight: 44,
+    borderRadius: 999,
   },
   editButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: C.primarySoft,
   },
   deactivateButton: {
-    backgroundColor: '#DB0007',
+    backgroundColor: C.errorSoft,
   },
   activateButton: {
-    backgroundColor: '#00754A',
+    backgroundColor: C.successSoft,
   },
   dishActionText: {
+    fontFamily: FONT,
     color: '#ffffff',
-    fontWeight: '500',
-    marginLeft: 4,
-    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 6,
+    fontSize: 13,
   },
   confirmOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(42, 53, 71, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -976,14 +1001,16 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   confirmTitle: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     marginBottom: 12,
   },
   confirmMessage: {
+    fontFamily: FONT,
     fontSize: 16,
-    color: '#64748b',
+    color: '#5A6A85',
     marginBottom: 24,
   },
   confirmButtons: {
@@ -992,31 +1019,33 @@ const styles = StyleSheet.create({
   },
   confirmButtonCancel: {
     flex: 1,
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   confirmButtonCancelText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
     fontWeight: '600',
   },
   confirmButtonConfirm: {
     flex: 1,
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   confirmButtonConfirmText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(42, 53, 71, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1035,21 +1064,24 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   inputLabel: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
     marginBottom: 8,
     marginTop: 12,
   },
   textInput: {
-    backgroundColor: '#f5f7fa',
-    color: '#1a202c',
+    fontFamily: FONT,
+    backgroundColor: '#F4F7FB',
+    color: '#2A3547',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     fontSize: 16,
   },
   textArea: {
@@ -1065,26 +1097,27 @@ const styles = StyleSheet.create({
   categorySelectorChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 8,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 999,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   categorySelectorChipActive: {
-    borderColor: '#DB0007',
-    backgroundColor: '#DB000720',
+    borderColor: '#00A1FF',
+    backgroundColor: '#E5F5FF',
   },
   categorySelectorChipText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
   },
   categorySelectorChipTextActive: {
-    color: '#1a202c',
+    color: '#2A3547',
   },
   primaryButton: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: 'center',
     marginTop: 24,
   },
@@ -1096,6 +1129,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   primaryButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
@@ -1104,12 +1138,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 999,
     marginTop: 12,
   },
   deleteButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
@@ -1122,7 +1157,7 @@ const styles = StyleSheet.create({
   categoryListItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
@@ -1131,19 +1166,21 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   categoryOrderText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 12,
   },
   categoryListItemText: {
+    fontFamily: FONT,
     flex: 1,
-    color: '#1a202c',
+    color: '#2A3547',
     fontSize: 15,
   },
   dishNameRow: {
@@ -1166,9 +1203,10 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   composableBadgeText: {
+    fontFamily: FONT,
     fontSize: 12,
     fontWeight: '700',
-    color: '#00754A',
+    color: '#0E9F80',
   },
   dishPriceRow: {
     flexDirection: 'row',
@@ -1177,7 +1215,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   favoriteText: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 12,
     fontWeight: '600',
     backgroundColor: 'rgba(233, 69, 96, 0.2)',
@@ -1188,7 +1227,7 @@ const styles = StyleSheet.create({
   favoriteToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     padding: 14,
     borderRadius: 10,
     marginTop: 16,
@@ -1197,7 +1236,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   favoriteToggleActive: {
-    borderColor: '#DB0007',
+    borderColor: '#00A1FF',
     backgroundColor: 'rgba(233, 69, 96, 0.1)',
   },
   favoriteToggleText: {
@@ -1205,15 +1244,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   favoriteToggleLabel: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 16,
     fontWeight: '600',
   },
   favoriteToggleLabelActive: {
-    color: '#1a202c',
+    color: '#2A3547',
   },
   favoriteToggleHint: {
-    color: '#94a3b8',
+    fontFamily: FONT,
+    color: '#98A4B8',
     fontSize: 12,
     marginTop: 2,
   },
@@ -1222,18 +1263,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
     marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    marginTop: 14,
+    marginBottom: 4,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    minHeight: 46,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
+    fontFamily: FONT,
     flex: 1,
-    color: '#1a202c',
+    color: '#2A3547',
     fontSize: 14,
     paddingVertical: 10,
   },

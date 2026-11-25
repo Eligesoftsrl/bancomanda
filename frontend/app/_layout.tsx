@@ -49,14 +49,14 @@ export default function RootLayout() {
     <View style={{ flex: 1 }}>
       <StatusBar style="light" />
       {status === 'loading' ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f7fa' }}>
-          <ActivityIndicator size="large" color="#DB0007" />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F7FB' }}>
+          <ActivityIndicator size="large" color="#00A1FF" />
         </View>
       ) : (
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#f5f7fa' },
+            contentStyle: { backgroundColor: '#F4F7FB' },
           }}
         >
           <Stack.Protected guard={authed}>

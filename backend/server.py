@@ -1832,11 +1832,11 @@ async def get_top_dishes(start_date: Optional[str] = None, end_date: Optional[st
     for order in orders:
         for item in order.get("items", []):
             dish_id = item.get("dishId")
-            key = dish_id if dish_id else f"custom::{item['dishName'].strip().lower()}"
+            key = dish_id if dish_id else f"custom::{(item.get('dishName') or '').strip().lower()}"
             if key not in dish_sales:
                 dish_sales[key] = {
                     "dishId": dish_id,
-                    "dishName": item["dishName"],
+                    "dishName": item.get("dishName") or "",
                     "totalQuantity": 0,
                     "totalRevenue": 0
                 }
@@ -1845,6 +1845,15 @@ async def get_top_dishes(start_date: Optional[str] = None, end_date: Optional[st
     
     sorted_dishes = sorted(dish_sales.values(), key=lambda x: x["totalQuantity"], reverse=True)
     return sorted_dishes[:limit]
+
+@api_router.get("/reports/range-summary")
+async def get_range_summary(start_date: str, end_date: str):
+    """Ordini e incasso del periodo (ordini annullati esclusi)"""
+    orders = await db.orders.find(
+        {"menuDate": {"$gte": start_date, "$lte": end_date}, "status": {"$ne": "annullato"}},
+        {"_id": 0, "total": 1},
+    ).to_list(None)
+    return {"totalOrders": len(orders), "totalRevenue": round(sum(o.get("total", 0) for o in orders), 2)}
 
 @api_router.get("/reports/missed-sales-summary")
 async def get_missed_sales_summary(start_date: Optional[str] = None, end_date: Optional[str] = None):
@@ -1858,7 +1867,7 @@ async def get_missed_sales_summary(start_date: Optional[str] = None, end_date: O
         else:
             query["date"] = {"$lte": end_date}
     
-    missed_sales = await db.missed_sales.find(query).to_list(10000)
+    missed_sales = await db.missed_sales.find(query, {"_id": 0, "dishName": 1, "reason": 1}).to_list(None)
     
     dish_counts = {}
     reason_counts = {"esaurito": 0, "non_nel_menu": 0}

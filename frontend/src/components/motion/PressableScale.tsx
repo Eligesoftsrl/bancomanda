@@ -3,8 +3,7 @@ import { Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SPRING } from '../../theme/tokens';
 
-type Props = Omit<PressableProps, 'style'> & {
-  style?: StyleProp<ViewStyle>;
+type Props = PressableProps & {
   containerStyle?: StyleProp<ViewStyle>;
   scaleTo?: number;
   hoverLift?: boolean;

@@ -14,7 +14,7 @@ const ITEMS: { key: StatusKey | null; label: string; short: string }[] = [
   { key: 'consegnato', label: 'Consegnati', short: 'Consegn.' },
 ];
 
-const Pill = ({ item, count, active, onPress, compact }: { item: typeof ITEMS[number]; count: number; active: boolean; onPress: () => void; compact: boolean }) => {
+const Pill = ({ item, count, active, onPress, compact, short }: { item: typeof ITEMS[number]; count: number; active: boolean; onPress: () => void; compact: boolean; short: boolean }) => {
   const pop = useSharedValue(1);
   useEffect(() => {
     if (active) pop.set(withSequence(withSpring(1.06, SPRING), withSpring(1, SPRING)));
@@ -29,7 +29,7 @@ const Pill = ({ item, count, active, onPress, compact }: { item: typeof ITEMS[nu
         accessibilityState={{ selected: active }}>
         <View style={styles.labelRow}>
           <View style={[styles.dot, { backgroundColor: st ? st.solid : active ? '#fff' : C.navy }]} />
-          <Text style={[styles.label, active && !st && { color: '#CBD5E1' }]} numberOfLines={1}>{compact ? item.short : item.label}</Text>
+          <Text style={[styles.label, active && !st && { color: '#CFD6DB' }]} numberOfLines={1}>{short ? item.short : item.label}</Text>
         </View>
         <FlipText value={count} style={[styles.count, { color: numColor }]} testID={`counter-value-${item.key || 'tutti'}`} />
       </PressableScale>
@@ -37,14 +37,15 @@ const Pill = ({ item, count, active, onPress, compact }: { item: typeof ITEMS[nu
   );
 };
 
-export const StatusCounters = ({ counts, active, onChange, compact }: {
+export const StatusCounters = ({ counts, active, onChange, compact, short }: {
   counts: Record<string, number>;
   active: string | null;
   onChange: (key: string | null) => void;
   compact: boolean;
+  short: boolean;
 }) => {
   const pills = ITEMS.map((item) => (
-    <Pill key={item.key || 'tutti'} item={item} compact={compact} count={counts[item.key || 'tutti'] || 0} active={active === item.key}
+    <Pill key={item.key || 'tutti'} item={item} compact={compact} short={short} count={counts[item.key || 'tutti'] || 0} active={active === item.key}
       onPress={() => onChange(item.key && active === item.key ? null : item.key)} />
   ));
   return compact ? (

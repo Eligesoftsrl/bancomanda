@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Platform,
   Switch,
+  useWindowDimensions,
 } from 'react-native';
 import { ChipScroller } from '../../src/components/ChipScroller';
 import { notify } from '../../src/store/toastStore';
@@ -30,9 +31,13 @@ import { TodayOptionsToggles } from '../../src/components/composable/TodayOption
 import { euro, fromPrice, groupsForDish, optionsSummary } from '../../src/utils/composition';
 import { sortCategoriesByFixedOrder, sortDishesByCategory, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { useFocusEffect } from 'expo-router';
+import { C, FONT } from '../../src/theme/tokens';
+import { PageHeader } from '../../src/components/ui2/PageHeader';
+import { DatePill } from '../../src/components/ui2/DatePill';
 
 
 export default function MenuScreen() {
+  const isCompact = useWindowDimensions().width < 768;
   const { selectedDate, setSelectedDate, dishes, setDishes, currentMenu, setCurrentMenu } = useAppStore();
   // Local "all dishes" list for the Menu tab so it isn't affected when
   // the Piatti tab filters the shared `dishes` store by category.
@@ -489,7 +494,7 @@ export default function MenuScreen() {
             font-family: 'Cormorant Garamond', Georgia, serif;
             background: #f8f5f0;
             padding: 0;
-            color: #475569;
+            color: #5A6A85;
           }
           
           .container {
@@ -577,7 +582,7 @@ export default function MenuScreen() {
           }
           
           .item-name {
-            color: #475569;
+            color: #5A6A85;
             font-weight: 500;
           }
           
@@ -681,7 +686,7 @@ export default function MenuScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#DB0007" />
+          <ActivityIndicator size="large" color="#00A1FF" />
           <Text style={styles.loadingText}>Caricamento...</Text>
         </View>
       </SafeAreaView>
@@ -692,31 +697,24 @@ export default function MenuScreen() {
     <SafeAreaView style={styles.container}>
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Menu Giornaliero</Text>
-        <View style={styles.dateSelector}>
-          <TouchableOpacity onPress={() => changeDate(-1)} style={styles.dateButton}>
-            <Ionicons name="chevron-back" size={24} color="#1a202c" />
-          </TouchableOpacity>
-          <Text style={styles.dateText}>
-            {format(new Date(selectedDate), 'EEEE d MMMM yyyy', { locale: it })}
-          </Text>
-          <TouchableOpacity onPress={() => changeDate(1)} style={styles.dateButton}>
-            <Ionicons name="chevron-forward" size={24} color="#1a202c" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageHeader
+        title="Menu del giorno"
+        subtitle="Scegli i piatti, le porzioni e pubblica sul sito"
+        testID="menu-header"
+        right={<DatePill selectedDate={selectedDate} onChange={changeDate} compact={isCompact} idPrefix="menu-" />}
+      />
 
       {/* Content */}
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.contentInner}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#DB0007" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
         {!currentMenu ? (
           <View style={styles.noMenuContainer}>
-            <Ionicons name="calendar-outline" size={64} color="#64748b" />
+            <Ionicons name="calendar-outline" size={64} color="#5A6A85" />
             <Text style={styles.noMenuText}>Nessun menu per questa data</Text>
             <TouchableOpacity style={styles.createMenuButton} onPress={handleCreateMenu}>
               <Ionicons name="add-circle" size={20} color="#fff" />
@@ -731,7 +729,7 @@ export default function MenuScreen() {
                 <Ionicons
                   name={currentMenu.isPublished ? 'globe' : 'globe-outline'}
                   size={20}
-                  color={currentMenu.isPublished ? '#16a34a' : '#64748b'}
+                  color={currentMenu.isPublished ? '#16a34a' : '#5A6A85'}
                 />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.publishBarTitle}>Pubblica sul sito</Text>
@@ -750,7 +748,7 @@ export default function MenuScreen() {
                     onPress={() => handleTogglePublish(true)}
                     testID="publish-resend-btn"
                   >
-                    <Ionicons name="cloud-upload-outline" size={18} color="#1a202c" />
+                    <Ionicons name="cloud-upload-outline" size={18} color="#2A3547" />
                     <Text style={styles.publishInfoButtonText}>Aggiorna</Text>
                   </TouchableOpacity>
                 )}
@@ -759,15 +757,15 @@ export default function MenuScreen() {
                   value={!!currentMenu.isPublished}
                   onValueChange={handleTogglePublish}
                   disabled={publishLoading}
-                  trackColor={{ false: '#e2e8f0', true: '#86efac' }}
-                  thumbColor={currentMenu.isPublished ? '#16a34a' : '#f1f5f9'}
+                  trackColor={{ false: '#E0E6EB', true: '#86efac' }}
+                  thumbColor={currentMenu.isPublished ? '#16a34a' : '#EFF4FA'}
                 />
                 <TouchableOpacity
                   style={styles.publishInfoButton}
                   onPress={() => setShowPublishModal(true)}
                   testID="publish-info-btn"
                 >
-                  <Ionicons name="code-slash-outline" size={18} color="#1a202c" />
+                  <Ionicons name="code-slash-outline" size={18} color="#2A3547" />
                   <Text style={styles.publishInfoButtonText}>Codice</Text>
                 </TouchableOpacity>
               </View>
@@ -802,7 +800,7 @@ export default function MenuScreen() {
                   <View style={styles.shareOptionsHeader}>
                     <Text style={styles.shareOptionsTitle}>Seleziona categorie da condividere:</Text>
                     <TouchableOpacity onPress={() => setShowShareOptions(false)}>
-                      <Ionicons name="close" size={20} color="#1a202c" />
+                      <Ionicons name="close" size={20} color="#2A3547" />
                     </TouchableOpacity>
                   </View>
                   <View style={styles.shareCategoriesList}>
@@ -824,7 +822,7 @@ export default function MenuScreen() {
                         <Ionicons 
                           name={selectedShareCategories.includes(catName) ? "checkbox" : "square-outline"} 
                           size={18} 
-                          color={selectedShareCategories.includes(catName) ? "#00754A" : "#64748b"} 
+                          color={selectedShareCategories.includes(catName) ? "#0E9F80" : "#5A6A85"} 
                         />
                         <Text style={[
                           styles.shareCategoryText,
@@ -963,7 +961,7 @@ export default function MenuScreen() {
                           openEditModal(item);
                         }}
                       >
-                        <Ionicons name="create-outline" size={22} color="#3498db" />
+                        <Ionicons name="create-outline" size={22} color="#00A1FF" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.actionButton}
@@ -972,7 +970,7 @@ export default function MenuScreen() {
                           handleRemoveItem(item.dishId);
                         }}
                       >
-                        <Ionicons name="trash-outline" size={22} color="#DB0007" />
+                        <Ionicons name="trash-outline" size={22} color="#F2545B" />
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
@@ -990,13 +988,13 @@ export default function MenuScreen() {
 
               {/* Free-text search for available dishes */}
               <View style={styles.availableSearchContainer} testID="available-search-container">
-                <Ionicons name="search" size={18} color="#64748b" style={{ marginRight: 8 }} />
+                <Ionicons name="search" size={18} color="#5A6A85" style={{ marginRight: 8 }} />
                 <TextInput
                   style={styles.availableSearchInput}
                   value={availableSearchQuery}
                   onChangeText={setAvailableSearchQuery}
                   placeholder="Cerca piatto per nome..."
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   autoCapitalize="none"
                   autoCorrect={false}
                   testID="available-search-input"
@@ -1006,7 +1004,7 @@ export default function MenuScreen() {
                     onPress={() => setAvailableSearchQuery('')}
                     testID="available-search-clear"
                   >
-                    <Ionicons name="close-circle" size={20} color="#64748b" />
+                    <Ionicons name="close-circle" size={20} color="#5A6A85" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -1051,7 +1049,7 @@ export default function MenuScreen() {
                             </Text>
                           </View>
                           <View style={styles.addDishButton}>
-                            <Ionicons name="add-circle" size={32} color="#00754A" />
+                            <Ionicons name="add-circle" size={32} color="#0E9F80" />
                           </View>
                         </TouchableOpacity>
                       ))}
@@ -1095,7 +1093,7 @@ export default function MenuScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Menu sul sito</Text>
               <TouchableOpacity onPress={() => setShowPublishModal(false)} testID="publish-modal-close">
-                <Ionicons name="close" size={24} color="#1a202c" />
+                <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
             <Text style={styles.publishHelpText}>
@@ -1130,7 +1128,7 @@ export default function MenuScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Aggiungi al Menu</Text>
               <TouchableOpacity onPress={() => { setShowAddDishModal(false); resetForm(); }}>
-                <Ionicons name="close" size={24} color="#1a202c" />
+                <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
 
@@ -1144,7 +1142,7 @@ export default function MenuScreen() {
                   value={portions}
                   onChangeText={setPortions}
                   placeholder="Numero di porzioni"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   keyboardType="number-pad"
                 />
 
@@ -1154,7 +1152,7 @@ export default function MenuScreen() {
                   value={dailyPrice}
                   onChangeText={setDailyPrice}
                   placeholder="Prezzo in euro"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   keyboardType="decimal-pad"
                 />
 
@@ -1164,7 +1162,7 @@ export default function MenuScreen() {
                   value={notes}
                   onChangeText={setNotes}
                   placeholder="Note per la preparazione..."
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   multiline
                 />
 
@@ -1184,7 +1182,7 @@ export default function MenuScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Modifica Piatto</Text>
               <TouchableOpacity onPress={() => { setShowEditItemModal(false); resetForm(); }}>
-                <Ionicons name="close" size={24} color="#1a202c" />
+                <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
 
@@ -1198,7 +1196,7 @@ export default function MenuScreen() {
                   value={portions}
                   onChangeText={setPortions}
                   placeholder="Numero di porzioni"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   keyboardType="number-pad"
                 />
 
@@ -1208,7 +1206,7 @@ export default function MenuScreen() {
                   value={dailyPrice}
                   onChangeText={setDailyPrice}
                   placeholder="Prezzo in euro"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   keyboardType="decimal-pad"
                 />
 
@@ -1218,7 +1216,7 @@ export default function MenuScreen() {
                   value={notes}
                   onChangeText={setNotes}
                   placeholder="Note per la preparazione..."
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#5A6A85"
                   multiline
                 />
 
@@ -1246,14 +1244,14 @@ export default function MenuScreen() {
                 setMissedSaleItem(null);
                 setMissedSaleQuantity('1');
               }}>
-                <Ionicons name="close" size={24} color="#1a202c" />
+                <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
 
             {missedSaleItem && (
               <>
                 <View style={styles.missedSaleDishInfo}>
-                  <Ionicons name="alert-circle" size={40} color="#DB0007" />
+                  <Ionicons name="alert-circle" size={40} color="#F2545B" />
                   <Text style={styles.missedSaleDishName}>{missedSaleItem.dishName}</Text>
                   <Text style={styles.missedSaleExplanation}>
                     Quante porzioni sono state richieste?
@@ -1302,7 +1300,7 @@ export default function MenuScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
   },
   loadingContainer: {
     flex: 1,
@@ -1310,7 +1308,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     marginTop: 10,
     fontSize: 16,
   },
@@ -1326,13 +1325,14 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   toastSuccess: {
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
   },
   toastError: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
   },
   toastText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
@@ -1342,12 +1342,13 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   headerTitle: {
+    fontFamily: FONT,
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     textAlign: 'center',
   },
   dateSelector: {
@@ -1360,15 +1361,19 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   dateText: {
+    fontFamily: FONT,
     fontSize: 18,
-    color: '#DB0007',
+    color: '#00A1FF',
     fontWeight: '600',
     marginHorizontal: 16,
     textTransform: 'capitalize',
   },
   content: {
     flex: 1,
+  },
+  contentInner: {
     padding: 16,
+    paddingBottom: 32,
   },
   noMenuContainer: {
     flex: 1,
@@ -1377,7 +1382,8 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   noMenuText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 18,
     marginTop: 16,
     marginBottom: 24,
@@ -1385,12 +1391,13 @@ const styles = StyleSheet.create({
   createMenuButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     paddingHorizontal: 24,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 999,
   },
   createMenuButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
@@ -1401,7 +1408,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#5423E7',
+    shadowColor: '#5A6A85',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -1413,36 +1420,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   sectionTitle: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   emptySection: {
     padding: 24,
     alignItems: 'center',
   },
   emptySectionText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
   },
   availableSearchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f7fa',
-    borderRadius: 10,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 14,
     paddingHorizontal: 12,
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   availableSearchInput: {
+    fontFamily: FONT,
     flex: 1,
-    color: '#1a202c',
+    color: '#2A3547',
     fontSize: 14,
     paddingVertical: 10,
   },
@@ -1451,25 +1461,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   menuItemInfo: {
     flex: 1,
   },
   menuItemName: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   menuItemComposable: {
+    fontFamily: FONT,
     fontSize: 13,
     fontWeight: '700',
-    color: '#00754A',
+    color: '#0E9F80',
     marginTop: 2,
   },
   menuItemNotes: {
+    fontFamily: FONT,
     fontSize: 13,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 4,
     fontStyle: 'italic',
   },
@@ -1480,23 +1493,25 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   menuItemPrice: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#00754A',
+    color: '#0E9F80',
   },
   portionsBadge: {
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   portionsBadgeEmpty: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
   },
   portionsBadgeLow: {
-    backgroundColor: '#FFBC0D',
+    backgroundColor: '#FFAE1F',
   },
   portionsText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 12,
     fontWeight: '700',
@@ -1507,32 +1522,35 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 10,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 8,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 999,
   },
   dishCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   dishInfo: {
     flex: 1,
   },
   dishName: {
+    fontFamily: FONT,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   dishDescription: {
+    fontFamily: FONT,
     fontSize: 13,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 4,
   },
   dishPrice: {
+    fontFamily: FONT,
     fontSize: 14,
-    color: '#00754A',
+    color: '#0E9F80',
     marginTop: 6,
   },
   addDishButton: {
@@ -1547,7 +1565,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 16,
     gap: 12,
-    shadowColor: '#5423E7',
+    shadowColor: '#5A6A85',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
@@ -1560,13 +1578,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   publishBarTitle: {
+    fontFamily: FONT,
     fontSize: 15,
     fontWeight: '700',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   publishBarSubtitle: {
+    fontFamily: FONT,
     fontSize: 12,
-    color: '#64748b',
+    color: '#5A6A85',
     marginTop: 2,
   },
   publishBarRight: {
@@ -1578,34 +1598,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 8,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
   publishInfoButtonText: {
+    fontFamily: FONT,
     fontSize: 13,
     fontWeight: '600',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   publishHelpText: {
+    fontFamily: FONT,
     fontSize: 14,
-    color: '#64748b',
+    color: '#5A6A85',
     lineHeight: 20,
   },
   codeBox: {
-    backgroundColor: '#1a202c',
-    borderRadius: 10,
+    backgroundColor: '#2A3547',
+    borderRadius: 14,
     padding: 12,
   },
   codeBoxScroll: {
-    backgroundColor: '#1a202c',
+    backgroundColor: '#2A3547',
     borderRadius: 10,
     padding: 12,
     maxHeight: 200,
   },
   codeText: {
-    color: '#FFBC0D',
+    fontFamily: FONT,
+    color: '#FFAE1F',
     fontSize: 12,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
@@ -1614,19 +1637,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#00754A',
-    borderRadius: 8,
+    backgroundColor: '#0E9F80',
+    borderRadius: 999,
     paddingVertical: 10,
     marginTop: 8,
   },
   copyButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
   },
   confirmOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(42, 53, 71, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1638,14 +1662,16 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   confirmTitle: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
     marginBottom: 12,
   },
   confirmMessage: {
+    fontFamily: FONT,
     fontSize: 16,
-    color: '#64748b',
+    color: '#5A6A85',
     marginBottom: 24,
   },
   confirmButtons: {
@@ -1654,31 +1680,33 @@ const styles = StyleSheet.create({
   },
   confirmButtonCancel: {
     flex: 1,
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   confirmButtonCancelText: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 15,
     fontWeight: '600',
   },
   confirmButtonConfirm: {
     flex: 1,
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   confirmButtonConfirmText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(42, 53, 71, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1698,27 +1726,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
+    fontFamily: FONT,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a202c',
+    color: '#2A3547',
   },
   selectedDishName: {
+    fontFamily: FONT,
     fontSize: 18,
     fontWeight: '600',
-    color: '#DB0007',
+    color: '#00A1FF',
     marginBottom: 16,
   },
   inputLabel: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 14,
     marginBottom: 8,
     marginTop: 12,
   },
   textInput: {
-    backgroundColor: '#f5f7fa',
-    color: '#1a202c',
+    fontFamily: FONT,
+    backgroundColor: '#F4F7FB',
+    color: '#2A3547',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 12,
     fontSize: 16,
   },
   textArea: {
@@ -1726,21 +1758,22 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   primaryButton: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: 'center',
     marginTop: 24,
   },
   primaryButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
   menuItemCardSoldOut: {
-    borderColor: '#DB0007',
+    borderColor: '#F2545B',
     borderWidth: 2,
-    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+    backgroundColor: '#FDECEC',
   },
   menuItemNameRow: {
     flexDirection: 'row',
@@ -1751,19 +1784,21 @@ const styles = StyleSheet.create({
   soldOutBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
     gap: 4,
   },
   soldOutText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 10,
     fontWeight: '700',
   },
   missedSaleHint: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#F2545B',
     fontSize: 12,
     fontStyle: 'italic',
     marginTop: 8,
@@ -1772,18 +1807,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
     marginBottom: 24,
   },
   missedSaleDishName: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 22,
     fontWeight: '700',
     marginTop: 16,
     textAlign: 'center',
   },
   missedSaleExplanation: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 15,
     marginTop: 8,
     textAlign: 'center',
@@ -1796,7 +1833,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   quantityButton: {
-    backgroundColor: '#DB0007',
+    backgroundColor: '#00A1FF',
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -1804,8 +1841,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quantityInputLarge: {
-    backgroundColor: '#f5f7fa',
-    color: '#1a202c',
+    fontFamily: FONT,
+    backgroundColor: '#F4F7FB',
+    color: '#2A3547',
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -1817,18 +1855,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DB0007',
+    backgroundColor: '#F2545B',
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 999,
     gap: 8,
   },
   missedSaleButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
   missedSaleHelpText: {
-    color: '#94a3b8',
+    fontFamily: FONT,
+    color: '#98A4B8',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 16,
@@ -1836,7 +1876,7 @@ const styles = StyleSheet.create({
   },
   categoryFilter: {
     borderBottomWidth: 1,
-    borderBottomColor: '#dde4ee',
+    borderBottomColor: '#E0E6EB',
   },
   categoryFilterContent: {
     paddingHorizontal: 12,
@@ -1846,17 +1886,18 @@ const styles = StyleSheet.create({
   categoryChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#f5f7fa',
-    borderRadius: 16,
+    backgroundColor: '#F4F7FB',
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#dde4ee',
+    borderColor: '#E0E6EB',
   },
   categoryChipActive: {
-    backgroundColor: '#DB0007',
-    borderColor: '#DB0007',
+    backgroundColor: '#00A1FF',
+    borderColor: '#00A1FF',
   },
   categoryChipText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 13,
     fontWeight: '500',
   },
@@ -1865,26 +1906,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   categoryBadge: {
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
   categoryBadgeText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 10,
     fontWeight: '600',
   },
   printMenuButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
     gap: 6,
   },
   printMenuButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '600',
@@ -1895,30 +1938,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#dde4ee',
+    backgroundColor: '#E0E6EB',
     borderBottomWidth: 1,
-    borderBottomColor: '#f5f7fa',
+    borderBottomColor: '#F4F7FB',
   },
   availableCategoryTitle: {
-    color: '#DB0007',
+    fontFamily: FONT,
+    color: '#00A1FF',
     fontSize: 14,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   availableCategoryCount: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 12,
     fontWeight: '500',
   },
   // Share options styles
   shareOptionsPanel: {
     backgroundColor: '#ffffff',
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#00754A',
+    borderColor: '#0E9F80',
   },
   shareOptionsHeader: {
     flexDirection: 'row',
@@ -1927,7 +1972,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   shareOptionsTitle: {
-    color: '#1a202c',
+    fontFamily: FONT,
+    color: '#2A3547',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1940,31 +1986,32 @@ const styles = StyleSheet.create({
   shareCategoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f7fa',
+    backgroundColor: '#F4F7FB',
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 999,
     gap: 6,
   },
   shareCategoryChipActive: {
-    backgroundColor: 'rgba(39, 174, 96, 0.2)',
+    backgroundColor: '#E1F7F1',
     borderWidth: 1,
-    borderColor: '#00754A',
+    borderColor: '#0E9F80',
   },
   shareCategoryText: {
-    color: '#64748b',
+    fontFamily: FONT,
+    color: '#5A6A85',
     fontSize: 13,
   },
   shareCategoryTextActive: {
-    color: '#1a202c',
+    color: '#2A3547',
   },
   shareConfirmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#00754A',
+    backgroundColor: '#0E9F80',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 999,
     gap: 8,
   },
   shareConfirmButtonDisabled: {
@@ -1972,6 +2019,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   shareConfirmButtonText: {
+    fontFamily: FONT,
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',

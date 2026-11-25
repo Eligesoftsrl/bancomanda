@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OptionDraft, OptionRowEditor } from './OptionRowEditor';
+import { FONT } from '../../theme/tokens';
 
 export interface GroupDraft {
   id?: string;
@@ -26,11 +27,11 @@ const Stepper = ({ label, value, onChange, testID, infinite }: { label: string; 
     <Text style={styles.stepperLabel}>{label}</Text>
     <View style={styles.stepper}>
       <TouchableOpacity style={styles.stepBtn} onPress={() => onChange(Math.max(0, value - 1))} testID={`${testID}-minus`}>
-        <Ionicons name="remove" size={16} color="#1a202c" />
+        <Ionicons name="remove" size={16} color="#2A3547" />
       </TouchableOpacity>
       <Text style={styles.stepValue} testID={`${testID}-value`}>{infinite && value === 0 ? 'nessun limite' : value}</Text>
       <TouchableOpacity style={styles.stepBtn} onPress={() => onChange(value + 1)} testID={`${testID}-plus`}>
-        <Ionicons name="add" size={16} color="#1a202c" />
+        <Ionicons name="add" size={16} color="#2A3547" />
       </TouchableOpacity>
     </View>
   </View>
@@ -53,7 +54,7 @@ export const OptionGroupEditor = ({ draft, onChange }: Props) => {
         value={draft.name}
         onChangeText={(name) => onChange({ ...draft, name })}
         placeholder="Es: Base, Proteine, Pane"
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor="#98A4B8"
         testID="option-group-name-input"
       />
 
@@ -84,7 +85,7 @@ export const OptionGroupEditor = ({ draft, onChange }: Props) => {
             />
           </View>
           <TouchableOpacity style={styles.repeat} onPress={() => onChange({ ...draft, allowRepeat: !draft.allowRepeat })} testID="option-group-repeat-toggle">
-            <Ionicons name={draft.allowRepeat ? 'checkbox' : 'square-outline'} size={20} color={draft.allowRepeat ? '#00754A' : '#64748b'} />
+            <Ionicons name={draft.allowRepeat ? 'checkbox' : 'square-outline'} size={20} color={draft.allowRepeat ? '#0E9F80' : '#5A6A85'} />
             <Text style={styles.repeatText}>Stesso ingrediente più volte (es. doppio pollo)</Text>
           </TouchableOpacity>
         </View>
@@ -104,7 +105,7 @@ export const OptionGroupEditor = ({ draft, onChange }: Props) => {
         ))}
       </View>
       <TouchableOpacity style={styles.addBtn} onPress={addOption} testID="option-add-btn">
-        <Ionicons name="add-circle-outline" size={18} color="#00754A" />
+        <Ionicons name="add-circle-outline" size={18} color="#0E9F80" />
         <Text style={styles.addText}>Aggiungi ingrediente</Text>
       </TouchableOpacity>
     </View>
@@ -113,24 +114,24 @@ export const OptionGroupEditor = ({ draft, onChange }: Props) => {
 
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
-  label: { fontSize: 14, fontWeight: '700', color: '#1a202c', marginTop: 10 },
-  hint: { fontSize: 12, color: '#64748b' },
-  input: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#1a202c', backgroundColor: '#fff' },
+  label: { fontFamily: FONT, fontSize: 14, fontWeight: '700', color: '#2A3547', marginTop: 10 },
+  hint: { fontFamily: FONT, fontSize: 12, color: '#5A6A85' },
+  input: { fontFamily: FONT, borderWidth: 1, borderColor: '#CFD6DB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#2A3547', backgroundColor: '#fff' },
   modes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  mode: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#fff' },
-  modeOn: { backgroundColor: '#1a202c', borderColor: '#1a202c' },
-  modeText: { fontSize: 13, color: '#334155', fontWeight: '600' },
+  mode: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#CFD6DB', backgroundColor: '#fff' },
+  modeOn: { backgroundColor: '#2A3547', borderColor: '#2A3547' },
+  modeText: { fontFamily: FONT, fontSize: 13, color: '#2A3547', fontWeight: '600' },
   modeTextOn: { color: '#fff' },
-  multiBox: { gap: 8, padding: 10, borderRadius: 10, backgroundColor: '#f8fafc' },
+  multiBox: { gap: 8, padding: 10, borderRadius: 10, backgroundColor: '#F6F9FC' },
   steppers: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
   stepperBox: { gap: 4 },
-  stepperLabel: { fontSize: 12, color: '#64748b', fontWeight: '600' },
+  stepperLabel: { fontFamily: FONT, fontSize: 12, color: '#5A6A85', fontWeight: '600' },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
-  stepValue: { minWidth: 30, textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#1a202c' },
+  stepBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: '#CFD6DB', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
+  stepValue: { fontFamily: FONT, minWidth: 30, textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#2A3547' },
   repeat: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  repeatText: { fontSize: 13, color: '#334155', flex: 1 },
+  repeatText: { fontFamily: FONT, fontSize: 13, color: '#2A3547', flex: 1 },
   options: { gap: 8 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#00754A', marginTop: 4 },
-  addText: { color: '#00754A', fontWeight: '700', fontSize: 14 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#0E9F80', marginTop: 4 },
+  addText: { fontFamily: FONT, color: '#0E9F80', fontWeight: '700', fontSize: 14 },
 });
