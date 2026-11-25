@@ -1824,11 +1824,13 @@ async def get_top_dishes(start_date: Optional[str] = None, end_date: Optional[st
         else:
             query["menuDate"] = {"$lte": end_date}
     
-    orders = await db.orders.find(query).to_list(10000)
+    # Solo i campi necessari e senza tetto: con migliaia di ordini il report resta veloce e completo
+    fields = {"_id": 0, "items.dishId": 1, "items.dishName": 1, "items.quantity": 1, "items.subtotal": 1}
+    orders = await db.orders.find(query, fields).to_list(None)
     
     dish_sales = {}
     for order in orders:
-        for item in order["items"]:
+        for item in order.get("items", []):
             dish_id = item.get("dishId")
             key = dish_id if dish_id else f"custom::{item['dishName'].strip().lower()}"
             if key not in dish_sales:

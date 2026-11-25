@@ -185,17 +185,13 @@ export default function ReportsScreen() {
   const loadDailyData = async () => {
     try {
       setIsLoading(true);
-      
-      // Load daily summary
-      const summaryData = await reportsApi.getDailySummary(selectedDate);
+      const [summaryData, missedData, topData] = await Promise.all([
+        reportsApi.getDailySummary(selectedDate),
+        missedSalesApi.getAll(selectedDate),
+        reportsApi.getTopDishes(),
+      ]);
       setSummary(summaryData);
-      
-      // Load missed sales for the day
-      const missedData = await missedSalesApi.getAll(selectedDate);
       setMissedSales(missedData);
-      
-      // Load top dishes
-      const topData = await reportsApi.getTopDishes();
       setTopDishes(topData);
     } catch (error) {
       console.error('Error loading reports:', error);
@@ -1923,7 +1919,7 @@ const styles = StyleSheet.create({
     borderColor: '#dde4ee',
   },
   dateRangeButtonText: {
-    color: '#ffffff',
+    color: '#1a202c',
     fontSize: 14,
     fontWeight: '600',
   },

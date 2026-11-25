@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { TabIcon } from '../../src/components/TabIcon';
+import { C, FONT } from '../../src/theme/tokens';
 import React, { useEffect, useState, useRef } from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import { format } from 'date-fns';
@@ -45,8 +46,8 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#DB0007',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: C.brand,
+        tabBarInactiveTintColor: C.text2,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -54,45 +55,40 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Ordini',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="receipt" focused={focused} />,
+          tabBarButtonTestID: 'tab-bar-orders',
         }}
       />
       <Tabs.Screen
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="restaurant-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="restaurant" focused={focused} />,
+          tabBarButtonTestID: 'tab-bar-menu',
         }}
       />
       <Tabs.Screen
         name="dishes"
         options={{
           title: 'Piatti',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="fast-food-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="fast-food" focused={focused} />,
+          tabBarButtonTestID: 'tab-bar-dishes',
         }}
       />
       <Tabs.Screen
         name="customers"
         options={{
           title: 'Clienti',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} />,
+          tabBarButtonTestID: 'tab-bar-customers',
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
           title: 'Report',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="bar-chart-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="bar-chart" focused={focused} />,
+          tabBarButtonTestID: 'tab-bar-reports',
           tabBarBadge: pendingKitchen > 0 ? pendingKitchen : undefined,
           tabBarBadgeStyle: styles.badge,
         }}
@@ -104,18 +100,25 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: '#ffffff',
-    borderTopColor: '#dde4ee',
+    borderTopColor: C.border,
     borderTopWidth: 1,
-    height: Platform.OS === 'ios' ? 88 : 70,
+    height: Platform.OS === 'ios' ? 90 : 74,
     paddingBottom: Platform.OS === 'ios' ? 28 : 10,
-    paddingTop: 10,
+    paddingTop: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
   },
   tabLabel: {
+    fontFamily: FONT,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginTop: 2,
   },
   badge: {
-    backgroundColor: '#DB0007',
+    fontFamily: FONT,
+    backgroundColor: C.brand,
     color: '#ffffff',
     fontSize: 11,
     fontWeight: '700',

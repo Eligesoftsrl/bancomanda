@@ -10,11 +10,12 @@ export const ChipScroller = ({ children, ...props }: ScrollViewProps) => {
     const el = (ref.current as any)?.getScrollableNode?.() as HTMLElement | undefined;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || el.scrollWidth <= el.clientWidth) return;
-      const atStart = el.scrollLeft <= 0 && e.deltaY < 0;
-      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && e.deltaY > 0;
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; // alcuni browser misurano in righe
+      if (Math.abs(dy) <= Math.abs(e.deltaX) || el.scrollWidth <= el.clientWidth) return;
+      const atStart = el.scrollLeft <= 0 && dy < 0;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && dy > 0;
       if (atStart || atEnd) return; // ai bordi lascia scorrere la pagina
-      el.scrollLeft += e.deltaY;
+      el.scrollLeft += dy;
       e.preventDefault();
     };
     el.addEventListener('wheel', onWheel, { passive: false });

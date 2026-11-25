@@ -551,10 +551,11 @@ export default function DishesScreen() {
               />
 
               <Text style={styles.inputLabel}>Categoria</Text>
-              <ChipScroller style={styles.categorySelector} testID="dish-category-selector">
+              <View style={styles.categorySelector} testID="dish-category-selector">
                 <TouchableOpacity
                   style={[styles.categorySelectorChip, !selectedCategoryId && styles.categorySelectorChipActive]}
                   onPress={() => setSelectedCategoryId(null)}
+                  testID="dish-category-chip-none"
                 >
                   <Text style={[styles.categorySelectorChipText, !selectedCategoryId && styles.categorySelectorChipTextActive]}>
                     Nessuna
@@ -565,13 +566,14 @@ export default function DishesScreen() {
                     key={category.id}
                     style={[styles.categorySelectorChip, selectedCategoryId === category.id && styles.categorySelectorChipActive]}
                     onPress={() => setSelectedCategoryId(category.id)}
+                    testID={`dish-category-chip-${category.id}`}
                   >
                     <Text style={[styles.categorySelectorChipText, selectedCategoryId === category.id && styles.categorySelectorChipTextActive]}>
                       {category.name}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ChipScroller>
+              </View>
 
               <Text style={styles.inputLabel}>Descrizione</Text>
               <TextInput
@@ -1056,6 +1058,8 @@ const styles = StyleSheet.create({
   },
   categorySelector: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 8,
   },
   categorySelectorChip: {
@@ -1063,7 +1067,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: '#f5f7fa',
     borderRadius: 8,
-    marginRight: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },

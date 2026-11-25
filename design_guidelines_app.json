@@ -1,0 +1,236 @@
+{
+  "project_name": "Bancomanda - Ordini & Navigation Redesign (UX/UI 2026)",
+  "version": "2026.7-ordini-v1",
+  "target_audience": "Personale di cassa, banco e cucina di ristoranti/bistrot italiani che operano sotto pressione, con visualizzazione touch su iPad (1180x820 landscape, 820x1180 portrait), desktop (1366-1920px) e smartphone.",
+  "tech_stack": {
+    "framework": "Expo SDK 58 / React Native with react-native-web 0.21",
+    "styling": "React Native StyleSheet (pure inline/StyleSheet rules, NO DOM/Tailwind)",
+    "animations": "react-native-reanimated 4.7 & Animated API (strictly transform and opacity only, 60fps native driver / UI thread worklets)",
+    "icons": "@expo/vector-icons (Ionicons)",
+    "visual_enhancers": "expo-blur (Glassmorphism on iOS/Web where supported with solid fallback)",
+    "fonts": "Local packages @expo-google-fonts/plus-jakarta-sans or @expo-google-fonts/outfit for modern high-legibility display, plus System SF Pro / Segoe UI / Roboto fallback."
+  },
+  "brand_and_colors": {
+    "theme": "light",
+    "philosophy": "Conservare l'eredità cromatica Bancomanda (Rosso brand, Giallo attesa, Verde pronto, Blu info, Grigio neutro) elevandola a standard SaaS 2026: saturazione calibrata, contrasto elevato (AA/APCA), bordi soft ma incisivi, sfondi gerarchici a tre livelli (canvas, surface, elevated card).",
+    "palette": {
+      "brand_red": "#DB0007",
+      "brand_red_dark": "#B80006",
+      "brand_red_subtle": "#FFF1F1",
+      "brand_red_glow": "rgba(219, 0, 7, 0.18)",
+      "navy_logo": "#141D2C",
+      "navy_logo_coral": "#F5595A",
+      "status_in_attesa": "#D97706",
+      "status_in_attesa_bg": "#FEF3C7",
+      "status_in_attesa_border": "#FDE68A",
+      "status_in_preparazione": "#2563EB",
+      "status_in_preparazione_bg": "#EFF6FF",
+      "status_in_preparazione_border": "#BFDBFE",
+      "status_pronto": "#059669",
+      "status_pronto_bg": "#ECFDF5",
+      "status_pronto_border": "#A7F3D0",
+      "status_sospeso": "#DC2626",
+      "status_sospeso_bg": "#FEF2F2",
+      "status_sospeso_border": "#FECACA",
+      "status_consegnato": "#64748B",
+      "status_consegnato_bg": "#F1F5F9",
+      "status_consegnato_border": "#CBD5E1",
+      "canvas_bg": "#F8FAFC",
+      "surface_bg": "#FFFFFF",
+      "card_bg": "#FFFFFF",
+      "card_hover_bg": "#FAFCFF",
+      "border_subtle": "#E2E8F0",
+      "border_strong": "#CBD5E1",
+      "border_focus": "#2563EB",
+      "text_primary": "#0F172A",
+      "text_secondary": "#475569",
+      "text_muted": "#94A3B8",
+      "text_on_brand": "#FFFFFF",
+      "pill_unpaid_bg": "#FEF2F2",
+      "pill_unpaid_text": "#DC2626",
+      "pill_paid_bg": "#ECFDF5",
+      "pill_paid_text": "#059669"
+    },
+    "surface_elevation": {
+      "level_0_canvas": "#F8FAFC",
+      "level_1_surface": "#FFFFFF (border: 1px solid #E2E8F0, shadow: 0 1px 3px rgba(15, 23, 42, 0.05))",
+      "level_2_card": "#FFFFFF (border: 1px solid #E2E8F0, shadow: 0 4px 12px rgba(15, 23, 42, 0.06), borderRadius: 16)",
+      "level_3_hover": "#FAFCFF (border: 1px solid #CBD5E1, shadow: 0 8px 24px rgba(15, 23, 42, 0.10))",
+      "level_modal": "#FFFFFF (shadow: 0 20px 40px rgba(15, 23, 42, 0.18), borderRadius: 20)"
+    }
+  },
+  "typography": {
+    "display_family": "PlusJakartaSans-Bold, Outfit-Bold, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "body_family": "PlusJakartaSans-Regular, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    "mono_numbers": "'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace",
+    "scale": {
+      "h1_screen_title": { "fontSize": 24, "lineHeight": 28, "fontWeight": "800", "letterSpacing": -0.5 },
+      "h2_card_header": { "fontSize": 18, "lineHeight": 22, "fontWeight": "700", "letterSpacing": -0.3 },
+      "counter_stat_number": { "fontSize": 22, "lineHeight": 26, "fontWeight": "800", "fontVariant": ["tabular-nums"] },
+      "counter_stat_label": { "fontSize": 11, "lineHeight": 14, "fontWeight": "700", "letterSpacing": 0.4, "textTransform": "uppercase" },
+      "badge_text": { "fontSize": 12, "lineHeight": 16, "fontWeight": "700", "letterSpacing": 0.2 },
+      "body_regular": { "fontSize": 14, "lineHeight": 20, "fontWeight": "400" },
+      "body_bold": { "fontSize": 14, "lineHeight": 20, "fontWeight": "600" },
+      "caption": { "fontSize": 12, "lineHeight": 16, "fontWeight": "500", "color": "#64748B" },
+      "price_highlight": { "fontSize": 18, "lineHeight": 22, "fontWeight": "800", "fontVariant": ["tabular-nums"] }
+    }
+  },
+  "spacing_and_metrics": {
+    "touch_target_min": 44,
+    "header_height": 64,
+    "tab_bar_height_desktop": 68,
+    "tab_bar_height_ios": 88,
+    "card_padding": 16,
+    "card_gap": 12,
+    "border_radius": {
+      "badge": 8,
+      "button_sm": 10,
+      "button_md": 12,
+      "button_pill": 999,
+      "card": 16,
+      "modal": 22
+    }
+  },
+  "components_specification": {
+    "header": {
+      "description": "Barra superiore con logo Bancomanda, indicatore di sincronizzazione con pulsazione live e date-picker a pillola scorrevole.",
+      "layout": "Row flex, alignItems: center, justifyContent: space-between, px: 20, py: 12, bg: #FFFFFF, borderBottom: 1px solid #E2E8F0",
+      "sync_indicator": {
+        "visual": "Pillola con bordo fine e sfondo sfumato, pallino 8x8px con ring animato di pulsazione (verde fresco <45s, ambra se >45s, rosso se errore). Al tocco: feedback scala (0.95 -> 1.0) e rotazione icona refresh.",
+        "testID": "sync-indicator"
+      },
+      "date_selector": {
+        "visual": "Pillola centrale ergonomica con chevron sinistro/destro da 44px touch-target, testo della data con primo piano della data odierna (es. 'Oggi • Merc 25 Nov') e apertura modale calendario rapida.",
+        "testID_prev": "date-prev-button",
+        "testID_next": "date-next-button",
+        "testID_text": "date-current-display"
+      }
+    },
+    "counter_bar": {
+      "description": "Barra contatori/filtri orizzontale scorrevole con stile 2026: pillole rialzate con bordo inferiore o laterale luminoso che corrisponde allo stato attivo.",
+      "items": [
+        { "id": "tutti", "label": "Tutti", "color": "#0F172A", "bg_active": "#0F172A", "text_active": "#FFFFFF" },
+        { "id": "in_attesa", "label": "Attesa", "color": "#D97706", "bg_active": "#FEF3C7", "border": "#F59E0B" },
+        { "id": "in_preparazione", "label": "Preparaz.", "color": "#2563EB", "bg_active": "#EFF6FF", "border": "#3B82F6" },
+        { "id": "pronto", "label": "Pronto", "color": "#059669", "bg_active": "#ECFDF5", "border": "#10B981" },
+        { "id": "sospeso", "label": "Sospeso", "color": "#DC2626", "bg_active": "#FEF2F2", "border": "#EF4444" },
+        { "id": "consegnato", "label": "Consegn.", "color": "#64748B", "bg_active": "#F1F5F9", "border": "#94A3B8" }
+      ],
+      "active_state_animation": "Spring scale 1.03x + transizione opacità background in 180ms",
+      "badge_counter": "Numeri ad alto contrasto con font monospaziato e animazione di conteggio al cambio data."
+    },
+    "orders_panel": {
+      "search_bar": {
+        "visual": "Barra di ricerca con icona lente e tasto cancella immediato, sfondo #F1F5F9 con focus border #2563EB e micro-ombra. Placeholder: 'Cerca ordine per cliente o #numero...'",
+        "testID": "orders-search-input"
+      },
+      "order_card": {
+        "structure": "3 blocchi verticali: Header (Cliente + #Numero + Badge stato + Tasto Stampa), Body (Canale icon + Servizio + Ora consegna con badge giallo + Piatti con bullet + Note), Footer (Prezzo grande in € + Switch Pagamento interattivo + Ora)",
+        "print_button": {
+          "style": "Bottone circolare 40x40px, sfondo #EFF6FF, icona Ionicons 'print' blu #2563EB, feedback di pressione scala 0.92x",
+          "testID": "order-card-print-btn"
+        },
+        "payment_switch": {
+          "paid_style": "Pillola con sfondo #ECFDF5, bordo #A7F3D0, icona carta e spunta verde #059669, testo 'PAGATO'",
+          "unpaid_style": "Pillola con sfondo #FEF2F2, bordo #FECACA, icona carta rossa #DC2626, testo 'DA PAGARE'",
+          "testID": "order-payment-toggle"
+        },
+        "time_indicator": "Badge con orologio in evidenza se l'orario di consegna è vicino (< 30 min) con colore giallo/ambra pulsante."
+      },
+      "empty_and_loading_states": {
+        "skeleton": "Tre schede skeleton animate con shimmer a gradiente opacità (0.4 <-> 0.8 in 1000ms loop) prima che i dati siano pronti.",
+        "empty_menu": "Card morbida con icona calendario grande #94A3B8 e bottone primario 'Crea menu del giorno'",
+        "empty_orders": "Card morbida con icona comanda e testo d'incoraggiamento 'Nessun ordine in questa sezione'"
+      }
+    },
+    "modals": {
+      "new_order_modal": {
+        "channel_selector": "3 bottoni grandi a griglia orizzontale (Banco, Telefono, WhatsApp) con icone 28px, stato selezionato con bordo rosso brand 2px e sfondo rosso tenue #FFF1F1.",
+        "service_selector": "3 bottoni toggle orizzontali (In Sede, Da Ritirare, Da Consegnare) con icone ristorante/persona/bici.",
+        "customer_selector": "Selezione rapida cliente con autocomplete integrato o bottone + Nuovo cliente veloce.",
+        "time_picker": "Selettore orario inline touch-friendly con step di 5 e 15 minuti.",
+        "sticky_cta": "Tasto inferiore sempre visibile 'Crea Ordine' rosso #DB0007 con ombra 0 8px 20px rgba(219,0,7,0.3) e stato disabled grigio."
+      },
+      "order_detail_modal": {
+        "layout": "Due colonne su desktop/iPad landscape (sinistra: Info ordine e Piatti comanda; destra: Aggiunta dal Menu e Carrello). Colonna singola a step su mobile.",
+        "custom_items": "Sezione 'Piatto Libero' per inserimenti rapidi fuori menu con tasto 'Duplica' per varianti immediate.",
+        "composer": "Compositore per piatti configurabili (Base obbligatoria con radio button touch, ingredienti opzionali con selettori + / - e calcolo supplementi in tempo reale)."
+      },
+      "portions_modal": {
+        "visual": "Griglia a schede compatte per monitorare le porzioni residue dei piatti del giorno con progress-bar colorata (verde >5, ambra 1-5, rosso esaurito)."
+      }
+    },
+    "tab_bar": {
+      "visual": "Barra di navigazione inferiore stile 2026: sfondo bianco solido con bordo superiore fine #E2E8F0, icone Ionicons con transizione di colore su attiva (rosso brand #DB0007), badge contatore cucina rotondo con numero bianco su rosso.",
+      "tabs": [
+        { "name": "index", "title": "Ordini", "icon": "receipt-outline", "icon_active": "receipt" },
+        { "name": "menu", "title": "Menu", "icon": "restaurant-outline", "icon_active": "restaurant" },
+        { "name": "dishes", "title": "Piatti", "icon": "fast-food-outline", "icon_active": "fast-food" },
+        { "name": "customers", "title": "Clienti", "icon": "people-outline", "icon_active": "people" },
+        { "name": "reports", "title": "Report", "icon": "bar-chart-outline", "icon_active": "bar-chart", "has_badge": true }
+      ]
+    }
+  },
+  "animation_choreography": {
+    "philosophy": "Rich, fluid, professional 2026 motion. ZERO input lag, running at 60fps on native UI thread with react-native-reanimated. Only transform (translate, scale) and opacity are animated.",
+    "cascading_order_cards": {
+      "trigger": "Caricamento ordini o cambio filtro stato",
+      "initial": "{ opacity: 0, translateY: 14 }",
+      "animate": "{ opacity: 1, translateY: 0 }",
+      "duration": "240ms con easing CubicBezier(0.16, 1, 0.3, 1)",
+      "stagger": "30ms tra una scheda e la successiva (max 8 schede animate a cascata, le successive immediate per non rallentare)"
+    },
+    "counter_state_transition": {
+      "trigger": "Selezione filtro stato nella barra contatori",
+      "scale_effect": "Pillola attiva pulsa a 1.04x per 120ms poi torna a 1.0x (spring tension 400, damping 25)",
+      "number_flip": "Opacità 0.4 -> 1.0 e leggero slide vertical 4px quando i numeri cambiano."
+    },
+    "modal_open_close": {
+      "backdrop": "Fade opacity 0 -> 0.5 in 200ms",
+      "sheet": "SlideUp translateY: 60 -> 0 con Spring(damping 28, stiffness 300) per effetto elastico moderno."
+    },
+    "button_press_feedback": {
+      "all_interactive_buttons": "PressIn -> scale: 0.96, PressOut -> scale: 1.00 in 100ms con Animated/Reanimated useSharedValue",
+      "add_to_cart": "Scala rapida 1.15x dell'icona carrello + emissione feedback verde"
+    },
+    "payment_toggle_switch": {
+      "transition": "Rotazione icona carta di 360deg o micro-bounce scale (0.85 -> 1.1 -> 1.0) con transizione colore background da rosso a verde smeraldo."
+    },
+    "accessibility_reduced_motion": "Se AccessibilityInfo.isReduceMotionEnabled() è vero, tutte le animazioni di traslazione e scala vengono azzerate mantenendo solo dissolvenze istantanee di opacità."
+  },
+  "data_testids": [
+    "header-logo",
+    "sync-indicator",
+    "date-prev-button",
+    "date-next-button",
+    "date-current-display",
+    "counter-filter-tutti",
+    "counter-filter-in_attesa",
+    "counter-filter-in_preparazione",
+    "counter-filter-pronto",
+    "counter-filter-sospeso",
+    "counter-filter-consegnato",
+    "orders-search-input",
+    "orders-search-clear",
+    "portions-dashboard-btn",
+    "new-order-button",
+    "order-card-container",
+    "order-card-print-btn",
+    "order-payment-toggle",
+    "new-order-modal",
+    "create-order-button",
+    "modal-close-button",
+    "tab-bar-orders",
+    "tab-bar-menu",
+    "tab-bar-dishes",
+    "tab-bar-customers",
+    "tab-bar-reports"
+  ],
+  "instructions_to_main_agent": [
+    "1. Modifica /app/frontend/app/(tabs)/index.tsx e i componenti correlati in /app/frontend/src/components/orders/ implementando lo styling 2026 definito in questo file.",
+    "2. Mantieni tutte le 8 funzionalità chiave intatte (nessuna rimozione di canali, tipi di servizio, stampa, pagamenti, note, compositore).",
+    "3. Usa react-native-reanimated per le animazioni a 60fps (staggered list entrance, counter press, button scale, modal bounce).",
+    "4. Assicurati che ogni pulsante e campo possieda il rispettivo data-testid e target touch >= 44px per iPad.",
+    "5. Conserva la logica di silent sync a 30s con l'indicatore live rinnovato."
+  ]
+}

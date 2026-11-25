@@ -5,6 +5,7 @@ import { ActivityIndicator, LogBox, Platform, View } from 'react-native';
 import { useAuthStore } from '../src/store/authStore';
 import { LaunchSplash } from '../src/components/LaunchSplash';
 import { ToastHost } from '../src/components/ToastHost';
+import { installFonts } from '../src/theme/fonts';
 
 // Silenzia warning noti dopo upgrade a SDK 57 (RN 0.86):
 // - "Unexpected text node: ." è generato da react-navigation/expo-router internamente
@@ -37,6 +38,7 @@ export default function RootLayout() {
   const hideSplash = useCallback(() => setShowSplash(false), []);
 
   useEffect(() => {
+    installFonts();
     init();
   }, [init]);
 
