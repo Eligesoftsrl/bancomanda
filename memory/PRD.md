@@ -280,3 +280,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - `app/+html.tsx`: barre sottili 8px su desktop (pointer: fine) ora globali.
 - Piatti: caricamento a tutta pagina solo la prima volta (`loadedOnce`), così cambiando filtro la riga non torna all'inizio.
 - Nota per l'utente: nel piatto componibile la categoria decide la sezione del menu e del sito; senza categoria il piatto non compare sul sito.
+
+## Conversione Fit Giorgio Bistrot in PRODUZIONE (Railway) — 2026-11-25 ✅
+- `backend/scripts/composable_conversion.py` (rieseguibile, `--dry-run`): gruppi di prova dell'utente archiviati come "PROVA Fit"/"PROVA Base"; creati gruppo "Base" (1 obbligatoria: Cous cous con verdure, Patate E Carote, Insalata Mista 5,50) e "Proteine" (nessun limite, doppie: Pollo, Tonno, Uova, Salmone, Primo Sale, Mozzarella, Noci e Parmigiano), categoria "Fit", piatto "Piatto Fit" (componibile, preferito). I 10 vecchi piatti: disattivati + `convertedTo`, storico ordini intatto.
+- Menu da oggi in poi: le 10 voci sostituite da "Piatto Fit" (porzioni = somma delle basi, ingrediente a 0 porzioni = esaurito oggi). Categorie "Base Fit"/"Proteine Fit" lasciate (vuote) finché si usa la vecchia app.
+- `migrate_legacy.py --sync`: non riattiva i piatti convertiti e riapplica la sostituzione nei menu; la copia completa è bloccata se esistono piatti componibili.
+- JSON pubblico: gruppi con `min`, `max`, `allowRepeat`; corretto il "Piatto Fit" senza ingredienti a 0 € quando il menu non è pubblicato (sezione fissa). Verificato su copia locale dei dati. Serve push per il backend.
+- Backup prima della conversione: /root/backups/conversion_backup_20261125_143346.json (non nel repository).
+- Backlog: pulizia categorie "Base Fit"/"Proteine Fit" dopo il passaggio definitivo; ordine dal sito via WhatsApp (solo lato sito dell'utente).
+

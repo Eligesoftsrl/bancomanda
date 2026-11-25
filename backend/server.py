@@ -659,6 +659,19 @@ def _rome_today_iso() -> str:
     return datetime.now(ZoneInfo("Europe/Rome")).strftime("%Y-%m-%d")
 
 
+async def _add_public_composition(entry: dict, dish: dict, unavailable: List[str]) -> None:
+    """Piatto componibile: prezzo "da", elenco delle scelte disponibili oggi e allergeni possibili."""
+    groups = await load_groups(db, dish.get("optionGroupIds", []))
+    floor, public_groups, text = public_options(groups, unavailable)
+    entry["price"] = round(entry["price"] + floor, 2)
+    entry["priceFrom"] = True
+    entry["optionGroups"] = public_groups
+    entry["notes"] = " · ".join(x for x in (text, entry["notes"]) if x)
+    for grp in public_groups:
+        for opt in grp["options"]:
+            entry["allergens"] += [a for a in opt["allergens"] if a not in entry["allergens"]]
+
+
 async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
     """Costruisce il payload pubblico (JSON) a partire da un menu del DB.
     - Espone SOLO campi pubblici: name, price, tags, allergens, notes.
@@ -719,17 +732,7 @@ async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
                     "notes": (item.get("notes") or "").strip(),
                 }
                 if (dish or {}).get("isComposable"):
-                    # Piatto componibile: prezzo "da" + elenco delle scelte disponibili oggi
-                    groups = await load_groups(db, dish.get("optionGroupIds", []))
-                    floor, public_groups, text = public_options(groups, item.get("unavailableOptionIds") or [])
-                    entry["price"] = round(entry["price"] + floor, 2)
-                    entry["priceFrom"] = True
-                    entry["optionGroups"] = public_groups
-                    entry["notes"] = " · ".join(x for x in (text, entry["notes"]) if x)
-                    # Allergeni possibili: quelli del piatto più quelli di tutte le scelte disponibili
-                    for grp in public_groups:
-                        for opt in grp["options"]:
-                            entry["allergens"] += [a for a in opt["allergens"] if a not in entry["allergens"]]
+                    await _add_public_composition(entry, dish, item.get("unavailableOptionIds") or [])
                 items.append(entry)
 
         # Per sezioni "fixed", mostra sempre tutti i piatti della categoria (anche se menu non pubblicato)
@@ -740,13 +743,16 @@ async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
                 "active": True,
                 "isFavorite": True,
             }):
-                items.append({
+                entry = {
                     "name": d.get("name"),
                     "price": round(float(d.get("basePrice", 0)), 2),
                     "tags": list(d.get("tags") or []),
                     "allergens": list(d.get("allergens") or []),
                     "notes": "",
-                })
+                }
+                if d.get("isComposable"):
+                    await _add_public_composition(entry, d, [])
+                items.append(entry)
 
         if items:
             sections.append({"name": cat_name, "type": sec_type, "items": items})

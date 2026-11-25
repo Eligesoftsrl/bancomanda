@@ -71,9 +71,14 @@ def sync(db, docs, existing, dry_run):
         print(f"[SYNC] {col}: nuovi {new}, solo nel nuovo db (lasciati intatti) {only_target}")
         if dry_run or not items:
             continue
-        ops = [UpdateOne({"_id": d["_id"]}, {"$set": {k: v for k, v in d.items() if k != "_id"}}, upsert=True) for d in items]
+        # i piatti trasformati in ingredienti restano disattivati anche se la vecchia app li ha attivi
+        keep = lambda d, k: k == "_id" or (k in ("active", "isFavorite") and "convertedTo" in current.get(d["_id"], {}))
+        ops = [UpdateOne({"_id": d["_id"]}, {"$set": {k: v for k, v in d.items() if not keep(d, k)}}, upsert=True) for d in items]
         r = db[col].bulk_write(ops, ordered=False)
         print(f"[SYNC] {col}: inseriti {r.upserted_count}, aggiornati {r.modified_count}")
+    if not dry_run:
+        from composable_conversion import apply_menus
+        apply_menus(db)
     print("[DRY-RUN] nessuna modifica" if dry_run else "[FATTO]")
 
 
@@ -112,6 +117,8 @@ def main():
     if args.dry_run:
         print("[DRY-RUN] nessuna modifica")
         return
+    if db.dishes.count_documents({**LEGACY, "conversionKey": {"$exists": True}}):
+        sys.exit("[ERRORE] Ci sono piatti componibili creati nella nuova app: la copia completa li cancellerebbe. Usa --sync")
 
     backup = Path(__file__).parent.parent / f"migration_backup_{datetime.now():%Y%m%d_%H%M%S}.json"
     backup.write_text(json.dumps(existing, default=str))

@@ -85,3 +85,4 @@ credentials.json
 .env
 .env.*
 *.env
+backend/*_backup_*.json

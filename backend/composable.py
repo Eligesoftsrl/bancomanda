@@ -176,7 +176,8 @@ def public_options(groups: List[dict], unavailable: List[str]) -> tuple:
         mn = g.get("minSelect", 0)
         floor = min(o["price"] for o in opts) if mn else 0.0
         base += floor * mn
-        public.append({"name": g["name"], "required": mn > 0,
+        public.append({"name": g["name"], "required": mn > 0, "min": mn, "max": g.get("maxSelect"),
+                       "allowRepeat": bool(g.get("allowRepeat")),
                        "options": [{"name": o["name"], "price": o["price"], "allergens": o.get("allergens", [])} for o in opts]})
         labels = [o["name"] + (f" +{_euro(o['price'] - floor)}" if o["price"] - floor > 0 else "") for o in opts]
         parts.append(f"{g['name']}: {', '.join(labels)}")
