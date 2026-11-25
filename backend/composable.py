@@ -98,7 +98,8 @@ async def update_group(group_id: str, body: OptionGroupIn, request: Request):
 @router.delete("/{group_id}")
 async def delete_group(group_id: str, request: Request):
     db = _db(request)
-    users = await db.dishes.find({"active": True, "optionGroupIds": group_id}, {"name": 1}).to_list(20)
+    # Anche i piatti disattivati: se riattivati resterebbero senza gruppo
+    users = await db.dishes.find({"isComposable": True, "optionGroupIds": group_id}, {"name": 1}).to_list(20)
     if users:
         names = ", ".join(d["name"] for d in users)
         raise HTTPException(status_code=409, detail=f"Gruppo usato da: {names}. Scollegalo prima dal piatto.")

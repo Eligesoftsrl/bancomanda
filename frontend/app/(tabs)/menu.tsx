@@ -1078,7 +1078,9 @@ export default function MenuScreen() {
                             {dish.description && (
                               <Text style={styles.dishDescription}>{dish.description}</Text>
                             )}
-                            <Text style={styles.dishPrice}>Prezzo base: {dish.basePrice.toFixed(2)} €</Text>
+                            <Text style={styles.dishPrice}>
+                              {dish.isComposable ? `Componibile · da ${euro(fromPrice(dish.basePrice, groupsForDish(dish, optionGroups)))}` : `Prezzo base: ${dish.basePrice.toFixed(2)} €`}
+                            </Text>
                           </View>
                           <View style={styles.addDishButton}>
                             <Ionicons name="add-circle" size={32} color="#00754A" />

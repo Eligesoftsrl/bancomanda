@@ -29,7 +29,7 @@ import { useAppStore } from '../../src/store/appStore';
 import { ordersApi, menusApi, customersApi, categoriesApi, dishesApi, optionGroupsApi } from '../../src/services/api';
 import { Order, MenuItem, Customer, Category, Dish, OptionGroup, Selections } from '../../src/types';
 import { DishComposer } from '../../src/components/composable/DishComposer';
-import { compositionText, euro, groupsForDish, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
+import { compositionText, euro, fromPrice, groupsForDish, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
 import { sortCategoriesByFixedOrder, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { TimePickerInline } from '../../src/components/TimePickerInline';
 
@@ -2453,7 +2453,9 @@ export default function OrdersScreen() {
                   </Text>
                   <View style={styles.footerItemRight}>
                     <Text style={styles.footerItemPrice} testID="order-footer-price">
-                      {(selectedMenuItem.dailyPrice + selectionExtra(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel)).toFixed(2)} €
+                      {selectionError(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel)
+                        ? `da ${euro(fromPrice(selectedMenuItem.dailyPrice, groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), selectedMenuItem.unavailableOptionIds))}`
+                        : euro(selectedMenuItem.dailyPrice + selectionExtra(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel))}
                     </Text>
                     <Text style={styles.footerAvailableText}>
                       disp. {selectedMenuItem.portions}

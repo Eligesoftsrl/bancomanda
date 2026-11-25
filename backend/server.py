@@ -726,6 +726,10 @@ async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
                     entry["priceFrom"] = True
                     entry["optionGroups"] = public_groups
                     entry["notes"] = " · ".join(x for x in (text, entry["notes"]) if x)
+                    # Allergeni possibili: quelli del piatto più quelli di tutte le scelte disponibili
+                    for grp in public_groups:
+                        for opt in grp["options"]:
+                            entry["allergens"] += [a for a in opt["allergens"] if a not in entry["allergens"]]
                 items.append(entry)
 
         # Per sezioni "fixed", mostra sempre tutti i piatti della categoria (anche se menu non pubblicato)
@@ -948,6 +952,8 @@ async def add_order_item(order_id: str, item: OrderAddItem):
     dish = await db.dishes.find_one({"_id": ObjectId(item.dishId)})
     if dish and dish.get("isComposable"):
         groups = await load_groups(db, dish.get("optionGroupIds", []))
+        if not groups or len(groups) != len(dish.get("optionGroupIds", [])):
+            raise HTTPException(status_code=400, detail="Piatto componibile senza gruppi di scelta: controlla la scheda del piatto")
         composition, extra = build_composition(groups, item.selections or [], menu_item.get("unavailableOptionIds") or [])
     elif item.selections:
         raise HTTPException(status_code=400, detail="Questo piatto non è componibile")
@@ -1148,6 +1154,8 @@ async def update_order_item(order_id: str, item_index: int, update: OrderItemUpd
         menu_item = next((mi for mi in menu.get("items", []) if mi["dishId"] == item["dishId"]), {})
         old = item.get("composition") or []
         groups = await load_groups(db, dish.get("optionGroupIds", []))
+        if not groups or len(groups) != len(dish.get("optionGroupIds", [])):
+            raise HTTPException(status_code=400, detail="Piatto componibile senza gruppi di scelta: controlla la scheda del piatto")
         composition, extra = build_composition(groups, update.selections, menu_item.get("unavailableOptionIds") or [],
                                                keep_ids={c["optionId"] for c in old})
         item["unitPrice"] = round(item["unitPrice"] - composition_extra(old) + extra, 2)

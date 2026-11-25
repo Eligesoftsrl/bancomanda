@@ -1,6 +1,6 @@
 import { CompositionEntry, Dish, OptionGroup, Selections } from '../types';
 
-export const euro = (v: number) => `${v.toFixed(2).replace('.', ',')} €`;
+export const euro = (v: number) => `${v.toFixed(2)} €`;
 
 // Gruppi del piatto nell'ordine scelto in anagrafica
 export const groupsForDish = (dish: Dish | undefined, all: OptionGroup[]): OptionGroup[] => {

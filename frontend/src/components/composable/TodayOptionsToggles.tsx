@@ -16,7 +16,7 @@ export const TodayOptionsToggles = ({ groups, unavailable, onChange }: Props) =>
   return (
     <View style={styles.wrap} testID="today-options-toggles">
       <Text style={styles.title}>Ingredienti di oggi</Text>
-      <Text style={styles.hint}>Tocca un ingrediente per segnarlo esaurito: non si potrà scegliere e sparirà dal sito.</Text>
+      <Text style={styles.hint}>Tocca un ingrediente per segnarlo esaurito oggi in questo piatto: non si potrà scegliere e sparirà dal sito.</Text>
       <ScrollView style={styles.scroll} nestedScrollEnabled showsVerticalScrollIndicator={Platform.OS === 'web'}>
         {groups.map((g) => (
           <View key={g.id} style={styles.group}>

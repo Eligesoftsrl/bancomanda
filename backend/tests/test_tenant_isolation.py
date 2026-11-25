@@ -279,9 +279,10 @@ class TestBruteForce:
     def test_lockout(self):
         raw = MongoClient("mongodb://localhost:27017")["catering-dashboard-3"]
         try:
+            # In preview l'IP di uscita alterna tra 2 indirizzi: 10 errori fanno scattare comunque il blocco per account
             codes = [requests.post(f"{API}/auth/login", json={"email": NAPOLI["email"], "password": "wrong!"}).status_code
-                     for _ in range(5)]
-            assert codes == [401] * 5, codes
+                     for _ in range(10)]
+            assert set(codes) <= {401, 429} and codes[:5] == [401] * 5, codes
             r = requests.post(f"{API}/auth/login", json=NAPOLI)
             assert r.status_code == 429
             assert "Troppi tentativi errati" in r.json()["detail"]

@@ -821,7 +821,7 @@ export default function ReportsScreen() {
                                     <Text style={styles.kitchenServiceText}>{svc.label}</Text>
                                   </View>
                                   {!!entry.composition?.length && (
-                                    <Text style={styles.kitchenEntryComposition} testID={`kitchen-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
+                                    <Text style={styles.kitchenEntryComposition} testID={`porz-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
                                       {compositionText(entry.composition)}
                                     </Text>
                                   )}
@@ -955,7 +955,7 @@ export default function ReportsScreen() {
                               <Text style={styles.kitchenServiceText}>{svc.label}</Text>
                             </View>
                             {!!entry.composition?.length && (
-                              <Text style={styles.kitchenEntryComposition} testID={`porz-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
+                              <Text style={styles.kitchenEntryComposition} testID={`kitchen-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
                                 {compositionText(entry.composition)}
                               </Text>
                             )}

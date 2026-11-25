@@ -8,7 +8,7 @@ import { GroupDraft, OptionGroupEditor } from './OptionGroupEditor';
 
 const toDraft = (g?: OptionGroup, order = 0): GroupDraft =>
   g
-    ? { ...g, options: g.options.map((o) => ({ ...o, priceText: String(o.price) })) }
+    ? { ...g, options: g.options.map((o) => ({ ...o, priceText: o.price.toFixed(2) })) }
     : { name: '', minSelect: 0, maxSelect: null, allowRepeat: true, options: [], order };
 
 const parseDraft = (d: GroupDraft): Omit<OptionGroup, 'id'> | string => {
