@@ -1,3 +1,4 @@
+import { compositionText } from '../../src/utils/composition';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -819,6 +820,11 @@ export default function ReportsScreen() {
                                   <View style={[styles.kitchenServiceBadge, { backgroundColor: svc.color }]}>
                                     <Text style={styles.kitchenServiceText}>{svc.label}</Text>
                                   </View>
+                                  {!!entry.composition?.length && (
+                                    <Text style={styles.kitchenEntryComposition} testID={`kitchen-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
+                                      {compositionText(entry.composition)}
+                                    </Text>
+                                  )}
                                   {entry.notes ? (
                                     <Text style={styles.kitchenEntryNote} numberOfLines={2}>
                                       📝 {entry.notes}
@@ -948,6 +954,11 @@ export default function ReportsScreen() {
                             <View style={[styles.kitchenServiceBadge, { backgroundColor: svc.color }]}>
                               <Text style={styles.kitchenServiceText}>{svc.label}</Text>
                             </View>
+                            {!!entry.composition?.length && (
+                              <Text style={styles.kitchenEntryComposition} testID={`porz-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
+                                {compositionText(entry.composition)}
+                              </Text>
+                            )}
                             {entry.notes ? (
                               <Text style={styles.kitchenEntryNote} numberOfLines={2}>
                                 📝 {entry.notes}
@@ -1769,6 +1780,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748b',
     fontWeight: '600',
+  },
+  kitchenEntryComposition: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#00754A',
+    flexBasis: '100%',
   },
   kitchenEntryNote: {
     fontSize: 11,

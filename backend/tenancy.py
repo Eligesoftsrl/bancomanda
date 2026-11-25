@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse
 from auth.jwt_handler import verify_access_token
 from auth.dependencies import password_version as _password_version
 
-SCOPED_COLLECTIONS = {"categories", "dishes", "daily_menus", "orders", "customers", "missed_sales"}
+SCOPED_COLLECTIONS = {"categories", "dishes", "daily_menus", "orders", "customers", "missed_sales", "option_groups"}
 
 PUBLIC_PREFIXES = ("/api/auth", "/api/superadmin", "/api/public", "/api/landing", "/api/admin", "/api/legal")
 LEGACY_PUBLIC_PREFIXES = ("/api/public/menu", "/public/menu")

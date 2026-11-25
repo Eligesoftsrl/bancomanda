@@ -21,10 +21,12 @@ import { it } from 'date-fns/locale';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useAppStore } from '../../src/store/appStore';
-import { menusApi, dishesApi, missedSalesApi, categoriesApi, tenantApi } from '../../src/services/api';
+import { menusApi, dishesApi, missedSalesApi, categoriesApi, tenantApi, optionGroupsApi } from '../../src/services/api';
 import { useAuthStore } from '../../src/store/authStore';
 import { escapeHtml } from '../../src/utils/escapeHtml';
-import { DailyMenu, Dish, MenuItem, Category } from '../../src/types';
+import { DailyMenu, Dish, MenuItem, Category, OptionGroup } from '../../src/types';
+import { TodayOptionsToggles } from '../../src/components/composable/TodayOptionsToggles';
+import { euro, fromPrice, groupsForDish, optionsSummary } from '../../src/utils/composition';
 import { sortCategoriesByFixedOrder, sortDishesByCategory, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { useFocusEffect } from 'expo-router';
 
@@ -65,6 +67,8 @@ export default function MenuScreen() {
   const [showEditItemModal, setShowEditItemModal] = useState(false);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
+  const [todayUnavailable, setTodayUnavailable] = useState<string[]>([]);
   const [portions, setPortions] = useState('');
   const [dailyPrice, setDailyPrice] = useState('');
   const [notes, setNotes] = useState('');
@@ -103,7 +107,8 @@ export default function MenuScreen() {
     if (!menu.published) { /* mostra menu.message */ return; }
     menu.sections.forEach(sec => {
       sec.items.forEach(p => {
-        /* p.name, p.price, p.tags, p.allergens, p.notes */
+        /* p.name, p.price, p.tags, p.allergens, p.notes
+           piatti componibili: p.priceFrom (prezzo "da"), p.optionGroups = [{ name, options: [{ name, price }] }] */
       });
     });
   });`;
@@ -184,6 +189,11 @@ export default function MenuScreen() {
       const dishesData = await dishesApi.getAll();
       setAllDishes(dishesData);
       setDishes(dishesData);
+      try {
+        setOptionGroups(await optionGroupsApi.getAll());
+      } catch (error) {
+        console.error('Error loading option groups:', error);
+      }
       
       // Load menu for selected date
       try {
@@ -242,7 +252,8 @@ export default function MenuScreen() {
       return;
     }
     
-    if (isNaN(priceNum) || priceNum <= 0) {
+    // Piatto componibile: prezzo di partenza anche 0 (lo danno le scelte)
+    if (isNaN(priceNum) || priceNum < 0 || (priceNum === 0 && !selectedDish.isComposable)) {
       showToast('Inserisci un prezzo valido', 'error');
       return;
     }
@@ -280,13 +291,19 @@ export default function MenuScreen() {
     
     if (dailyPrice) {
       const priceNum = parseFloat((dailyPrice || '').replace(',', '.'));
-      if (!isNaN(priceNum) && priceNum > 0) {
+      const composable = !!dishById(selectedItem.dishId)?.isComposable;
+      if (!isNaN(priceNum) && (priceNum > 0 || (composable && priceNum === 0)) && priceNum !== selectedItem.dailyPrice) {
         updates.dailyPrice = priceNum;
       }
     }
     
     if (notes !== selectedItem.notes) {
       updates.notes = notes;
+    }
+
+    const before = selectedItem.unavailableOptionIds || [];
+    if (before.length !== todayUnavailable.length || before.some((id) => !todayUnavailable.includes(id))) {
+      updates.unavailableOptionIds = todayUnavailable;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -339,8 +356,12 @@ export default function MenuScreen() {
     setSelectedDate(format(currentDate, 'yyyy-MM-dd'));
   };
 
+  const dishById = (id: string) => allDishes.find((d) => d.id === id);
+  const itemGroups = (item: MenuItem) => groupsForDish(dishById(item.dishId), optionGroups);
+
   const openEditModal = (item: MenuItem) => {
     setSelectedItem(item);
+    setTodayUnavailable(item.unavailableOptionIds || []);
     setPortions(item.portions.toString());
     setDailyPrice(item.dailyPrice.toString());
     setNotes(item.notes || '');
@@ -436,8 +457,9 @@ export default function MenuScreen() {
             <div class="menu-item">
               <span class="item-name">${escapeHtml(item.dishName)}</span>
               <span class="item-dots"></span>
-              <span class="item-price">${item.dailyPrice.toFixed(2)} €</span>
+              <span class="item-price">${itemGroups(item).length ? 'da ' + fromPrice(item.dailyPrice, itemGroups(item), item.unavailableOptionIds).toFixed(2) : item.dailyPrice.toFixed(2)} €</span>
             </div>
+            ${itemGroups(item).length ? `<div class="item-notes">${escapeHtml(optionsSummary(itemGroups(item), item.unavailableOptionIds))}</div>` : ''}
             ${item.notes ? `<div class="item-notes">${escapeHtml(item.notes)}</div>` : ''}
           `).join('')}
         </div>
@@ -938,11 +960,19 @@ export default function MenuScreen() {
                           </View>
                         )}
                       </View>
+                      {itemGroups(item).length > 0 && (
+                        <Text style={styles.menuItemComposable} testID={`menu-item-composable-${item.dishId}`}>
+                          Componibile · {itemGroups(item).map((g) => g.name).join(' + ')}
+                          {(item.unavailableOptionIds || []).length ? ` · ${(item.unavailableOptionIds || []).length} esauriti oggi` : ''}
+                        </Text>
+                      )}
                       {item.notes && (
                         <Text style={styles.menuItemNotes}>{item.notes}</Text>
                       )}
                       <View style={styles.menuItemDetails}>
-                        <Text style={styles.menuItemPrice}>{item.dailyPrice.toFixed(2)} €</Text>
+                        <Text style={styles.menuItemPrice}>
+                          {itemGroups(item).length ? `da ${euro(fromPrice(item.dailyPrice, itemGroups(item), item.unavailableOptionIds))}` : `${item.dailyPrice.toFixed(2)} €`}
+                        </Text>
                         <View style={[
                           styles.portionsBadge,
                           item.portions === 0 && styles.portionsBadgeEmpty,
@@ -1222,7 +1252,11 @@ export default function MenuScreen() {
                   multiline
                 />
 
-                <TouchableOpacity style={styles.primaryButton} onPress={handleUpdateItem}>
+                {itemGroups(selectedItem).length > 0 && (
+                  <TodayOptionsToggles groups={itemGroups(selectedItem)} unavailable={todayUnavailable} onChange={setTodayUnavailable} />
+                )}
+
+                <TouchableOpacity style={styles.primaryButton} onPress={handleUpdateItem} testID="menu-item-save-btn">
                   <Text style={styles.primaryButtonText}>Salva Modifiche</Text>
                 </TouchableOpacity>
               </>
@@ -1456,6 +1490,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1a202c',
+  },
+  menuItemComposable: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#00754A',
+    marginTop: 2,
   },
   menuItemNotes: {
     fontSize: 13,

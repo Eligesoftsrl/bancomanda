@@ -20,6 +20,7 @@ import { it } from 'date-fns/locale';
 import { useAppStore } from '../../src/store/appStore';
 import { customersApi } from '../../src/services/api';
 import { Customer, Order } from '../../src/types';
+import { compositionText } from '../../src/utils/composition';
 
 // Stessi colori della schermata Ordini
 const ORDER_STATUS_STYLE: Record<string, { label: string; bg: string; fg: string }> = {
@@ -438,7 +439,7 @@ export default function CustomersScreen() {
                     <View style={styles.orderHistoryItems}>
                       {order.items.map((item, idx) => (
                         <Text key={idx} style={styles.orderHistoryItem}>
-                          {item.quantity}x {item.dishName}
+                          {item.quantity}x {item.dishName}{item.composition?.length ? `: ${compositionText(item.composition)}` : ''}
                         </Text>
                       ))}
                     </View>

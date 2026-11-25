@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, Category } from '../types';
+import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, Category, OptionGroup, CompositionEntry } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { API_URL } from './config';
 
@@ -68,7 +68,7 @@ export const dishesApi = {
     return response.data;
   },
   
-  create: async (data: { name: string; description?: string; basePrice: number; categoryId?: string; isFavorite?: boolean; tags?: string[]; allergens?: string[] }): Promise<Dish> => {
+  create: async (data: { name: string; description?: string; basePrice: number; categoryId?: string; isFavorite?: boolean; tags?: string[]; allergens?: string[]; isComposable?: boolean; optionGroupIds?: string[] }): Promise<Dish> => {
     const response = await api.post('/dishes', data);
     return response.data;
   },
@@ -80,6 +80,27 @@ export const dishesApi = {
   
   deactivate: async (id: string): Promise<void> => {
     await api.delete(`/dishes/${id}`);
+  },
+};
+
+// Gruppi di scelta per i piatti componibili
+export type SelectionInput = { optionId: string; quantity: number };
+
+export const optionGroupsApi = {
+  getAll: async (): Promise<OptionGroup[]> => {
+    const response = await api.get('/option-groups');
+    return response.data;
+  },
+  create: async (data: Omit<OptionGroup, 'id'>): Promise<OptionGroup> => {
+    const response = await api.post('/option-groups', data);
+    return response.data;
+  },
+  update: async (id: string, data: Omit<OptionGroup, 'id'>): Promise<OptionGroup> => {
+    const response = await api.put(`/option-groups/${id}`, data);
+    return response.data;
+  },
+  remove: async (id: string): Promise<void> => {
+    await api.delete(`/option-groups/${id}`);
   },
 };
 
@@ -110,7 +131,7 @@ export const menusApi = {
     return response.data;
   },
   
-  updateItem: async (menuId: string, dishId: string, data: { portions?: number; dailyPrice?: number; notes?: string }): Promise<DailyMenu> => {
+  updateItem: async (menuId: string, dishId: string, data: { portions?: number; dailyPrice?: number; notes?: string; unavailableOptionIds?: string[] }): Promise<DailyMenu> => {
     const response = await api.put(`/menus/${menuId}/items/${dishId}`, data);
     return response.data;
   },
@@ -152,7 +173,7 @@ export const ordersApi = {
     return response.data;
   },
   
-  addItem: async (orderId: string, data: { dishId?: string; dishName?: string; quantity: number; customPrice?: number }): Promise<Order> => {
+  addItem: async (orderId: string, data: { dishId?: string; dishName?: string; quantity: number; customPrice?: number; notes?: string; selections?: SelectionInput[] }): Promise<Order> => {
     const response = await api.post(`/orders/${orderId}/items`, data);
     return response.data;
   },
@@ -170,7 +191,7 @@ export const ordersApi = {
   updateItemByIndex: async (
     orderId: string,
     itemIndex: number,
-    data: { quantity?: number; notes?: string; dishName?: string; unitPrice?: number }
+    data: { quantity?: number; notes?: string; dishName?: string; unitPrice?: number; sendToKitchen?: boolean; selections?: SelectionInput[] }
   ): Promise<Order> => {
     const response = await api.patch(`/orders/${orderId}/items/by-index/${itemIndex}`, data);
     return response.data;
@@ -315,6 +336,7 @@ export interface KitchenEntry {
   notes: string;
   itemStatus: string;
   isCustomItem: boolean;
+  composition?: CompositionEntry[];
 }
 export interface KitchenGroup {
   dishName: string;

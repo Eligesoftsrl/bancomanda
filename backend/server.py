@@ -33,6 +33,7 @@ from tenancy import ScopedDatabase, TenantContextMiddleware
 from tenant_profile import FtpNotConfigured, current_tenant_doc, encrypt_secret, ftp_config, ftp_error_message, ftp_upload_menu_json, logo_data_url, menu_message
 from auth.jwt_handler import hash_password
 from auth.dependencies import CurrentUser, require_roles
+from composable import CompositionEntry, Selection, build_composition, composition_extra, load_groups, public_options, validate_group_ids
 
 # Collezioni dati filtrate automaticamente per locale (vedi tenancy.py)
 db = ScopedDatabase(raw_db)
@@ -81,6 +82,8 @@ async def root_landing():
 # Admin dashboard
 from routes.admin_dashboard import router as admin_dashboard_router
 api_router.include_router(admin_dashboard_router)
+from composable import router as composable_router
+api_router.include_router(composable_router)
 
 # Configure logging
 logging.basicConfig(
@@ -130,15 +133,19 @@ class DishBase(BaseModel):
     isFavorite: bool = False  # Piatti preferiti
     tags: List[str] = []       # Es: "senza_glutine", "vegetariano", "piccante"
     allergens: List[str] = []  # Es: "glutine", "latte", "uova" (Reg. UE 1169/2011)
+    isComposable: bool = False       # Piatto componibile (es. base + proteine)
+    optionGroupIds: List[str] = []   # Gruppi di scelta collegati, in ordine
 
 class DishCreate(BaseModel):
     name: str
     description: Optional[str] = ""
-    basePrice: float
+    basePrice: float = Field(..., ge=0)
     categoryId: Optional[str] = None
     isFavorite: bool = False
     tags: List[str] = []
     allergens: List[str] = []
+    isComposable: bool = False
+    optionGroupIds: List[str] = []
 
 class DishUpdate(BaseModel):
     name: Optional[str] = None
@@ -149,6 +156,8 @@ class DishUpdate(BaseModel):
     isFavorite: Optional[bool] = None
     tags: Optional[List[str]] = None
     allergens: Optional[List[str]] = None
+    isComposable: Optional[bool] = None
+    optionGroupIds: Optional[List[str]] = None
 
 class Dish(DishBase):
     id: str
@@ -168,11 +177,13 @@ class MenuItemBase(BaseModel):
     initialPortions: Optional[int] = None  # Porzioni iniziali (per tracciamento)
     dailyPrice: float
     notes: Optional[str] = ""
+    unavailableOptionIds: List[str] = []  # Ingredienti "esauriti oggi" (piatti componibili)
 
 class MenuItemUpdate(BaseModel):
     portions: Optional[int] = None
     dailyPrice: Optional[float] = None
     notes: Optional[str] = None
+    unavailableOptionIds: Optional[List[str]] = None
 
 # Menu Giornaliero (Daily Menu)
 class DailyMenuBase(BaseModel):
@@ -209,6 +220,7 @@ class OrderItemBase(BaseModel):
     sendToKitchen: bool = False
     portionStatuses: List[str] = []  # 1 stato per porzione (lunghezza = quantity)
     notes: Optional[str] = ""
+    composition: List[CompositionEntry] = []  # Scelte del piatto componibile (fotografia di nomi e prezzi)
 
 # Ordini (Orders)
 class OrderBase(BaseModel):
@@ -250,6 +262,7 @@ class OrderAddItem(BaseModel):
     quantity: int
     customPrice: Optional[float] = None  # Prezzo personalizzato (opzionale)
     notes: Optional[str] = ""  # Note per singola voce
+    selections: Optional[List[Selection]] = None  # Scelte per i piatti componibili
 
 class OrderUpdateStatus(BaseModel):
     status: str
@@ -264,6 +277,7 @@ class OrderItemUpdate(BaseModel):
     dishName: Optional[str] = None     # solo per piatti liberi
     unitPrice: Optional[float] = None  # solo per piatti liberi
     sendToKitchen: Optional[bool] = None  # flag "manda in cucina" (per tutti i piatti)
+    selections: Optional[List[Selection]] = None  # nuova composizione (piatti componibili)
 
 class Order(OrderBase):
     id: str
@@ -366,9 +380,20 @@ async def delete_category(category_id: str):
 
 # ============ ROUTES - DISHES ============
 
+async def _check_composable(data: dict):
+    """Un piatto componibile deve avere almeno un gruppo di scelta valido del locale."""
+    if not data.get("isComposable"):
+        data["optionGroupIds"] = []
+        return
+    data["optionGroupIds"] = await validate_group_ids(db, list(dict.fromkeys(data.get("optionGroupIds") or [])))
+    if not data["optionGroupIds"]:
+        raise HTTPException(status_code=400, detail="Scegli almeno un gruppo di scelta per il piatto componibile")
+
+
 @api_router.post("/dishes", response_model=Dish)
 async def create_dish(dish: DishCreate):
     dish_dict = dish.dict()
+    await _check_composable(dish_dict)
     dish_dict["active"] = True
     dish_dict["createdAt"] = datetime.utcnow()
     
@@ -413,6 +438,14 @@ async def update_dish(dish_id: str, dish_update: DishUpdate):
     update_data = {k: v for k, v in dish_update.dict().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
+    if update_data.get("basePrice", 0) < 0:
+        raise HTTPException(status_code=400, detail="Prezzo non valido")
+    if "isComposable" in update_data or "optionGroupIds" in update_data:
+        current = await db.dishes.find_one({"_id": ObjectId(dish_id)}) or {}
+        merged = {"isComposable": update_data.get("isComposable", current.get("isComposable", False)),
+                  "optionGroupIds": update_data.get("optionGroupIds", current.get("optionGroupIds", []))}
+        await _check_composable(merged)
+        update_data.update(merged)
     
     # Get category name if categoryId is being updated
     if "categoryId" in update_data:
@@ -554,6 +587,8 @@ async def update_menu_item(menu_id: str, dish_id: str, item_update: MenuItemUpda
         update_fields["items.$.dailyPrice"] = item_update.dailyPrice
     if item_update.notes is not None:
         update_fields["items.$.notes"] = item_update.notes
+    if item_update.unavailableOptionIds is not None:
+        update_fields["items.$.unavailableOptionIds"] = list(dict.fromkeys(item_update.unavailableOptionIds))
     
     if not update_fields:
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
@@ -676,13 +711,22 @@ async def _build_public_payload(menu: Optional[dict], target_date: str) -> dict:
                 dish = dish_map.get(item.get("dishId") or "")
                 tags = (dish or {}).get("tags") or []
                 allergens = (dish or {}).get("allergens") or []
-                items.append({
+                entry = {
                     "name": item.get("dishName"),
                     "price": round(float(item.get("dailyPrice", 0)), 2),
                     "tags": list(tags),
                     "allergens": list(allergens),
                     "notes": (item.get("notes") or "").strip(),
-                })
+                }
+                if (dish or {}).get("isComposable"):
+                    # Piatto componibile: prezzo "da" + elenco delle scelte disponibili oggi
+                    groups = await load_groups(db, dish.get("optionGroupIds", []))
+                    floor, public_groups, text = public_options(groups, item.get("unavailableOptionIds") or [])
+                    entry["price"] = round(entry["price"] + floor, 2)
+                    entry["priceFrom"] = True
+                    entry["optionGroups"] = public_groups
+                    entry["notes"] = " · ".join(x for x in (text, entry["notes"]) if x)
+                items.append(entry)
 
         # Per sezioni "fixed", mostra sempre tutti i piatti della categoria (anche se menu non pubblicato)
         # purché siano "preferiti" (isFavorite=True) → policy di default per piatti fissi del locale.
@@ -899,8 +943,17 @@ async def add_order_item(order_id: str, item: OrderAddItem):
             detail=f"Porzioni insufficienti. Disponibili: {menu_item['portions']}"
         )
     
-    # Usa prezzo personalizzato se fornito, altrimenti prezzo del menu
-    unit_price = item.customPrice if item.customPrice is not None else menu_item["dailyPrice"]
+    # Piatto componibile: regole dei gruppi e prezzo calcolati qui, mai dal client
+    composition, extra = [], 0.0
+    dish = await db.dishes.find_one({"_id": ObjectId(item.dishId)})
+    if dish and dish.get("isComposable"):
+        groups = await load_groups(db, dish.get("optionGroupIds", []))
+        composition, extra = build_composition(groups, item.selections or [], menu_item.get("unavailableOptionIds") or [])
+    elif item.selections:
+        raise HTTPException(status_code=400, detail="Questo piatto non è componibile")
+
+    # Usa prezzo personalizzato se fornito, altrimenti prezzo del menu (+ scelte)
+    unit_price = item.customPrice if item.customPrice is not None else round(menu_item["dailyPrice"] + extra, 2)
     subtotal = unit_price * item.quantity
     
     # Create order item
@@ -913,7 +966,8 @@ async def add_order_item(order_id: str, item: OrderAddItem):
         "isCustomItem": False,
         "itemStatus": "pending",
         "portionStatuses": ["pending"] * item.quantity,
-        "notes": item.notes or ""
+        "notes": item.notes or "",
+        "composition": composition,
     }
     
     # Se il prezzo è stato modificato, logga
@@ -1084,6 +1138,20 @@ async def update_order_item(order_id: str, item_index: int, update: OrderItemUpd
                 status_code=400,
                 detail="Su un piatto da menu si possono modificare solo quantità e note"
             )
+
+    # Nuova composizione: il supplemento cambia, il prezzo di partenza (e ritocchi manuali) resta
+    if update.selections is not None:
+        dish = await db.dishes.find_one({"_id": ObjectId(item["dishId"])}) if item.get("dishId") else None
+        if not dish or not dish.get("isComposable"):
+            raise HTTPException(status_code=400, detail="Questo piatto non è componibile")
+        menu = await db.daily_menus.find_one({"date": order["menuDate"]}) or {}
+        menu_item = next((mi for mi in menu.get("items", []) if mi["dishId"] == item["dishId"]), {})
+        old = item.get("composition") or []
+        groups = await load_groups(db, dish.get("optionGroupIds", []))
+        composition, extra = build_composition(groups, update.selections, menu_item.get("unavailableOptionIds") or [],
+                                               keep_ids={c["optionId"] for c in old})
+        item["unitPrice"] = round(item["unitPrice"] - composition_extra(old) + extra, 2)
+        item["composition"] = composition
 
     # Flag "manda in cucina" (consentito per tutti)
     # Se stiamo ATTIVANDO il flag (era false, diventa true), resettiamo TUTTE le porzioni a 'pending':
@@ -1611,6 +1679,7 @@ async def get_kitchen_items(menu_date: str):
                 "notes": item.get("notes") or "",
                 "itemStatus": item.get("itemStatus", "pending"),
                 "isCustomItem": item.get("isCustomItem", False),
+                "composition": item.get("composition") or [],
             })
 
     # Ordina i gruppi per nome piatto; entries ordinati per orario consegna (vuote in fondo)
@@ -1672,6 +1741,7 @@ async def get_porzionatura_items(menu_date: str):
                 "notes": item.get("notes") or "",
                 "itemStatus": item.get("itemStatus", "pending"),
                 "isCustomItem": item.get("isCustomItem", False),
+                "composition": item.get("composition") or [],
             })
 
     # Ordina gruppi per nome; entries per orario consegna crescente (vuote in fondo)
@@ -2180,7 +2250,7 @@ async def public_menu_html():
                 tags_html = " ".join(f'<span class="tag">{esc(t)}</span>' for t in it["tags"])
                 tags_badge = f'<span class="tags">{tags_html}</span>'
             notes = f'<div class="notes">{esc(it["notes"])}</div>' if it["notes"] else ""
-            price_fmt = f"€ {it['price']:.2f}".replace(".", ",")
+            price_fmt = ("da " if it.get("priceFrom") else "") + f"€ {it['price']:.2f}".replace(".", ",")
             items_html += f"""
                 <div class="item">
                     <div class="item-line">
@@ -2323,6 +2393,7 @@ async def ensure_tenant_indexes():
         ("tenants", [("slug", 1)], {"unique": True}),
         ("daily_menus", [("tenant_id", 1), ("date", 1)], {"unique": True}),
         ("orders", [("tenant_id", 1), ("menuDate", 1)], {}),
+        ("option_groups", [("tenant_id", 1)], {}),
         ("users", [("email", 1)], {"unique": True}),
         ("demo_requests", [("created_at", 1)], {"expireAfterSeconds": 730 * 24 * 3600}),
         ("login_attempts", [("identifier", 1)], {}),

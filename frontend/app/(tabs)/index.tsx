@@ -26,8 +26,10 @@ import * as Sharing from 'expo-sharing';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../../src/store/appStore';
-import { ordersApi, menusApi, customersApi, categoriesApi } from '../../src/services/api';
-import { Order, MenuItem, Customer, Category } from '../../src/types';
+import { ordersApi, menusApi, customersApi, categoriesApi, dishesApi, optionGroupsApi } from '../../src/services/api';
+import { Order, MenuItem, Customer, Category, Dish, OptionGroup, Selections } from '../../src/types';
+import { DishComposer } from '../../src/components/composable/DishComposer';
+import { compositionText, euro, groupsForDish, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
 import { sortCategoriesByFixedOrder, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { TimePickerInline } from '../../src/components/TimePickerInline';
 
@@ -154,6 +156,11 @@ export default function OrdersScreen() {
   const [editShowCustomerPicker, setEditShowCustomerPicker] = useState(false);
   const [editCustomerSearchQuery, setEditCustomerSearchQuery] = useState('');
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
+  // Piatti componibili: anagrafica piatti/gruppi e scelte in corso
+  const [dishMap, setDishMap] = useState<Record<string, Dish>>({});
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
+  const [composerSel, setComposerSel] = useState<Selections>({});
+  const [itemEditSel, setItemEditSel] = useState<Selections>({});
   const [itemQuantity, setItemQuantity] = useState('1');
   const [itemCustomPrice, setItemCustomPrice] = useState<string>(''); // Prezzo personalizzato
   const [itemNotes, setItemNotes] = useState(''); // Note per singola voce
@@ -301,16 +308,27 @@ export default function OrdersScreen() {
     }
     
     const customer = customers.find(c => c.id === order.customerId);
-    const itemCount = order.items.length;
+    // Peso in righe: le scelte dei piatti componibili occupano mezza riga ciascuna
+    const weightOf = (it: typeof order.items[number]) => 1 + (it.composition?.length || 0) * 0.5;
+    const itemCount = Math.ceil(order.items.reduce((acc, it) => acc + weightOf(it), 0));
 
-    // Split: oltre 10 piatti → divide su più etichette (max 10 piatti per etichetta)
+    // Split: oltre 10 righe → divide su più etichette (max 10 righe per etichetta)
     const ITEMS_PER_LABEL = 10;
     const needsSplit = itemCount > ITEMS_PER_LABEL;
-    const totalPages = needsSplit ? Math.ceil(itemCount / ITEMS_PER_LABEL) : 1;
     const itemPages: typeof order.items[] = [];
-    for (let i = 0; i < totalPages; i++) {
-      itemPages.push(order.items.slice(i * ITEMS_PER_LABEL, (i + 1) * ITEMS_PER_LABEL));
-    }
+    let page: typeof order.items = [];
+    let pageWeight = 0;
+    order.items.forEach((it) => {
+      if (page.length && pageWeight + weightOf(it) > ITEMS_PER_LABEL) {
+        itemPages.push(page);
+        page = [];
+        pageWeight = 0;
+      }
+      page.push(it);
+      pageWeight += weightOf(it);
+    });
+    if (page.length || !itemPages.length) itemPages.push(page);
+    const totalPages = itemPages.length;
 
     // Scala adattiva: riduce i font per stare in 100mm quando NON splittiamo
     // 1-5 piatti → 1.0, 6 → 0.92, 7-8 → 0.82, 9-10 → 0.72
@@ -352,6 +370,7 @@ export default function OrdersScreen() {
               <span class="item-name">${item.quantity}x ${escapeHtml(item.dishName)}</span>
               <span class="item-price">${item.subtotal.toFixed(2)}€</span>
             </div>
+            ${(item.composition || []).map((c, ci) => `<div class="item-note">${ci > 0 && c.groupId !== item.composition![0].groupId ? '+ ' : ''}${escapeHtml(c.name)}${c.quantity > 1 ? ` ×${c.quantity}` : ''}</div>`).join('')}
             ${item.notes ? `<div class="item-note">&gt; ${escapeHtml(item.notes)}</div>` : ''}
           </div>
         `).join('')}
@@ -560,6 +579,15 @@ export default function OrdersScreen() {
         console.error('Error loading categories:', error);
       }
       
+      // Piatti e gruppi di scelta (per i piatti componibili)
+      try {
+        const [allDishes, groups] = await Promise.all([dishesApi.getAll(false), optionGroupsApi.getAll()]);
+        setDishMap(Object.fromEntries(allDishes.map((d) => [d.id, d])));
+        setOptionGroups(groups);
+      } catch (error) {
+        console.error('Error loading option groups:', error);
+      }
+      
       // Load menu for selected date
       try {
         const menu = await menusApi.getByDate(selectedDate);
@@ -742,6 +770,8 @@ export default function OrdersScreen() {
 
     // Prezzo personalizzato (se specificato)
     const customPrice = itemCustomPrice ? parseFloat(itemCustomPrice.replace(',', '.')) : undefined;
+    const composerGroups = groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups);
+    if (composerGroups.length && selectionError(composerGroups, composerSel)) return;
 
     try {
       const updatedOrder = await ordersApi.addItem(selectedOrder.id, {
@@ -749,6 +779,7 @@ export default function OrdersScreen() {
         quantity: qty,
         customPrice: customPrice,
         notes: itemNotes || undefined,
+        selections: composerGroups.length ? toSelectionList(composerSel) : undefined,
       });
       
       // Update orders list
@@ -760,6 +791,7 @@ export default function OrdersScreen() {
       setCurrentMenu(menu);
       
       setSelectedMenuItem(null);
+      setComposerSel({});
       setItemQuantity('1');
       setItemCustomPrice('');
       setItemNotes('');
@@ -848,6 +880,7 @@ export default function OrdersScreen() {
     setItemEditNotes(it.notes || '');
     setItemEditName(it.dishName || '');
     setItemEditPrice(String(it.unitPrice ?? ''));
+    setItemEditSel(selectionsFrom(it.composition));
   };
 
   const cancelEditItem = () => {
@@ -866,10 +899,19 @@ export default function OrdersScreen() {
       showToast('Quantità non valida', 'error');
       return;
     }
-    const payload: { quantity?: number; notes?: string; dishName?: string; unitPrice?: number } = {
+    const payload: Parameters<typeof ordersApi.updateItemByIndex>[2] = {
       quantity: qty,
       notes: itemEditNotes,
     };
+    const editGroups = it.dishId ? groupsForDish(dishMap[it.dishId], optionGroups) : [];
+    if (editGroups.length) {
+      const err = selectionError(editGroups, itemEditSel);
+      if (err) {
+        showToast(err, 'error');
+        return;
+      }
+      payload.selections = toSelectionList(itemEditSel);
+    }
     if (it.isCustomItem) {
       if (!itemEditName.trim()) {
         showToast('Nome piatto richiesto', 'error');
@@ -1211,6 +1253,9 @@ export default function OrdersScreen() {
                           {order.items.map((item, idx) => (
                             <Text key={`${order.id}-item-${idx}`} style={styles.orderItemLine} numberOfLines={2}>
                               • {item.quantity}x {item.dishName}
+                              {!!item.composition?.length && (
+                                <Text style={styles.orderItemNoteInline}>: {compositionText(item.composition)}</Text>
+                              )}
                               {!!item.notes && (
                                 <Text style={styles.orderItemNoteInline}> ({item.notes})</Text>
                               )}
@@ -1926,6 +1971,20 @@ export default function OrdersScreen() {
                               </View>
                             )}
                           </View>
+                          {!!item.dishId && groupsForDish(dishMap[item.dishId], optionGroups).length > 0 && (
+                            <>
+                              <Text style={styles.itemEditLabel}>
+                                Composizione · {euro(item.unitPrice - selectionExtra(groupsForDish(dishMap[item.dishId], optionGroups), selectionsFrom(item.composition)) + selectionExtra(groupsForDish(dishMap[item.dishId], optionGroups), itemEditSel))} cad.
+                              </Text>
+                              <DishComposer
+                                groups={groupsForDish(dishMap[item.dishId], optionGroups)}
+                                value={itemEditSel}
+                                onChange={setItemEditSel}
+                                unavailable={currentMenu?.items.find((mi) => mi.dishId === item.dishId)?.unavailableOptionIds || []}
+                                keepIds={(item.composition || []).map((c) => c.optionId)}
+                              />
+                            </>
+                          )}
                           <Text style={styles.itemEditLabel}>Note</Text>
                           <TextInput
                             style={[styles.itemEditInput, styles.itemEditTextarea]}
@@ -1966,6 +2025,11 @@ export default function OrdersScreen() {
                                 </View>
                               )}
                             </View>
+                            {!!item.composition?.length && (
+                              <Text style={styles.orderItemComposition} testID={`order-item-composition-${index}`}>
+                                {compositionText(item.composition)}
+                              </Text>
+                            )}
                             {item.notes ? (
                               <Text style={styles.orderItemNotes}>📝 {item.notes}</Text>
                             ) : null}
@@ -2328,22 +2392,32 @@ export default function OrdersScreen() {
                     return Object.entries(groupedItems).map(([categoryName, items]) => (
                       <View key={categoryName}>
                         <Text style={styles.menuCategoryTitle}>{categoryName}</Text>
-                        {items.map((item, index) => (
+                        {items.map((item, index) => {
+                          const itemGroups = groupsForDish(dishMap[item.dishId], optionGroups);
+                          const isSelected = selectedMenuItem?.dishId === item.dishId;
+                          return (
+                          <React.Fragment key={`menu-${item.dishId}-${index}`}>
                           <TouchableOpacity
-                            key={`menu-${item.dishId}-${index}`}
                             style={[
                               styles.menuItemCard,
-                              selectedMenuItem?.dishId === item.dishId && styles.menuItemCardSelected,
+                              isSelected && styles.menuItemCardSelected,
                               item.portions === 0 && styles.menuItemCardDisabled,
                             ]}
-                            onPress={() => item.portions > 0 && setSelectedMenuItem(
-                              selectedMenuItem?.dishId === item.dishId ? null : item
-                            )}
+                            onPress={() => {
+                              if (item.portions <= 0) return;
+                              setComposerSel({});
+                              setSelectedMenuItem(isSelected ? null : item);
+                            }}
                             disabled={item.portions === 0}
+                            testID={`order-menu-item-${item.dishId}`}
                           >
                             <View style={styles.menuItemInfo}>
                               <Text style={styles.menuItemName}>{item.dishName}</Text>
-                              <Text style={styles.menuItemPrice}>{item.dailyPrice.toFixed(2)} €</Text>
+                              {itemGroups.length > 0 ? (
+                                <Text style={styles.menuItemPrice}>Componi · {itemGroups.map((g) => g.name).join(' + ')}</Text>
+                              ) : (
+                                <Text style={styles.menuItemPrice}>{item.dailyPrice.toFixed(2)} €</Text>
+                              )}
                             </View>
                             <View style={[
                               styles.portionsBadge,
@@ -2354,13 +2428,15 @@ export default function OrdersScreen() {
                                 {item.portions === 0 ? 'Esaurito' : `${item.portions} porz.`}
                               </Text>
                             </View>
-                            {selectedMenuItem?.dishId === item.dishId && (
+                            {isSelected && (
                               <View style={styles.selectedCheckmark}>
                                 <Ionicons name="checkmark-circle" size={24} color="#00754A" />
                               </View>
                             )}
                           </TouchableOpacity>
-                        ))}
+                          </React.Fragment>
+                          );
+                        })}
                       </View>
                     ));
                   })()}
@@ -2376,14 +2452,25 @@ export default function OrdersScreen() {
                     {selectedMenuItem.dishName}
                   </Text>
                   <View style={styles.footerItemRight}>
-                    <Text style={styles.footerItemPrice}>
-                      {selectedMenuItem.dailyPrice.toFixed(2)} €
+                    <Text style={styles.footerItemPrice} testID="order-footer-price">
+                      {(selectedMenuItem.dailyPrice + selectionExtra(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel)).toFixed(2)} €
                     </Text>
                     <Text style={styles.footerAvailableText}>
                       disp. {selectedMenuItem.portions}
                     </Text>
                   </View>
                 </View>
+                {/* Piatto componibile: scelte dentro il footer, sempre visibili */}
+                {groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups).length > 0 && (
+                  <ScrollView style={styles.footerComposerScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                    <DishComposer
+                      groups={groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups)}
+                      value={composerSel}
+                      onChange={setComposerSel}
+                      unavailable={selectedMenuItem.unavailableOptionIds || []}
+                    />
+                  </ScrollView>
+                )}
                 {/* Footer Controls - Layout verticale per mobile */}
                 <View style={styles.footerControlsVertical}>
                   {/* Prima riga: Prezzo e Quantità */}
@@ -2394,7 +2481,7 @@ export default function OrdersScreen() {
                         style={styles.footerPriceInput}
                         value={itemCustomPrice}
                         onChangeText={setItemCustomPrice}
-                        placeholder={selectedMenuItem.dailyPrice.toFixed(2)}
+                        placeholder={(selectedMenuItem.dailyPrice + selectionExtra(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel)).toFixed(2)}
                         placeholderTextColor="#888"
                         keyboardType="decimal-pad"
                       />
@@ -2434,8 +2521,19 @@ export default function OrdersScreen() {
                     placeholder="Note (es: senza sale, ben cotto...)"
                     placeholderTextColor="#888"
                   />
+                  {/* Piatto componibile: cosa manca ancora */}
+                  {!!selectionError(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel) && (
+                    <Text style={styles.footerComposerError} testID="order-composer-error">
+                      {selectionError(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel)}
+                    </Text>
+                  )}
                   {/* Seconda riga: Pulsante Aggiungi */}
-                  <TouchableOpacity style={styles.footerAddButtonFull} onPress={handleAddItem}>
+                  <TouchableOpacity
+                    style={[styles.footerAddButtonFull, !!selectionError(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel) && { opacity: 0.5 }]}
+                    onPress={handleAddItem}
+                    disabled={!!selectionError(groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), composerSel)}
+                    testID="order-confirm-dish-btn"
+                  >
                     <Ionicons name="checkmark-circle" size={22} color="#fff" />
                     <Text style={styles.footerAddButtonText}>Conferma Piatto</Text>
                   </TouchableOpacity>
@@ -3598,6 +3696,21 @@ const styles = StyleSheet.create({
   },
   orderItemInfo: {
     flex: 1,
+  },
+  orderItemComposition: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#00754A',
+    marginTop: 2,
+  },
+  footerComposerScroll: {
+    maxHeight: 320,
+  },
+  footerComposerError: {
+    color: '#B45309',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   orderItemName: {
     color: '#1a202c',

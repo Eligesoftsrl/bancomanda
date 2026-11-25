@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../src/store/appStore';
-import { dishesApi, categoriesApi } from '../../src/services/api';
+import { dishesApi, categoriesApi , optionGroupsApi } from '../../src/services/api';
 import { Dish, Category } from '../../src/types';
 import { sortCategoriesByFixedOrder, sortDishesByCategory } from '../../src/utils/categoryOrder';
 import { DishLabelsPicker } from '../../src/components/DishLabelsPicker';
@@ -44,6 +44,11 @@ const Toast = ({ visible, message, type, onHide }: { visible: boolean; message: 
     </Animated.View>
   );
 };
+
+import { OptionGroupsManager } from '../../src/components/composable/OptionGroupsManager';
+import { ComposableDishFields } from '../../src/components/composable/ComposableDishFields';
+import { OptionGroup } from '../../src/types';
+import { fromPrice, groupsForDish, euro } from '../../src/utils/composition';
 
 export default function DishesScreen() {
   const { dishes, setDishes } = useAppStore();
@@ -78,6 +83,10 @@ export default function DishesScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [allergens, setAllergens] = useState<string[]>([]);
+  const [isComposable, setIsComposable] = useState(false);
+  const [optionGroupIds, setOptionGroupIds] = useState<string[]>([]);
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
+  const [showGroupsModal, setShowGroupsModal] = useState(false);
   
   // Category form state
   const [categoryName, setCategoryName] = useState('');
@@ -98,6 +107,7 @@ export default function DishesScreen() {
       ]);
       setDishes(dishesData);
       setCategories(categoriesData);
+      setOptionGroups(await optionGroupsApi.getAll());
     } catch (error) {
       console.error('Error loading data:', error);
       showToast('Impossibile caricare i dati', 'error');
@@ -124,6 +134,8 @@ export default function DishesScreen() {
     setIsFavorite(false);
     setTags([]);
     setAllergens([]);
+    setIsComposable(false);
+    setOptionGroupIds([]);
     setEditingDish(null);
   };
 
@@ -147,6 +159,8 @@ export default function DishesScreen() {
     setIsFavorite(dish.isFavorite || false);
     setTags(dish.tags || []);
     setAllergens(dish.allergens || []);
+    setIsComposable(!!dish.isComposable);
+    setOptionGroupIds(dish.optionGroupIds || []);
     setShowDishModal(true);
   };
 
@@ -169,9 +183,14 @@ export default function DishesScreen() {
       return;
     }
 
-    const price = parseFloat((basePrice || '').replace(',', '.'));
-    if (isNaN(price) || price <= 0) {
+    // Piatto componibile: il prezzo di partenza può essere 0 (lo danno le scelte)
+    const price = parseFloat((basePrice || (isComposable ? '0' : '')).replace(',', '.'));
+    if (isNaN(price) || price < 0 || (price === 0 && !isComposable)) {
       showToast('Inserisci un prezzo valido', 'error');
+      return;
+    }
+    if (isComposable && optionGroupIds.length === 0) {
+      showToast('Scegli almeno un gruppo di scelta', 'error');
       return;
     }
 
@@ -185,6 +204,8 @@ export default function DishesScreen() {
           isFavorite,
           tags,
           allergens,
+          isComposable,
+          optionGroupIds,
         });
         setDishes(dishes.map(d => d.id === updated.id ? updated : d));
         showToast('Piatto aggiornato');
@@ -197,6 +218,8 @@ export default function DishesScreen() {
           isFavorite,
           tags,
           allergens,
+          isComposable,
+          optionGroupIds,
         });
         setDishes([newDish, ...dishes]);
         showToast('Piatto creato');
@@ -353,6 +376,10 @@ export default function DishesScreen() {
             <Ionicons name="pricetag" size={16} color="#fff" />
             <Text style={styles.categoryButtonText}>Categorie</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.categoryButton, { backgroundColor: '#00754A' }]} onPress={() => setShowGroupsModal(true)} testID="dishes-option-groups-button">
+            <Ionicons name="layers" size={16} color="#fff" />
+            <Text style={styles.categoryButtonText}>Gruppi</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.addButton} onPress={openCreateDishModal} testID="dishes-new-button">
             <Ionicons name="add" size={18} color="#fff" />
             <Text style={styles.addButtonText}>Nuovo</Text>
@@ -444,9 +471,20 @@ export default function DishesScreen() {
                   )}
 
                   <DishLabelsSummary tags={dish.tags} allergens={dish.allergens} dishId={dish.id} />
+
+                  {dish.isComposable && (
+                    <View style={styles.composableBadge} testID={`dish-composable-badge-${dish.id}`}>
+                      <Ionicons name="layers" size={14} color="#00754A" />
+                      <Text style={styles.composableBadgeText}>
+                        Componibile · {groupsForDish(dish, optionGroups).map(g => g.name).join(' + ') || 'nessun gruppo'}
+                      </Text>
+                    </View>
+                  )}
                   
                   <View style={styles.dishPriceRow}>
-                    <Text style={styles.dishPrice}>{dish.basePrice.toFixed(2)} €</Text>
+                    <Text style={styles.dishPrice}>
+                      {dish.isComposable ? `da ${euro(fromPrice(dish.basePrice, groupsForDish(dish, optionGroups)))}` : `${dish.basePrice.toFixed(2)} €`}
+                    </Text>
                     {dish.isFavorite && (
                       <Text style={styles.favoriteText}>Auto Menu</Text>
                     )}
@@ -572,7 +610,7 @@ export default function DishesScreen() {
                 multiline
               />
 
-              <Text style={styles.inputLabel}>Prezzo Base (€) *</Text>
+              <Text style={styles.inputLabel}>{isComposable ? 'Prezzo di partenza (€) · 0 se lo danno le scelte' : 'Prezzo Base (€) *'}</Text>
               <TextInput
                 style={styles.textInput}
                 value={basePrice}
@@ -603,6 +641,14 @@ export default function DishesScreen() {
                 </View>
               </TouchableOpacity>
 
+              <ComposableDishFields
+                enabled={isComposable}
+                groupIds={optionGroupIds}
+                groups={optionGroups}
+                onToggle={() => setIsComposable(!isComposable)}
+                onChangeGroups={setOptionGroupIds}
+              />
+
               <DishLabelsPicker
                 tags={tags}
                 allergens={allergens}
@@ -620,6 +666,13 @@ export default function DishesScreen() {
           </View>
         </View>
       </Modal>
+
+      <OptionGroupsManager
+        visible={showGroupsModal}
+        groups={optionGroups}
+        onClose={() => setShowGroupsModal(false)}
+        onChanged={setOptionGroups}
+      />
 
       {/* Category Modal */}
       <Modal visible={showCategoryModal} animationType="slide" transparent>
@@ -1124,6 +1177,22 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     marginLeft: 8,
+  },
+  composableBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: '#EAF6F0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginTop: 6,
+  },
+  composableBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#00754A',
   },
   dishPriceRow: {
     flexDirection: 'row',

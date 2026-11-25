@@ -18,8 +18,41 @@ export interface Dish {
   isFavorite: boolean;
   tags?: string[];
   allergens?: string[];
+  isComposable?: boolean;
+  optionGroupIds?: string[];
   createdAt: string;
 }
+
+// Piatti componibili: gruppi di scelta (es. Base, Proteine)
+export interface OptionItem {
+  id?: string;
+  name: string;
+  price: number;
+  allergens: string[];
+  active: boolean;
+}
+
+export interface OptionGroup {
+  id: string;
+  name: string;
+  minSelect: number;
+  maxSelect: number | null;  // null = nessun limite
+  allowRepeat: boolean;
+  options: OptionItem[];
+  order: number;
+}
+
+export interface CompositionEntry {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+// optionId -> quantità scelta
+export type Selections = Record<string, number>;
 
 export interface MenuItem {
   dishId: string;
@@ -30,6 +63,7 @@ export interface MenuItem {
   initialPortions?: number;  // Porzioni iniziali per tracciamento
   dailyPrice: number;
   notes: string;
+  unavailableOptionIds?: string[];  // ingredienti esauriti oggi
 }
 
 export interface DailyMenu {
@@ -51,6 +85,7 @@ export interface OrderItem {
   isCustomItem?: boolean;
   sendToKitchen?: boolean;
   notes?: string;
+  composition?: CompositionEntry[];
 }
 
 export interface Order {
