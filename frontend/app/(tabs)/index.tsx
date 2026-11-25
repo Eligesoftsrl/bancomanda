@@ -971,7 +971,7 @@ export default function OrdersScreen() {
         style={styles.ordersSearchInput}
         value={orderSearchQuery}
         onChangeText={setOrderSearchQuery}
-        placeholder="Cerca ordine per nome cliente..."
+        placeholder="Cerca cliente..."
         placeholderTextColor={C.muted}
         autoCapitalize="none"
         autoCorrect={false}
@@ -1007,7 +1007,7 @@ export default function OrdersScreen() {
         onSync={silentSync}
         selectedDate={selectedDate}
         onChangeDate={changeDate}
-        compact={isSmallScreen}
+        compact={contentWidth < 900}
         sidebar={wide}
       />
 
@@ -1111,7 +1111,7 @@ export default function OrdersScreen() {
           <ModalSheet style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Nuovo Ordine</Text>
-              <TouchableOpacity onPress={() => setShowNewOrderModal(false)}>
+              <TouchableOpacity onPress={() => setShowNewOrderModal(false)} testID="new-order-close-button">
                 <Ionicons name="close" size={24} color="#2A3547" />
               </TouchableOpacity>
             </View>
@@ -1133,6 +1133,7 @@ export default function OrdersScreen() {
                     newOrderChannel === channel.id && styles.channelButtonActive,
                   ]}
                   onPress={() => setNewOrderChannel(channel.id)}
+                  testID={`new-order-channel-${channel.id}`}
                 >
                   <Ionicons
                     name={channel.icon as any}
@@ -1165,6 +1166,7 @@ export default function OrdersScreen() {
                     newOrderServiceType === type.id && styles.serviceTypeButtonActive,
                   ]}
                   onPress={() => setNewOrderServiceType(type.id as any)}
+                  testID={`new-order-service-${type.id}`}
                 >
                   <Ionicons
                     name={type.icon as any}

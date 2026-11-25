@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only test of the MaterialM restyle (side nav, PageHeader, DatePill, StatCards, responsive grids) at 1366x820, 1180x820, 820x1180, 768x1024, 1024x1366 and 390x844 as Pizzeria Napoli. Almost everything works. The side nav shows at 1366 and 1180 (logo, tenant name 'Pizzeria Napoli', active item light blue rgb(229,245,255), Report badge = 2, which matches the API kitchen pendingQuantity) and all 5 items change screen. The bottom bar shows at 820x1180 and 390x844 and its 5 items all work. Orders: counters, search, date prev/next, and Nuovo ordine -> Crea Ordine (order #2 created) all work. The phone header shows the Bancomanda logo; with the side nav it shows 'Ordini'. The QuickCustomerForm flow on an anonymous order works: it created TEST_Quick Restyle, filled in the name, saved, and the history shows order #2. Menu: header and date picker OK. Dishes: Attivi/Tutti toggle, deactivate (confirm dialog) then reactivate, edit modal, and the new dish modal all work; category chips wrap onto 7 rows and the last chip can be selected. Customers: 2-column grid on tablet, search filter, history, edit and new modals OK. Reports: daily stats, report date prev/next, Cucina refresh, sync indicator and settings button OK. The Periodo fix is CONFIRMED: Periodo shows 2 orders / 17.00 EUR, the same as the real data, instead of the missed-sales count. The calendar is readable. No page errors, no white screens, no horizontal scroll on the phone. One layout bug: on tablets in portrait at 768-820px the Orders header overflows to the right.",
+  "backend_issues": {"critical": [], "minor": [{"endpoint": "DELETE /api/customers/{id}", "issue": "Returns 405; TEST customers created in tests cannot be cleaned up (carried over from iteration_20)"}]},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "OrdersHeader (tablet portrait 768-820px)", "issue": "The header row (brand minWidth 220 + full DatePill 'Mercoledì 25 Novembre 2026' + sync pill) is wider than the screen. sync-indicator ends at x=819 of 820 (it ignores the 24px padding) and the pill is visibly cut off at the right edge. The 'compact' layout only starts below this width. Fix: switch to compact below ~900px, use the short date in DatePill, or add flexWrap/flexShrink.", "selector": "[data-testid='sync-indicator']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Report on phone 390x844", "issues": ["The header (title, sync, tenant name, Password, Esci, gear, mode toggle, DatePill) takes about 280px. The 3 stat cards are stacked one per row, so on first view only the stats are visible. Consider 2 columns for the stats or moving the account buttons into a menu."]},
+      {"screen": "Report header (all sizes)", "issues": ["'Pizzeria Napoli' appears again in the header even though the side nav already shows it on wide screens"]},
+      {"screen": "Nuovo/Modifica Piatto modal", "issues": ["The selected category chip is only marked by a thin light-blue border and is hard to tell apart from the others; consider a filled primary background. Pressing Escape on web does not close the modal."]},
+      {"screen": "Orders search (820px)", "issues": ["The search placeholder is cut off ('Cerca ordine per nome clien')"]},
+      {"screen": "Report Periodo", "issues": ["The preset chips (7 giorni / 30 giorni...) are small (about 28px tall), grey, and float centered above the date-range button; they are under the 44px touch target"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix the OrdersHeader overflow at 768-820px width (sync pill cut off at the right edge)",
+    "Optional: compact the Report header and stats on the phone, make the selected category chip more visible, make the Periodo preset chips at least 44px tall",
+    "Optional: add DELETE /api/customers/{id} so test customers can be cleaned up"
+  ],
+  "critical_code_review_comments": [
+    "SideNav had no testIDs side-nav-logo, side-nav-tenant, side-nav-badge-<route>, although the review request expected them. ADDED by the testing agent.",
+    "The Report mode toggle buttons (Giornaliero/Periodo) have no testID",
+    "app/(tabs)/index.tsx is 4888 lines and reports.tsx is 2232 lines; both should be split into modules",
+    "The new-order modal channel/service-type buttons and close button have no testIDs"
+  ],
+  "updated_files": ["/app/frontend/src/components/SideNav.tsx (added testIDs only)"],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "96%"},
+  "seed_data_creation": "Created order #2 (6b070d3260973f0b3e1e6173) and then deleted it via the API. Created customer TEST_Quick Restyle (6b070d5260973f0b3e1e6175) through QuickCustomerForm; it cannot be deleted (no DELETE endpoint). Dish TEST_Pizza_88510a was deactivated and then reactivated (back to active).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Today in the preview is 2026-11-25. Pizzeria Napoli has order #1 TEST_Composizione (17 EUR, 2x TEST_Piatto Fit, pending in the kitchen), so the Report badge = 2. Dish deactivate/reactivate opens a 'Conferma' dialog. On web, Escape does not close modals. Mode toggle: use get_by_text('Periodo', exact=True). The wide layout starts at width>=1024 and width>=height."
+}

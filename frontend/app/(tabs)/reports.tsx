@@ -565,6 +565,7 @@ export default function ReportsScreen() {
           <TouchableOpacity
             style={[styles.modeButton, reportMode === 'daily' && styles.modeButtonActive]}
             onPress={() => setReportMode('daily')}
+            testID="report-mode-daily"
           >
             <Text style={[styles.modeButtonText, reportMode === 'daily' && styles.modeButtonTextActive]}>
               Giornaliero
@@ -573,6 +574,7 @@ export default function ReportsScreen() {
           <TouchableOpacity
             style={[styles.modeButton, reportMode === 'range' && styles.modeButtonActive]}
             onPress={() => setReportMode('range')}
+            testID="report-mode-range"
           >
             <Text style={[styles.modeButtonText, reportMode === 'range' && styles.modeButtonTextActive]}>
               Periodo
@@ -1941,23 +1943,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginBottom: 10,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   presetChip: {
-    backgroundColor: '#E0E6EB',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#c5d0e0',
+    borderColor: C.border,
   },
   presetChipText: {
     fontFamily: FONT,
     color: '#2A3547',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   dateRangeButton: {
+    alignSelf: 'flex-start',
+    minWidth: 320,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

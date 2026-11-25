@@ -18,10 +18,10 @@ export const SideNav = ({ state, descriptors, emitter, navigateToTab }: TabBarPr
   return (
     <View style={styles.nav} testID="side-nav">
       <Appear from="above" style={styles.brand}>
-        <Image source={require('../../assets/images/icon.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../assets/images/icon.png')} style={styles.logo} resizeMode="contain" testID="side-nav-logo" />
         <View style={{ flex: 1 }}>
           <Text style={styles.brandName}>Bancomanda</Text>
-          {!!tenantName && <Text style={styles.tenant} numberOfLines={1}>{tenantName}</Text>}
+          {!!tenantName && <Text style={styles.tenant} numberOfLines={1} testID="side-nav-tenant">{tenantName}</Text>}
         </View>
       </Appear>
       <Text style={styles.section}>Gestione</Text>
@@ -45,7 +45,7 @@ export const SideNav = ({ state, descriptors, emitter, navigateToTab }: TabBarPr
             >
               <Ionicons name={(focused ? ICONS[route.name] : `${ICONS[route.name]}-outline`) as any} size={21} color={focused ? C.primary : C.text2} />
               <Text style={[styles.label, focused && styles.labelActive]}>{String(options.title ?? route.name)}</Text>
-              {badge != null && <View style={styles.badge}><Text style={styles.badgeText}>{badge}</Text></View>}
+              {badge != null && <View style={styles.badge} testID={`side-nav-badge-${route.name}`}><Text style={styles.badgeText}>{badge}</Text></View>}
             </PressableScale>
           </Appear>
         );

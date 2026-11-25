@@ -289,3 +289,21 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Backup prima della conversione: /root/backups/conversion_backup_20261125_143346.json (non nel repository).
 - Backlog: pulizia categorie "Base Fit"/"Proteine Fit" dopo il passaggio definitivo; ordine dal sito via WhatsApp (solo lato sito dell'utente).
 
+
+## Report, cliente rapido, categorie modale — 2026-11-25 ✅ (iteration_20 + fix)
+- Report Periodo: totali ordini/incassi reali (rangeStats), date calendario leggibili, refresh cucina corretto
+- Modifica anagrafica ordine: crea cliente rapido (solo nome + telefono) e lo seleziona (QuickCustomerForm)
+- Modale Nuovo piatto: categorie a capo (wrap), selezionata piena azzurra
+
+## Restyling stile MaterialM su tutte le schermate — 2026-11-25 ✅ (iteration_21, frontend 96% → fix applicati)
+- Scelte utente: azzurro #00A1FF come colore principale (rosso solo per errori/avvisi), menu laterale su tablet orizzontale e computer (width>=1024 e orizzontale), barra in basso su telefono/tablet verticale, nessun banner di benvenuto, tutte le schermate insieme
+- Token: src/theme/tokens.ts (palette MaterialM), src/theme/layout.ts (useWideLayout, SIDEBAR_W=248)
+- Nuovi componenti: SideNav, ui2/PageHeader, ui2/DatePill, ui2/HeaderButton, ui2/StatCard
+- Griglie responsive Piatti/Clienti (1-3 colonne), pulsanti "soft", riquadri statistiche pastello, target touch 44px, doppio padding ScrollView web corretto
+- Telefono: account Report solo icone, statistiche 2 colonne; tablet verticale: intestazione Ordini compatta sotto 900px
+
+## Backlog aperto
+- P1: DELETE /api/customers/{id} (o archiviazione) per pulizia clienti di test
+- P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
+- P2: lint globale (setState in useEffect preesistenti)
+- In attesa: pulizia definitiva categorie "Base Fit"/"Proteine Fit" dopo il passaggio definitivo

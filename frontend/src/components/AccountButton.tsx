@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../store/authStore';
 import { ChangePasswordModal } from './ChangePasswordModal';
-import { FONT } from '../theme/tokens';
+import { C, FONT } from '../theme/tokens';
+import { useWideLayout } from '../theme/layout';
 
 // Esci con doppio tocco (niente modali annidati su tablet)
 export const AccountButton = () => {
@@ -11,6 +12,9 @@ export const AccountButton = () => {
   const logout = useAuthStore((s) => s.logout);
   const [confirming, setConfirming] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { wide, contentWidth } = useWideLayout();
+  const showTenant = !wide && contentWidth >= 768;
+  const iconOnly = contentWidth < 768;
 
   useEffect(() => {
     if (!confirming) return;
@@ -20,12 +24,12 @@ export const AccountButton = () => {
 
   return (
     <View style={styles.row}>
-      {!!user?.tenant_name && (
+      {showTenant && !!user?.tenant_name && (
         <Text style={styles.tenant} numberOfLines={1} testID="account-tenant-name">{user.tenant_name}</Text>
       )}
       <TouchableOpacity style={styles.keyButton} onPress={() => setShowPassword(true)} testID="change-password-button">
         <Ionicons name="key-outline" size={18} color="#5A6A85" />
-        <Text style={styles.keyText}>Password</Text>
+        {!iconOnly && <Text style={styles.keyText}>Password</Text>}
       </TouchableOpacity>
       <ChangePasswordModal visible={showPassword} onClose={() => setShowPassword(false)} />
       <TouchableOpacity
@@ -34,7 +38,9 @@ export const AccountButton = () => {
         testID="logout-button"
       >
         <Ionicons name="log-out-outline" size={18} color={confirming ? '#ffffff' : '#F2545B'} />
-        <Text style={[styles.text, confirming && styles.textConfirm]}>{confirming ? 'Tocca per uscire' : 'Esci'}</Text>
+        {(!iconOnly || confirming) && (
+          <Text style={[styles.text, confirming && styles.textConfirm]}>{confirming ? (iconOnly ? 'Esci?' : 'Tocca per uscire') : 'Esci'}</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -47,9 +53,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    minHeight: 44,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: '#E0E6EB',
     backgroundColor: '#ffffff',
@@ -59,14 +65,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    minHeight: 44,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#f3c1c3',
-    backgroundColor: '#fff5f5',
+    borderColor: '#F9C4C6',
+    backgroundColor: C.errorSoft,
   },
-  buttonConfirm: { backgroundColor: '#00A1FF', borderColor: '#00A1FF' },
-  text: { fontFamily: FONT, color: '#00A1FF', fontWeight: '700', fontSize: 14 },
+  buttonConfirm: { backgroundColor: C.error, borderColor: C.error },
+  text: { fontFamily: FONT, color: C.errorFg, fontWeight: '700', fontSize: 14 },
   textConfirm: { color: '#ffffff' },
 });

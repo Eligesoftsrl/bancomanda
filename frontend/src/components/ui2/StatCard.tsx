@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Appear } from '../motion/Appear';
 import { FlipText } from '../motion/FlipText';
@@ -19,13 +19,14 @@ type Props = { icon: string; value: string | number; label: string; tone: Tone; 
 
 export const StatCard = ({ icon, value, label, tone, index = 0, testID }: Props) => {
   const t = TONES[tone];
+  const sm = useWindowDimensions().width < 768;
   return (
-    <Appear index={index} style={[styles.card, { backgroundColor: t.bg }]} testID={testID}>
-      <View style={[styles.iconWrap, { backgroundColor: t.icon }]}>
-        <Ionicons name={icon as any} size={24} color="#fff" />
+    <Appear index={index} style={[styles.card, sm && styles.cardSm, { backgroundColor: t.bg }]} testID={testID}>
+      <View style={[styles.iconWrap, sm && styles.iconWrapSm, { backgroundColor: t.icon }]}>
+        <Ionicons name={icon as any} size={sm ? 20 : 24} color="#fff" />
       </View>
       <View style={styles.texts}>
-        <FlipText value={String(value)} style={[styles.value, { color: t.fg }]} testID={testID ? `${testID}-value` : undefined} />
+        <FlipText value={String(value)} style={[styles.value, sm && styles.valueSm, { color: t.fg }]} testID={testID ? `${testID}-value` : undefined} />
         <Text style={styles.label} numberOfLines={1}>{label}</Text>
       </View>
     </Appear>
@@ -33,7 +34,10 @@ export const StatCard = ({ icon, value, label, tone, index = 0, testID }: Props)
 };
 
 const styles = StyleSheet.create({
-  card: { flex: 1, minWidth: 200, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: R.lg },
+  card: { flex: 1, minWidth: 150, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 18, borderRadius: R.lg },
+  cardSm: { minWidth: 140, padding: 14, gap: 10 },
+  iconWrapSm: { width: 42, height: 42, borderRadius: 21 },
+  valueSm: { fontSize: 20 },
   iconWrap: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   texts: { flex: 1, minWidth: 0 },
   value: { fontFamily: FONT, fontSize: 26, fontWeight: '800', letterSpacing: -0.6 },

@@ -1104,7 +1104,7 @@ const styles = StyleSheet.create({
   },
   categorySelectorChipActive: {
     borderColor: '#00A1FF',
-    backgroundColor: '#E5F5FF',
+    backgroundColor: '#00A1FF',
   },
   categorySelectorChipText: {
     fontFamily: FONT,
@@ -1112,7 +1112,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   categorySelectorChipTextActive: {
-    color: '#2A3547',
+    color: '#ffffff',
+    fontWeight: '700',
   },
   primaryButton: {
     backgroundColor: '#00A1FF',
