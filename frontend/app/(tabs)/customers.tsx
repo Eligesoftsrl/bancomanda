@@ -7,12 +7,12 @@ import {
   ScrollView,
   Modal,
   TextInput,
-  Alert,
   ActivityIndicator,
   RefreshControl,
   Switch,
   Platform,
 } from 'react-native';
+import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
@@ -62,7 +62,7 @@ export default function CustomersScreen() {
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
-      Alert.alert('Errore', 'Impossibile caricare i clienti');
+      notify('Impossibile caricare i clienti', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -110,13 +110,13 @@ export default function CustomersScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Errore', 'Inserisci il nome del cliente');
+      notify('Inserisci il nome del cliente', 'error');
       return;
     }
     
     // Validazione partita IVA per società
     if (customerType === 'societa' && !partitaIva.trim()) {
-      Alert.alert('Errore', 'La Partita IVA è obbligatoria per le società');
+      notify('La Partita IVA è obbligatoria per le società', 'error');
       return;
     }
 
@@ -133,7 +133,7 @@ export default function CustomersScreen() {
           notes: notes.trim(),
         });
         setCustomers(customers.map(c => c.id === updated.id ? updated : c));
-        Alert.alert('Successo', 'Cliente aggiornato');
+        notify('Cliente aggiornato');
       } else {
         const newCustomer = await customersApi.create({
           name: name.trim(),
@@ -146,13 +146,13 @@ export default function CustomersScreen() {
           notes: notes.trim(),
         });
         setCustomers([newCustomer, ...customers]);
-        Alert.alert('Successo', 'Cliente creato');
+        notify('Cliente creato');
       }
       
       setShowModal(false);
       resetForm();
     } catch (error: any) {
-      Alert.alert('Errore', error.response?.data?.detail || 'Impossibile salvare il cliente');
+      notify(error.response?.data?.detail || 'Impossibile salvare il cliente', 'error');
     }
   };
 
@@ -163,7 +163,7 @@ export default function CustomersScreen() {
       setCustomerOrders(orders);
       setShowOrdersModal(true);
     } catch (error) {
-      Alert.alert('Errore', 'Impossibile caricare lo storico ordini');
+      notify('Impossibile caricare lo storico ordini', 'error');
     }
   };
 

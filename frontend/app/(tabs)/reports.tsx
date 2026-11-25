@@ -10,9 +10,9 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Alert,
   Platform,
 } from 'react-native';
+import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format, addDays, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -115,7 +115,7 @@ export default function ReportsScreen() {
       await loadKitchen();
     } catch (error) {
       console.error('Error updating item status:', error);
-      Alert.alert('Errore', 'Impossibile aggiornare il piatto');
+      notify('Impossibile aggiornare il piatto', 'error');
     }
   };
 
@@ -143,7 +143,7 @@ export default function ReportsScreen() {
       await loadPorzionatura();
     } catch (error) {
       console.error('Error updating portion status:', error);
-      Alert.alert('Errore', 'Impossibile aggiornare la porzione');
+      notify('Impossibile aggiornare la porzione', 'error');
     }
   };
 
@@ -176,7 +176,7 @@ export default function ReportsScreen() {
       setUnpaidOrders(prev => prev.filter(o => o.id !== order.id));
     } catch (error) {
       console.error('Error marking as paid:', error);
-      Alert.alert('Errore', 'Impossibile aggiornare il pagamento');
+      notify('Impossibile aggiornare il pagamento', 'error');
     }
   };
 
@@ -349,7 +349,7 @@ export default function ReportsScreen() {
       setShowSetupModal(true);
       checkSetupStatus();
     } catch (error: any) {
-      Alert.alert('Errore', error?.response?.data?.detail || 'Password non corretta');
+      notify(error?.response?.data?.detail || 'Password non corretta', 'error');
       setPassword('');
     }
   };
@@ -367,14 +367,11 @@ export default function ReportsScreen() {
     setIsSetupLoading(true);
     try {
       const result = await setupApi.runSetup();
-      Alert.alert(
-        'Setup Completato!',
-        `Categorie aggiunte: ${result.categories_added}\nMenu aggiornati: ${result.menus_updated}`,
-        [{ text: 'OK', onPress: checkSetupStatus }]
-      );
+      notify(`Setup completato: categorie aggiunte ${result.categories_added}, menu aggiornati ${result.menus_updated}`);
+      checkSetupStatus();
     } catch (error) {
       console.error('Error running setup:', error);
-      Alert.alert('Errore', 'Impossibile eseguire il setup del database');
+      notify('Impossibile eseguire il setup del database', 'error');
     } finally {
       setIsSetupLoading(false);
     }

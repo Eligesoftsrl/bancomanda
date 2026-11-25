@@ -9,9 +9,9 @@ import {
   TextInput,
   ActivityIndicator,
   RefreshControl,
-  Animated,
   Platform,
 } from 'react-native';
+import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../src/store/appStore';
@@ -21,29 +21,6 @@ import { sortCategoriesByFixedOrder, sortDishesByCategory } from '../../src/util
 import { DishLabelsPicker } from '../../src/components/DishLabelsPicker';
 import { DishLabelsSummary } from '../../src/components/DishLabelsSummary';
 
-// Toast notification component
-const Toast = ({ visible, message, type, onHide }: { visible: boolean; message: string; type: 'success' | 'error'; onHide: () => void }) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
-
-  useEffect(() => {
-    if (visible) {
-      Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.delay(2000),
-        Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-      ]).start(() => onHide());
-    }
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <Animated.View style={[styles.toast, type === 'success' ? styles.toastSuccess : styles.toastError, { opacity: fadeAnim }]}>
-      <Ionicons name={type === 'success' ? 'checkmark-circle' : 'alert-circle'} size={24} color="#1a202c" />
-      <Text style={styles.toastText}>{message}</Text>
-    </Animated.View>
-  );
-};
 
 import { OptionGroupsManager } from '../../src/components/composable/OptionGroupsManager';
 import { ComposableDishFields } from '../../src/components/composable/ComposableDishFields';
@@ -69,11 +46,8 @@ export default function DishesScreen() {
   const sortedDishes = useMemo(() => sortDishesByCategory(dishes, categories), [dishes, categories]);
   
   // Toast state
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
-  
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ visible: true, message, type });
-  };
+  // Avviso globale: visibile anche sopra le finestre aperte
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => notify(message, type);
   
   // Dish form state
   const [name, setName] = useState('');
@@ -351,13 +325,6 @@ export default function DishesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Toast */}
-      <Toast 
-        visible={toast.visible} 
-        message={toast.message} 
-        type={toast.type} 
-        onHide={() => setToast({ ...toast, visible: false })} 
-      />
 
       {/* Header */}
       <View style={styles.header}>

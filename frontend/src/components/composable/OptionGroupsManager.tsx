@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, ScrollView, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { optionGroupsApi } from '../../services/api';
+import { notify } from '../../store/toastStore';
 import { OptionGroup } from '../../types';
 import { euro, ruleLabel } from '../../utils/composition';
 import { GroupDraft, OptionGroupEditor } from './OptionGroupEditor';
@@ -32,12 +33,7 @@ interface Props {
 }
 
 export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Props) => {
-  // Avviso interno: il toast della pagina resterebbe nascosto sotto la finestra
-  const [notice, setNotice] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  const onToast = (text: string, type: 'success' | 'error' = 'success') => {
-    setNotice({ text, type });
-    setTimeout(() => setNotice(null), 3500);
-  };
+  const onToast = notify;
   const [draft, setDraft] = useState<GroupDraft | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -120,12 +116,6 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
             )}
           </ScrollView>
 
-          {notice && (
-            <View style={[styles.notice, notice.type === 'error' ? styles.noticeError : styles.noticeOk]} testID="option-groups-notice">
-              <Ionicons name={notice.type === 'error' ? 'alert-circle' : 'checkmark-circle'} size={18} color="#fff" />
-              <Text style={styles.noticeText}>{notice.text}</Text>
-            </View>
-          )}
           <View style={styles.footer}>
             {draft ? (
               <>
@@ -164,10 +154,6 @@ const styles = StyleSheet.create({
   groupName: { fontSize: 16, fontWeight: '800', color: '#1a202c' },
   groupRule: { fontSize: 12, color: '#00754A', fontWeight: '600', marginTop: 2 },
   groupOptions: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  notice: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 10 },
-  noticeOk: { backgroundColor: '#00754A' },
-  noticeError: { backgroundColor: '#DB0007' },
-  noticeText: { color: '#fff', fontWeight: '700', fontSize: 14, flex: 1 },
   footer: { flexDirection: 'row', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: '#e2e8f0', justifyContent: 'flex-end' },
   btn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12, paddingHorizontal: 18, borderRadius: 999 },
   btnPrimary: { backgroundColor: '#DB0007' },

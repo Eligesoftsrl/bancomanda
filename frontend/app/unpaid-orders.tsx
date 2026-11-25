@@ -7,8 +7,8 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
-  Animated,
 } from 'react-native';
+import { notify } from '../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -31,56 +31,7 @@ const STATUS_LABELS: Record<string, string> = {
   consegnato: 'Consegnato',
 };
 
-// Toast component
-const Toast = ({ visible, message, type, onHide }: { visible: boolean; message: string; type: 'success' | 'error'; onHide: () => void }) => {
-  const [fadeAnim] = useState(new Animated.Value(0));
 
-  useEffect(() => {
-    if (visible) {
-      Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.delay(2000),
-        Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-      ]).start(() => onHide());
-    }
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <Animated.View style={[toastStyles.toast, type === 'success' ? toastStyles.toastSuccess : toastStyles.toastError, { opacity: fadeAnim }]}>
-      <Ionicons name={type === 'success' ? 'checkmark-circle' : 'alert-circle'} size={24} color="#1a202c" />
-      <Text style={toastStyles.toastText}>{message}</Text>
-    </Animated.View>
-  );
-};
-
-const toastStyles = StyleSheet.create({
-  toast: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    zIndex: 1000,
-  },
-  toastSuccess: {
-    backgroundColor: '#00754A',
-  },
-  toastError: {
-    backgroundColor: '#DB0007',
-  },
-  toastText: {
-    color: '#1a202c',
-    fontSize: 15,
-    fontWeight: '600',
-    marginLeft: 12,
-    flex: 1,
-  },
-});
 
 export default function UnpaidOrdersScreen() {
   const router = useRouter();
@@ -94,10 +45,8 @@ export default function UnpaidOrdersScreen() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   
   // Toast state
-  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' as 'success' | 'error' });
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-    setToast({ visible: true, message, type });
-  };
+  // Avviso globale: visibile anche sopra le finestre aperte
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => notify(message, type);
 
   const loadUnpaidOrders = useCallback(async () => {
     if (!customerId) {
@@ -170,13 +119,6 @@ export default function UnpaidOrdersScreen() {
 
   return (
     <SafeAreaView style={styles.container} data-testid="unpaid-orders-screen">
-      {/* Toast */}
-      <Toast 
-        visible={toast.visible} 
-        message={toast.message} 
-        type={toast.type} 
-        onHide={() => setToast({ ...toast, visible: false })} 
-      />
 
       {/* Header */}
       <View style={styles.header}>
