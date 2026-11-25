@@ -25,10 +25,10 @@ export const ConfirmDialog = ({ visible, title, message, confirmLabel, icon = 'a
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.message}>{message}</Text>
         <View style={styles.row}>
-          <PressableScale style={[styles.btn, styles.cancel]} onPress={onCancel} testID={`${testID}-cancel`}>
+          <PressableScale containerStyle={styles.btnWrap} style={[styles.btn, styles.cancel]} onPress={onCancel} testID={`${testID}-cancel`}>
             <Text style={[styles.btnText, { color: C.text2 }]}>Annulla</Text>
           </PressableScale>
-          <PressableScale style={[styles.btn, styles.confirm, busy && { opacity: 0.6 }]} onPress={busy ? undefined : onConfirm} testID={`${testID}-confirm`}>
+          <PressableScale containerStyle={styles.btnWrap} style={[styles.btn, styles.confirm, busy && { opacity: 0.6 }]} onPress={busy ? undefined : onConfirm} testID={`${testID}-confirm`}>
             <Text style={[styles.btnText, { color: '#fff' }]}>{busy ? 'Attendi...' : confirmLabel}</Text>
           </PressableScale>
         </View>
@@ -44,7 +44,8 @@ const styles = StyleSheet.create({
   title: { fontFamily: FONT, fontSize: 19, fontWeight: '800', color: C.text, marginBottom: 8 },
   message: { fontFamily: FONT, fontSize: 14, lineHeight: 21, color: C.text2, marginBottom: 22 },
   row: { flexDirection: 'row', gap: 10 },
-  btn: { flex: 1, minHeight: 46, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center' },
+  btnWrap: { flex: 1 },
+  btn: { minHeight: 46, paddingHorizontal: 18, borderRadius: R.pill, alignItems: 'center', justifyContent: 'center' },
   cancel: { backgroundColor: C.sunken },
   confirm: { backgroundColor: C.primary },
   btnText: { fontFamily: FONT, fontSize: 15, fontWeight: '700' },

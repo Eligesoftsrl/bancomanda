@@ -15,7 +15,7 @@ import {
 import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { format, subMonths } from 'date-fns';
+import { format, parseISO, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useAppStore } from '../../src/store/appStore';
 import { customersApi } from '../../src/services/api';
@@ -155,7 +155,7 @@ export default function CustomersScreen() {
           requiresInvoice,
           notes: notes.trim(),
         });
-        setCustomers(customers.map(c => c.id === updated.id ? updated : c));
+        setCustomers(customers.map(c => c.id === updated.id ? { ...c, ...updated, lastOrderDate: c.lastOrderDate, ordersCount: c.ordersCount } : c));
         notify('Cliente aggiornato');
       } else {
         const newCustomer = await customersApi.create({
@@ -237,7 +237,7 @@ export default function CustomersScreen() {
 
   const lastOrderLabel = (c: Customer) =>
     c.lastOrderDate
-      ? `Ultimo ordine ${format(new Date(c.lastOrderDate), 'd MMM yyyy', { locale: it })} · ${c.ordersCount} ${c.ordersCount === 1 ? 'ordine' : 'ordini'}`
+      ? `Ultimo ordine ${format(parseISO(c.lastOrderDate), 'd MMM yyyy', { locale: it })} · ${c.ordersCount} ${c.ordersCount === 1 ? 'ordine' : 'ordini'}`
       : 'Nessun ordine';
 
   if (isLoading) {
@@ -284,7 +284,7 @@ export default function CustomersScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
-        {view !== 'active' && (
+        {view !== 'active' && filteredCustomers.length > 0 && (
           <CustomerViewBanner view={view} count={filteredCustomers.length} onArchiveAll={() => setArchiveTarget(filteredCustomers)} />
         )}
         {filteredCustomers.length === 0 ? (

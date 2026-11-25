@@ -1676,7 +1676,7 @@ async def get_customers(search: Optional[str] = None, limit: int = 5000, scope: 
 
 @api_router.get("/customers/{customer_id}", response_model=Customer)
 async def get_customer(customer_id: str):
-    customer = await db.customers.find_one({"_id": ObjectId(customer_id)})
+    customer = await db.customers.find_one({"_id": _customer_object_ids([customer_id])[0]})
     if not customer:
         raise HTTPException(status_code=404, detail="Cliente non trovato")
     return Customer(id=str(customer["_id"]), **{k: v for k, v in customer.items() if k != "_id"})
@@ -1688,7 +1688,7 @@ async def update_customer(customer_id: str, customer_update: CustomerUpdate):
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
     
     result = await db.customers.update_one(
-        {"_id": ObjectId(customer_id)},
+        {"_id": _customer_object_ids([customer_id])[0]},
         {"$set": update_data}
     )
     if result.matched_count == 0:

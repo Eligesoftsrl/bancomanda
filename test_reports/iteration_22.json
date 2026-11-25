@@ -1,0 +1,38 @@
+{
+  "summary": "Tested Archivio Clienti (archive/restore, scope, with_stats, tenant isolation, the 'Senza ordini da 6 mesi' filter, 'Archivia tutti', and hiding archived customers in the Nuovo ordine / Modifica anagrafica pickers) and Grafico Incassi (daily-revenue API plus the RevenueChart bars/line, tooltip, average/best, presets, empty state, weekly grouping for long periods) at 1366x820, 820x1180 and 390x844. Backend: 11/11 pytest pass. Frontend: everything requested works. Found 1 real bug: after saving a customer from Modifica, the card loses its order stats.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET/PUT /api/customers/{id}", "issue": "Pre-existing, outside this feature: a malformed id is passed straight to ObjectId(), so it returns 500 instead of 400."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "customers.tsx handleSave (edit)", "issue": "After saving from Modifica, the card is replaced with the PUT response, which has no stats (lastOrderDate is null, ordersCount is 0). The card then shows 'Nessun ordine' and the counts are wrong: the customer drops out of 'Senza ordini da 6 mesi' because the check falls back to createdAt. Reproduced on TEST_Cliente sec: the inactive count went 1 -> 0 and the label read 'Nessun ordine' until reload. Fix: setCustomers(customers.map(c => c.id === updated.id ? { ...c, ...updated, lastOrderDate: c.lastOrderDate, ordersCount: c.ordersCount } : c)), or reload with stats.", "selector": "customer-last-order-<id>, customers-view-inactive-count", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ConfirmDialog (customers-archive-dialog)", "issues": ["The Annulla / Archivia buttons have almost no horizontal padding and are left-aligned. The text touches the pill edges. Add paddingHorizontal of about 18 and/or align the buttons to the right / make them full width."]},
+      {"screen": "Clienti > Senza ordini da 6 mesi with 0 results", "issues": ["The banner '0 clienti senza ordini da 6 mesi' sits above the empty state, which repeats the same message. Consider hiding the banner when count is 0."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_customer_archive_daily_revenue.py", "/app/test_reports/pytest/pytest_iter22.xml"],
+  "action_items": [
+    "Keep the order stats (lastOrderDate, ordersCount) after editing a customer in customers.tsx handleSave.",
+    "Add horizontal padding to the ConfirmDialog buttons.",
+    "Optional: reports.tsx loadRangeData uses Promise.all, so a 400 from daily-revenue (period over 2 years) makes the whole Periodo report fail. Use allSettled, or limit the period in the calendar."
+  ],
+  "critical_code_review_comments": [
+    "customers.tsx lastOrderLabel uses new Date('YYYY-MM-DD'), which is parsed as UTC. In time zones west of UTC it shows the previous day. Use parseISO, as chartUtils does.",
+    "isInactive treats customers with no createdAt (old legacy records) as inactive (''<cutoff). This is acceptable but should be documented: on Giorgio Bistrot, 'Archivia tutti' could include every old customer who never ordered.",
+    "setArchived does not set archivedAt locally. This is harmless today.",
+    "Backend: archive and restore go through ScopedCollection.update_many and the aggregate stats are prefixed with the tenant $match. Isolation is verified (modified 0 for a Giorgio Bistrot id with the Pizzeria token)."
+  ],
+  "updated_files": ["/app/backend/tests/test_customer_archive_daily_revenue.py"],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "seed_data_creation": "The pytest fixture creates 'TEST_Archivio Cliente' in Pizzeria Napoli and deletes it by id in teardown (directly in Mongo, because there is no DELETE /customers endpoint). TEST_Cliente sec was archived during the UI tests and restored afterwards. Final state: all 5 Pizzeria customers are active. Giorgio Bistrot was only read; the cross-tenant archive attempt changed nothing (modified 0).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Preview date is 2026-11-25. Pizzeria Napoli has TEST_Grafico orders from 26 Oct to 25 Nov 2026 (30 days: 84 orders / 2000.50 EUR, best day 6 Nov at 180.50) and TEST_Cliente sec's last order on 2026-03-02. Calendar days use testids '[data-testid$=\"day_YYYY-MM-DD\"]' and the arrows use '[data-testid$=\"leftArrow\"]'. A period over 120 days switches the chart to one bar per week (1 Mar - 25 Nov = 39 bars). Run the tests with backend/.env loaded so the teardown can delete the TEST_ customer.",
+  "rca of the issue": "Edit-stats bug: the PUT /customers/{id} response is built without _customer_order_stats, so it has the default lastOrderDate=None and ordersCount=0. The frontend replaces the card's local state with it. Reproduce: Clienti > Modifica on TEST_Cliente sec > Salva; the pill shows 'Nessun ordine' and the inactive count goes down. Fix: merge the existing stats into the updated record on the client."
+}

@@ -302,8 +302,13 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Griglie responsive Piatti/Clienti (1-3 colonne), pulsanti "soft", riquadri statistiche pastello, target touch 44px, doppio padding ScrollView web corretto
 - Telefono: account Report solo icone, statistiche 2 colonne; tablet verticale: intestazione Ordini compatta sotto 900px
 
+## Archivio clienti + Grafico incassi — 2026-11-25 ✅ (iteration_22: backend 11/11, frontend 95% → fix applicati)
+- Clienti: archiviazione/ripristino (POST /api/customers/archive e /restore, {ids}); GET /api/customers?scope=active|archived|all&with_stats=true (lastOrderDate, ordersCount)
+- L'archiviato sparisce dalla lista e dalle scelte cliente negli ordini (activeCustomers in index.tsx); filtri Attivi / Senza ordini da 6 mesi (con "Archivia tutti") / Archiviati
+- Report Periodo: GET /api/reports/daily-revenue (un punto per giorno, max 2 anni); grafico Barre/Linea con incassi + numero ordini, suggerimento al tocco, media e giorno migliore; oltre 120 giorni raggruppa per settimana
+- Dati di prova: ordini "TEST_Grafico" (26 ott–24 nov 2026) in Pizzeria Napoli
+
 ## Backlog aperto
-- P1: DELETE /api/customers/{id} (o archiviazione) per pulizia clienti di test
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
 - P2: lint globale (setState in useEffect preesistenti)
 - In attesa: pulizia definitiva categorie "Base Fit"/"Proteine Fit" dopo il passaggio definitivo

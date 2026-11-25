@@ -213,14 +213,13 @@ export default function ReportsScreen() {
     try {
       setIsLoading(true);
       
-      const [topData, missedSummary, totals, perDay] = await Promise.all([
+      reportsApi.getDailyRevenue(startDate, endDate).then(setDailyRevenue).catch(() => setDailyRevenue([]));
+      const [topData, missedSummary, totals] = await Promise.all([
         reportsApi.getTopDishes(startDate, endDate, 10),
         reportsApi.getMissedSalesSummary(startDate, endDate),
         reportsApi.getRangeSummary(startDate, endDate),
-        reportsApi.getDailyRevenue(startDate, endDate),
       ]);
       setTopDishes(topData);
-      setDailyRevenue(perDay);
       setRangeStats({
         totalOrders: totals.totalOrders,
         totalRevenue: totals.totalRevenue,
