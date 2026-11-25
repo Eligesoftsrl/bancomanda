@@ -268,3 +268,9 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - DA FARE (dopo l'ultimo allineamento, quando Giorgio passa alla nuova app): convertire i 10 piatti delle categorie Base Fit/Proteine Fit in gruppi "Base" (min1 max1) e "Proteine" (min0, nessun limite, doppie) + piatto "Piatto Fit" (prezzo 0); disattivare (non cancellare) i 10 piatti; storico invariato. NON farlo prima: il sync dalla vecchia app li riattiverebbe.
 - Fase 2 (backlog): report ingredienti usati, regola "N incluse nel prezzo", allergeni scelti sull'etichetta, esaurito condiviso tra piatti.
 - 2026-11-25 ~11:15 UTC: sesto `--sync` Giorgio (nessun conflitto): +183 ordini, 12 aggiornati (pagato), +7 piatti, +2 clienti, +4 menu → 444 piatti, 262 clienti, 6.415 ordini, 159 menu, tutti validi. Ultimo ordine 25/11 11:09 UTC (#52).
+
+## Avvisi sopra le finestre — 2026-11-25 ✅ (iteration_18, frontend 100%)
+- Avviso unico globale: `src/store/toastStore.ts` (`notify(msg, type)`, `dismissToast()`), `src/components/ToastCard.tsx` (testID `app-toast`, testo bianco, errore ~4s, successo ~2,5s, tocco = chiudi), montato una volta in `app/_layout.tsx` con `<ToastHost />`.
+- Web: `ToastHost.web.tsx` = portale in document.body, z-index 2147483000, overlay che lascia passare i click. iOS nativo: `ToastHost.tsx` con `FullWindowOverlay` (react-native-screens) sopra ai Modal — non testabile in preview.
+- Rimossi i Toast locali da index/menu/dishes/unpaid-orders (showToast → notify). customers.tsx e reports.tsx: `Alert.alert` (muto su web) → notify. OptionGroupsManager usa notify. Report: sblocco corretto chiude l'eventuale avviso d'errore.
+- unpaid-orders: se aperta direttamente torna a "/" (router.canGoBack()).

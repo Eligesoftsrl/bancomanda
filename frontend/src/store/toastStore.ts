@@ -20,3 +20,5 @@ export const useToastStore = create<ToastState>((set) => ({
 }));
 
 export const notify = (message: string, type: ToastType = 'success') => useToastStore.getState().show(message, type);
+
+export const dismissToast = () => useToastStore.getState().hide(useToastStore.getState().id);

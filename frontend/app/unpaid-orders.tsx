@@ -46,11 +46,13 @@ export default function UnpaidOrdersScreen() {
   
   // Toast state
   // Avviso globale: visibile anche sopra le finestre aperte
+  // Aperta direttamente (senza pagina precedente): torna agli ordini
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const showToast = (message: string, type: 'success' | 'error' = 'success') => notify(message, type);
 
   const loadUnpaidOrders = useCallback(async () => {
     if (!customerId) {
-      router.back();
+      goBack();
       return;
     }
     
@@ -85,7 +87,7 @@ export default function UnpaidOrdersScreen() {
       
       // If no more unpaid orders, go back
       if (updatedUnpaid.length === 0) {
-        setTimeout(() => router.back(), 500);
+        setTimeout(goBack, 500);
       }
     } catch (error) {
       console.error('Error paying order:', error);
@@ -124,7 +126,7 @@ export default function UnpaidOrdersScreen() {
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={goBack}
           data-testid="back-button"
         >
           <Ionicons name="arrow-back" size={24} color="#1a202c" />

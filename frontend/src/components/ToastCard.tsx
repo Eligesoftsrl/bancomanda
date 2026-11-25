@@ -38,7 +38,7 @@ export const ToastCard = () => {
 };
 
 const styles = StyleSheet.create({
-  lane: { position: 'absolute', top: 56, left: 0, right: 0, alignItems: 'center' },
+  lane: { position: 'absolute', top: 20, left: 0, right: 0, alignItems: 'center' },
   toast: {
     width: '92%',
     maxWidth: 560,

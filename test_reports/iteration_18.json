@@ -1,0 +1,40 @@
+{
+  "summary": "Frontend-only test of the new global toast (ToastHost portal) on Expo Web, Pizzeria Napoli tenant, 1920x800 + iPad 1024x768. All requested flows PASS: the toast shows above every open modal (elementFromPoint at the toast centre lands inside app-toast every time), white text on red (#DB0007) for errors and on green (#00754A) for success, hides on its own (error about 4.2s, success about 2.8s), closes on tap, and the full-screen overlay lets clicks through (could click and type in an input while the toast was visible). No ToastHost/createPortal console errors.",
+  "tested_flows": [
+    "Dishes: empty save -> 'Inserisci il nome del piatto' above the modal; TEST_Toast 5 EUR -> 'Piatto creato' (success)",
+    "Dishes > Gruppi > Nuovo gruppo > Salva gruppo empty -> 'Inserisci il nome del gruppo' above the modal",
+    "Orders: order modal > Piatto Libero > Aggiungi empty -> 'Inserisci nome e prezzo' above the modal; add TEST_Toast from menu -> 'Piatto aggiunto' above the modal",
+    "Menu: Aggiungi al Menu with empty portions -> 'Inserisci un numero di porzioni valido' above the modal; with 3 portions -> 'Piatto aggiunto al menu'",
+    "Customers: empty save -> 'Inserisci il nome del cliente' above the modal; valid -> 'Cliente creato'",
+    "Reports gear: wrong password (1 attempt) -> 'Password non corretta' above the password modal; Password123! -> Impostazioni Admin opens",
+    "Unpaid orders page (customerId param): Paga -> 'Ordine #2 pagato'",
+    "iPad 1024x768: dish modal error toast on top"
+  ],
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "unpaid-orders.tsx", "issue": "Before this change: opening /unpaid-orders directly (no customerId, or after paying the last order with no history) calls router.back() with nothing to go back to. Result: a 'GO_BACK was not handled' warning and a spinner ('Caricamento ordini...') that never stops. Suggest router.canGoBack() ? back() : replace('/').", "selector": "app/unpaid-orders.tsx:53,88", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Modals near the top (Nuovo Piatto, Nuovo Cliente)", "issues": ["The toast (top: 56) covers the modal title or header while it is shown. Acceptable, but a small top offset or placing the toast lower on short modals would keep the title readable."]},
+      {"screen": "Reports password modal", "issues": ["After a wrong password, the red 'Password non corretta' toast stays on screen for up to 4s after the correct password has already opened the settings. Suggest hiding the current toast on success."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: hide the current toast when the next action succeeds (e.g. reports password unlock)",
+    "Optional: in unpaid-orders.tsx, check router.canGoBack() before router.back()"
+  ],
+  "critical_code_review_comments": [
+    "ToastCard: a new notify() with the same message restarts the animation correctly (keyed on id). The hide(id) guard prevents an old timer from closing a newer toast. Good.",
+    "ToastHost.web: the wrapper div uses pointerEvents none, the inner View uses box-none and the card is clickable. Verified that clicks pass through.",
+    "Only one toast at a time: a quick second notify replaces the first (by design)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend only)", "frontend": "100%"},
+  "seed_data_creation": "Created TEST_Toast dish (deactivated via DELETE /api/dishes), added and then removed from today's menu; created order #2 for TEST_Toast Cliente (deleted). TEST_Toast Cliente (id 6b06cf7f72e70e0cd20c298b) remains because there is no customer DELETE endpoint (405). Option group: not saved (only the validation was tested). Giorgio Bistrot not touched. Used 1 wrong report password.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Global toast testIDs: app-toast, app-toast-error, app-toast-success. Check that the toast is on top with document.elementFromPoint at the centre of app-toast. Unpaid page needs ?customerId=...&customerName=.... Order creation API needs ?menu_date=YYYY-MM-DD and orders are created with isPaid=true by default."
+}

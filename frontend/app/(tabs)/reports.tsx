@@ -12,7 +12,7 @@ import {
   TextInput,
   Platform,
 } from 'react-native';
-import { notify } from '../../src/store/toastStore';
+import { dismissToast, notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format, addDays, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
@@ -344,6 +344,7 @@ export default function ReportsScreen() {
   const handlePasswordSubmit = async () => {
     try {
       await authApi.verifyPassword(password);
+      dismissToast();
       setShowPasswordModal(false);
       setPassword('');
       setShowSetupModal(true);
