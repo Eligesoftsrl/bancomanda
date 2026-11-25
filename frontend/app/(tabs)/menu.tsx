@@ -12,6 +12,7 @@ import {
   Platform,
   Switch,
 } from 'react-native';
+import { ChipScroller } from '../../src/components/ChipScroller';
 import { notify } from '../../src/store/toastStore';
 import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -855,9 +856,7 @@ export default function MenuScreen() {
 
               {/* Category Filter */}
               {categories.length > 0 && currentMenu.items.length > 0 && (
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false} 
+                <ChipScroller
                   style={styles.categoryFilter}
                   contentContainerStyle={styles.categoryFilterContent}
                 >
@@ -880,7 +879,7 @@ export default function MenuScreen() {
                       </Text>
                     </TouchableOpacity>
                   ))}
-                </ScrollView>
+                </ChipScroller>
               )}
 
               {(() => {

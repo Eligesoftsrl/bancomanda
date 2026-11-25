@@ -48,14 +48,14 @@ export default function Root({ children }: PropsWithChildren) {
               body > div:first-child { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; }
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
-              /* Finestre a comparsa su computer: barra di scorrimento sempre visibile (Chrome/Safari via ::-webkit-scrollbar, Firefox via proprietà standard) */
+              /* Su computer: barre di scorrimento sottili e sempre visibili, anche per le righe di categorie orizzontali (Chrome/Safari via ::-webkit-scrollbar, Firefox via proprietà standard) */
               @media (pointer: fine) {
-                [role="dialog"] ::-webkit-scrollbar { width: 8px; height: 8px; }
-                [role="dialog"] ::-webkit-scrollbar-track { background: transparent; }
-                [role="dialog"] ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-                [role="dialog"] ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                ::-webkit-scrollbar { width: 8px; height: 8px; }
+                ::-webkit-scrollbar-track { background: transparent; }
+                ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+                ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
                 @supports not selector(::-webkit-scrollbar) {
-                  [role="dialog"] * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+                  * { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
                 }
               }
             `,

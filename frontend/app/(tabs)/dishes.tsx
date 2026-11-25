@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Platform,
 } from 'react-native';
+import { ChipScroller } from '../../src/components/ChipScroller';
 import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -374,7 +375,7 @@ export default function DishesScreen() {
 
       {/* Category Filter - Fixed height chips */}
       <View style={styles.categoryFilterWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryFilterContent}>
+        <ChipScroller contentContainerStyle={styles.categoryFilterContent}>
           <TouchableOpacity
             style={[styles.categoryChip, !selectedCategoryFilter && styles.categoryChipActive]}
             onPress={() => setSelectedCategoryFilter(null)}
@@ -395,7 +396,7 @@ export default function DishesScreen() {
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </ChipScroller>
       </View>
 
       {/* Content */}
@@ -545,7 +546,7 @@ export default function DishesScreen() {
               />
 
               <Text style={styles.inputLabel}>Categoria</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categorySelector}>
+              <ChipScroller style={styles.categorySelector} testID="dish-category-selector">
                 <TouchableOpacity
                   style={[styles.categorySelectorChip, !selectedCategoryId && styles.categorySelectorChipActive]}
                   onPress={() => setSelectedCategoryId(null)}
@@ -565,7 +566,7 @@ export default function DishesScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </ChipScroller>
 
               <Text style={styles.inputLabel}>Descrizione</Text>
               <TextInput

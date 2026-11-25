@@ -15,6 +15,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import { ChipScroller } from '../../src/components/ChipScroller';
 import { notify } from '../../src/store/toastStore';
 import { escapeHtml } from '../../src/utils/escapeHtml';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -2198,7 +2199,7 @@ export default function OrdersScreen() {
                   <Text style={styles.sectionSubtitle}>Tocca un piatto per selezionarlo</Text>
                   
                   {/* Category Filter */}
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.menuCategoryFilter}>
+                  <ChipScroller style={styles.menuCategoryFilter}>
                     <TouchableOpacity
                       style={[styles.menuCategoryChip, !selectedCategoryFilter && styles.menuCategoryChipActive]}
                       onPress={() => setSelectedCategoryFilter(null)}
@@ -2218,7 +2219,7 @@ export default function OrdersScreen() {
                         </Text>
                       </TouchableOpacity>
                     ))}
-                  </ScrollView>
+                  </ChipScroller>
 
                   {/* Pulsante Piatto Libero */}
                   {!showInlineCustomItem ? (
