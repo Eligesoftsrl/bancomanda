@@ -274,3 +274,9 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Web: `ToastHost.web.tsx` = portale in document.body, z-index 2147483000, overlay che lascia passare i click. iOS nativo: `ToastHost.tsx` con `FullWindowOverlay` (react-native-screens) sopra ai Modal — non testabile in preview.
 - Rimossi i Toast locali da index/menu/dishes/unpaid-orders (showToast → notify). customers.tsx e reports.tsx: `Alert.alert` (muto su web) → notify. OptionGroupsManager usa notify. Report: sblocco corretto chiude l'eventuale avviso d'errore.
 - unpaid-orders: se aperta direttamente torna a "/" (router.canGoBack()).
+
+## Scorrimento categorie su computer — 2026-11-25 ✅ (iteration_19, frontend 95% → LOW corretti)
+- `src/components/ChipScroller.tsx`: ScrollView orizzontale; su web la rotellina scorre in orizzontale (listener wheel non passivo su getScrollableNode, ai bordi lascia scorrere la pagina) e la barra resta visibile. Usato in: Piatti filtro (`dishes-category-filter`), modale piatto Categoria (`dish-category-selector`), Menu filtro (`menu-category-filter`), modale ordine (`order-menu-category-filter`).
+- `app/+html.tsx`: barre sottili 8px su desktop (pointer: fine) ora globali.
+- Piatti: caricamento a tutta pagina solo la prima volta (`loadedOnce`), così cambiando filtro la riga non torna all'inizio.
+- Nota per l'utente: nel piatto componibile la categoria decide la sezione del menu e del sito; senza categoria il piatto non compare sul sito.

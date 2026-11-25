@@ -857,6 +857,7 @@ export default function MenuScreen() {
               {/* Category Filter */}
               {categories.length > 0 && currentMenu.items.length > 0 && (
                 <ChipScroller
+                  testID="menu-category-filter"
                   style={styles.categoryFilter}
                   contentContainerStyle={styles.categoryFilterContent}
                 >

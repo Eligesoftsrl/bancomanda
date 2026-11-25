@@ -2199,7 +2199,7 @@ export default function OrdersScreen() {
                   <Text style={styles.sectionSubtitle}>Tocca un piatto per selezionarlo</Text>
                   
                   {/* Category Filter */}
-                  <ChipScroller style={styles.menuCategoryFilter}>
+                  <ChipScroller style={styles.menuCategoryFilter} testID="order-menu-category-filter">
                     <TouchableOpacity
                       style={[styles.menuCategoryChip, !selectedCategoryFilter && styles.menuCategoryChipActive]}
                       onPress={() => setSelectedCategoryFilter(null)}

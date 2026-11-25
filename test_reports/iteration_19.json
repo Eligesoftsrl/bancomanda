@@ -1,0 +1,33 @@
+{
+  "summary": "Frontend-only check of the desktop fix for scrolling category chips with the mouse wheel (ChipScroller). Tested on the Pizzeria Napoli preview tenant at 1280x800 and 1920x1080, plus an iPad touch context (1024x768). Mouse wheel scrolling now works in all 4 chip rows: Nuovo Piatto modal, Modifica Piatto modal, the Piatti page filter bar, the Menu tab filter, and the order modal 'Aggiungi dal Menu del Giorno' filter. Wheel 400 moves scrollLeft 0->400, and the row stops exactly at its end. No scroll trapping: at the end of the row, further wheel scrolls the modal vertically (dish modal 0->331, order modal 3->320). The last hidden category (TEST_Cat_24ce2f) could be reached, selected and saved: the dish was created in that category and shown under it. Filters work after scrolling on all three pages. iPad touch swipe on the modal chip row works (scrollLeft 0->668) and tap selects a chip. No JS page errors. One minor UX issue found (see below).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Piatti tab page-level category filter bar (dishes.tsx ~378)", "issue": "After you wheel to a far-right chip and click it, the row jumps back to scrollLeft 0, so the active chip is now off screen. Cause: setSelectedCategoryFilter changes the loadData deps, then loadData calls setIsLoading(true), then the screen returns the full-page 'Caricamento...' loader. That unmounts the whole UI, including ChipScroller, which then remounts at scroll 0. Menu tab and order modal filters keep their scroll position (400 stays 400) because they filter on the client side.", "selector": "Piatti filter row (no testID)", "priority": "LOW"},
+      {"component": "Dish edit modal category selector", "issue": "When the dish's category is far right (e.g. TEST_Cat_24ce2f), the selector opens at scrollLeft 0, so the selected chip is not visible until you scroll. Nice to have: scroll the active chip into view when the modal opens.", "selector": "[data-testid=dish-category-selector]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Global scrollbar", "issues": ["Headless Chromium hides scrollbars, so the thin desktop scrollbar could not be checked visually. I did verify that the @media (pointer: fine) ::-webkit-scrollbar rules (8px, #cbd5e1 thumb) are loaded, and that the RNW hide-scrollbar class is not on the chip rows (scrollbar-width: auto). Please check visually in a real desktop browser."]},
+      {"screen": "Piatti filter bar / dish filter rows", "issues": ["The page-level Piatti filter row has no testID. Suggest adding dishes-category-filter."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "LOW: Keep the Piatti filter bar's scroll position when a chip is selected. Only show the full-screen loader on the first load (e.g. if (isLoading && dishes.length === 0)) or use refreshing/inline loading, so ChipScroller is not unmounted.",
+    "LOW (optional): In the dish edit modal, scroll the selected category chip into view when the modal opens.",
+    "Optional: add testID to the Piatti, Menu and order-modal filter ChipScrollers."
+  ],
+  "critical_code_review_comments": [
+    "ChipScroller: the logic is solid. It passes control to the page at the edges, ignores mostly-horizontal (trackpad) gestures, and uses a non-passive listener with cleanup. The effect uses [] deps, which is fine because the node is stable for each mount.",
+    "ChipScroller ignores WheelEvent.deltaMode. If a browser reports line-mode deltas (deltaMode=1, older Firefox), each notch would only move about 3px. Optional: multiply by 16 when deltaMode===1.",
+    "dishes.tsx: loadData toggles the full-screen isLoading on every filter or showInactive change, which remounts the whole screen (root cause of the scroll-reset issue above)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "95%"},
+  "seed_data_creation": "Created dish TEST_ChipScroll_Dish (id 6b06ee6572e70e0cd20c2994) in TEST_Cat_24ce2f on Pizzeria Napoli, then deactivated it via DELETE /api/dishes/{id} (it is now active=false). No other data changed. Giorgio Bistrot not touched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pizzeria Napoli has about 11 TEST_Cat_* categories. At 1280px the Piatti filter row overflows (sw 1831 vs cw 1280), but at 1920 it does not. The modal selector [data-testid=dish-category-selector] is the scrollable node itself (sw 1823 / cw 452). Order modal: click [data-testid^=order-items-summary-] on the TEST_Composizione order. Use page.mouse.wheel and read scrollLeft. For iPad, use a new context with has_touch plus CDP Input.dispatchTouchEvent for swipes.",
+  "rca of the issue": "Original bug: horizontal RN-Web ScrollViews only scroll with shift+wheel or trackpad, so mouse-only desktop users could not reach the hidden chips. Fix verified: ChipScroller converts vertical wheel deltaY to scrollLeft. Reproduced the customer case (Nuovo Piatto > Categoria): the hidden categories can now be reached and selected."
+}

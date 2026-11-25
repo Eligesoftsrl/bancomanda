@@ -73,21 +73,25 @@ export default function DishesScreen() {
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState<{ visible: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
 
+  const [loadedOnce, setLoadedOnce] = useState(false);
+
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [dishesData, categoriesData] = await Promise.all([
+      const [dishesData, categoriesData, groupsData] = await Promise.all([
         dishesApi.getAll(!showInactive, selectedCategoryFilter || undefined),
         categoriesApi.getAll(),
+        optionGroupsApi.getAll(),
       ]);
       setDishes(dishesData);
       setCategories(categoriesData);
-      setOptionGroups(await optionGroupsApi.getAll());
+      setOptionGroups(groupsData);
     } catch (error) {
       console.error('Error loading data:', error);
       showToast('Impossibile caricare i dati', 'error');
     } finally {
       setIsLoading(false);
+      setLoadedOnce(true);
     }
   }, [showInactive, selectedCategoryFilter]);
 
@@ -313,7 +317,8 @@ export default function DishesScreen() {
     sortedCategoryNames.push('Senza categoria');
   }
 
-  if (isLoading) {
+  // Caricamento a tutta pagina solo la prima volta: cambiando filtro la riga delle categorie resta dov'era
+  if (isLoading && !loadedOnce) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -375,7 +380,7 @@ export default function DishesScreen() {
 
       {/* Category Filter - Fixed height chips */}
       <View style={styles.categoryFilterWrapper}>
-        <ChipScroller contentContainerStyle={styles.categoryFilterContent}>
+        <ChipScroller contentContainerStyle={styles.categoryFilterContent} testID="dishes-category-filter">
           <TouchableOpacity
             style={[styles.categoryChip, !selectedCategoryFilter && styles.categoryChipActive]}
             onPress={() => setSelectedCategoryFilter(null)}
