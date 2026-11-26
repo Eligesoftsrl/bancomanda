@@ -315,6 +315,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Apertura a cascata (Appear, 70ms per voce, massimo 12) su tutte le liste: Ordini, riepilogo, piatti del menu nel dettaglio, Menu, Piatti, Clienti, liste del Report
 - NOTA UTENTE: niente note colorate e niente funzioni inventate; MaterialM vale solo come riferimento grafico
 
+## Contatori stile "invoice list", schede Ordini tinte, Info/Stato Ordine a riquadri — 2026-11-26 ✅ (iteration_24 frontend 92% → fix applicati)
+- StatusCounters: riquadri bianchi con numero + etichetta a sinistra, icona in quadrato tenue a destra, barretta di quota animata (quota sullo stato totale); bordo colorato quando filtrano; scorrimento orizzontale sotto 1100px di contenuto, etichette brevi sotto 1350px
+- OrderTicket: sfondo tenue del colore dello stato, nome nello stesso tono, elementi bianchi semitrasparenti sopra
+- Dettaglio ordine: Info Ordine a riquadri (Intestatario azzurro, Tipologia viola, Ora consegna gialla, Note grigio neutro); Stato Ordine con riquadro tinto dello stato + icona; pulsanti Cambia stato con icona e larghezze uguali; Pagamento e Scontrino come riquadri
+- Fix web: RefreshControl di RN-web duplica margin/padding dello style dello ScrollView → usare un View contenitore o contentContainerStyle
+
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
 - P2: lint globale (setState in useEffect preesistenti)

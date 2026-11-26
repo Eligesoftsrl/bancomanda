@@ -1,0 +1,42 @@
+{
+  "summary": "Frontend-only test of the restyle on Pizzeria Napoli: status counters (MaterialM invoice boxes), tinted Ordini cards, Info Ordine and Stato Ordine tiles, plus the iteration_23 regressions. Viewports: 1366x900, 1180x820, 820x1180 and 390x844. I created 5 TEST_ orders for today (2026-11-26), one per status, and one of them had a delivery time and notes. I removed them all afterwards, along with the menu item I added. The logic all works: filtering, numbers, bar shares, edit, status change, payment and the footer close. One real layout issue: at 1180 and 820 widths, the counter labels are cut off with an ellipsis.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "StatusCounters (row layout, not compact)", "issue": "The labels are cut off inside the boxes on tablet. At 1180x820 each box is 135px wide, and 'Preparaz.', 'Sospesi' and 'Consegn.' show as 'Prep…', 'Sosp…' and 'Cons…'. At 820x1180 each box is 117px wide and every label except 'Tutti' is cut off: 'Att…', 'Pr…', 'Pr…', 'So…', 'Co…'. Preparazione and Pronti both show as 'Pr…', so the user cannot tell them apart. Cause: the 44px icon, 32px of padding and the 8px gap leave only about 30-50px for the label. This breaks the 'no cut-off text inside a box' rule. The 6 boxes do fit in one row with no horizontal overflow, and there is no overlap. Suggested fix: use the compact horizontal scroll (168px boxes) below about 1250px content width, or make the icon square smaller (for example 34px) and the padding smaller at these widths. At 1366, no label is cut off.", "selector": "[data-testid^=counter-filter-]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Ordini home 1366/1180", "issues": ["The order grid is about 6-7px wider than the counter row on each side. Cards run from x=265 to 1163 at 1180, while the counters run from 272 to 1156. The left and right edges do not line up."]},
+      {"screen": "Order detail > Cambia stato (desktop)", "issues": ["The 4 status buttons are sized by their content, so they have uneven widths (about 270, 228, 240 and 264px at 1366). Equal flex:1 widths would look tidier. This is cosmetic only."]},
+      {"screen": "Ordini card at 820 and 390", "issues": ["Long customer names are cut off with an ellipsis, for example 'TEST_Prep Bia…' and 'TEST_Sospeso N…'. This is because of numberOfLines=1, so it is expected. Nothing overlaps."]}
+    ]
+  },
+  "passed_checks": [
+    "Counters: all 6 boxes have a white background (#fff), the number and label on the left, the icon in a tinted 44px square on the right, and a progress bar. The bar share is correct: Tutti 75/94px = 4/5, each status 18/94px = 1/5. The numbers match the grid: Tutti 4 = the active cards, and each status shows 1.",
+    "Filter: tapping Pronto shows only the Pronto card and gives the box a teal border (rgb 19,201,161). Tapping it again clears the filter (4 cards, transparent border). Tapping Consegnato shows the 1 delivered card. Tapping Tutti clears the filter and gives Tutti a violet border.",
+    "Phone 390: the counters scroll horizontally (scrollWidth 1086), each box is 168px wide, there is no overlap and no cut-off label. Filtering works after scrolling.",
+    "No page-level horizontal overflow at any viewport.",
+    "Card tints: in attesa rgb(255,244,224), in preparazione rgb(229,245,255), pronto rgb(225,247,241), sospeso rgb(253,236,236), consegnato grey. The name is in the status colour, and the chips, badge, print button and pay pill are white or semi-white. The print button never overlaps the badge, and the pay pill stays inside the card.",
+    "Info Ordine tiles: customer is blue, service is violet, delivery time is amber (shown only when set) and notes are neutral grey across the full width (shown only when set). On phone they stack to the full width with no cut-off text.",
+    "Modifica opens the edit form, Annulla discards the change, and Salva saves the notes, which then show in the notes tile.",
+    "Stato Ordine: the current-status tile is tinted and shows the label and icon. Changing to Pronto updates the tile (teal) and the button list. Changing back restored the status. Each status button has an icon and text.",
+    "Payment tile toggles Pagato ⇄ Da pagare, with green and red tints. I toggled it back. The receipt tile (order-receipt-capture) is present.",
+    "Regressions: the Riepilogo item cards look fine, order-footer-close opens and closes the footer, and the Tipologia icons in the edit form are visible (muted grey, blue when selected). No page errors."
+  ],
+  "test_report_links": ["/app/tests/setup_iter24.py"],
+  "action_items": [
+    "StatusCounters: stop the labels being cut off at tablet widths (1180 and 820). Use the compact scroll layout or a smaller icon and padding when each box is narrower than about 160px.",
+    "Optional: line up the order grid edges with the counter row, and give the 'Cambia stato' buttons equal widths."
+  ],
+  "critical_code_review_comments": [
+    "StatusCounters uses short labels when contentWidth < 1150, but the number of characters is not the real limit. The width left inside the box is. The compact layout is only used when isSmallScreen is true, so 820 portrait gets 117px boxes.",
+    "app/(tabs)/index.tsx is still about 5000 lines and should be split, for example into OrderDetail, StatusSection and InfoTiles components."
+  ],
+  "updated_files": ["/app/tests/setup_iter24.py (new test data setup and cleanup script)"],
+  "success_rate": {"backend": "not tested (frontend only)", "frontend": "92% (all functional checks pass; 1 layout issue at tablet widths)"},
+  "seed_data_creation": "I created 5 TEST_ orders on 2026-11-26 and added the menu item TEST_Pizza_88510a to that day's menu, which already existed and was empty. All of it was deleted after the test, and the day's menu is empty again.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run `python3 /app/tests/setup_iter24.py` to create one TEST_ order per status for 2026-11-26. It logs in by itself and writes ids to /tmp/iter24.json. Run `python3 /app/tests/setup_iter24.py cleanup` to remove them. The edit form uses edit-customer-name-input, edit-notes-input and save-order-header-btn, and Annulla is a text button. The detail status buttons leave out the current status."
+}

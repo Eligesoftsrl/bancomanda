@@ -1033,8 +1033,8 @@ export default function OrdersScreen() {
         counts={counterValues}
         active={statusFilter}
         onChange={(key) => setStatusFilter(key as any)}
-        compact={isSmallScreen}
-        short={contentWidth < 1150}
+        compact={contentWidth < 1100}
+        short={contentWidth < 1350}
       />
 
       {/* Content */}
@@ -1086,40 +1086,42 @@ export default function OrdersScreen() {
             testID="orders-empty-menu"
           />
         ) : (
-          <ScrollView
-            key={`${selectedDate}-${statusFilter || 'tutti'}`}
-            style={styles.ordersList}
-            contentContainerStyle={styles.ordersGrid}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
-            }
-          >
-            {filteredOrders.length === 0 ? (
-              <View style={styles.ordersGridFull}>
-                <EmptyOrders
-                  icon="receipt-outline"
-                  title={statusFilter ? `Nessun ordine ${STATUS_LABELS[statusFilter]}` : 'Nessun ordine'}
-                  subtitle={orderSearchQuery ? 'Prova a cercare un altro nome' : statusFilter ? 'Scegli "Tutti" per vedere gli altri ordini' : 'Tocca "Nuovo ordine" per iniziare'}
-                  testID="orders-empty"
-                />
-              </View>
-            ) : (
-              filteredOrders.map((order, index) => (
-                <Appear key={order.id} index={index} style={[styles.ordersGridCell, { width: `${100 / gridCols}%` as any }]}>
-                  <OrderTicket
-                    order={order}
-                    selected={selectedOrder?.id === order.id}
-                    onOpen={() => {
-                      setSelectedOrder(order);
-                      setShowAddItemModal(true);
-                    }}
-                    onPrint={(e) => handlePrintOrder(order, e)}
-                    onTogglePayment={() => handleTogglePayment(order)}
+          <View style={styles.ordersList}>
+            <ScrollView
+              key={`${selectedDate}-${statusFilter || 'tutti'}`}
+              style={styles.ordersListScroll}
+              contentContainerStyle={styles.ordersGrid}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />
+              }
+            >
+              {filteredOrders.length === 0 ? (
+                <View style={styles.ordersGridFull}>
+                  <EmptyOrders
+                    icon="receipt-outline"
+                    title={statusFilter ? `Nessun ordine ${STATUS_LABELS[statusFilter]}` : 'Nessun ordine'}
+                    subtitle={orderSearchQuery ? 'Prova a cercare un altro nome' : statusFilter ? 'Scegli "Tutti" per vedere gli altri ordini' : 'Tocca "Nuovo ordine" per iniziare'}
+                    testID="orders-empty"
                   />
-                </Appear>
-              ))
-            )}
-          </ScrollView>
+                </View>
+              ) : (
+                filteredOrders.map((order, index) => (
+                  <Appear key={order.id} index={index} style={[styles.ordersGridCell, { width: `${100 / gridCols}%` as any }]}>
+                    <OrderTicket
+                      order={order}
+                      selected={selectedOrder?.id === order.id}
+                      onOpen={() => {
+                        setSelectedOrder(order);
+                        setShowAddItemModal(true);
+                      }}
+                      onPrint={(e) => handlePrintOrder(order, e)}
+                      onTogglePayment={() => handleTogglePayment(order)}
+                    />
+                  </Appear>
+                ))
+              )}
+            </ScrollView>
+          </View>
         )}
       </View>
 
@@ -2872,6 +2874,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: -7,
   },
+  ordersListScroll: {
+    flex: 1,
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -4078,6 +4083,7 @@ const styles = StyleSheet.create({
     borderRadius: R.md,
     minWidth: 130,
     flexGrow: 1,
+    flexBasis: 0,
   },
   statusGridButtonText: {
     fontFamily: FONT,

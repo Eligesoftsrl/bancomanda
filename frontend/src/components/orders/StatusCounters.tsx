@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { PressableScale } from '../motion/PressableScale';
@@ -73,6 +73,7 @@ export const StatusCounters = ({ counts, active, onChange, compact, short }: {
   compact: boolean;
   short: boolean;
 }) => {
+  const phone = useWindowDimensions().width < 768;
   const total = ITEMS.reduce((a, it) => a + (it.key ? counts[it.key] || 0 : 0), 0);
   const boxes = ITEMS.map((item, i) => (
     <Box key={item.key || 'tutti'} index={i} item={item} compact={compact} short={short} total={total}
@@ -80,7 +81,7 @@ export const StatusCounters = ({ counts, active, onChange, compact, short }: {
       onPress={() => onChange(item.key && active === item.key ? null : item.key)} />
   ));
   return compact ? (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bar} contentContainerStyle={styles.rowCompact}>{boxes}</ScrollView>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bar} contentContainerStyle={[styles.rowCompact, !phone && styles.rowCompactWide]}>{boxes}</ScrollView>
   ) : (
     <View style={[styles.bar, styles.row]}>{boxes}</View>
   );
@@ -90,6 +91,7 @@ const styles = StyleSheet.create({
   bar: { backgroundColor: C.canvas, flexGrow: 0 },
   row: { flexDirection: 'row', gap: 14, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 6 },
   rowCompact: { gap: 10, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 6 },
+  rowCompactWide: { paddingHorizontal: 24, paddingTop: 20, gap: 14 },
   wrap: { flex: 1, minWidth: 0 },
   wrapCompact: { width: 168 },
   box: {
