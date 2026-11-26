@@ -120,6 +120,6 @@ export const selectionNames = (groups: OptionGroup[], s: Selections) =>
 
 // Prezzo da mostrare: fisso per i piatti già composti, "da" per i componibili
 export const priceText = (base: number, dish: Dish | undefined, groups: OptionGroup[], unavailable: string[] = []) => {
-  if (isPreset(dish)) return euro(base + presetExtra(dish, groups));
+  if (isPreset(dish)) return euro(base + selectionExtra(groups, presetStart(dish, groups, unavailable)));
   return groups.length ? `da ${euro(fromPrice(base, groups, unavailable))}` : euro(base);
 };

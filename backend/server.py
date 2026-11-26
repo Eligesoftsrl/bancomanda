@@ -1290,6 +1290,25 @@ async def update_order_info(order_id: str, update: OrderUpdateInfo):
     updated_order = await db.orders.find_one({"_id": ObjectId(order_id)})
     return Order(id=str(updated_order["_id"]), **{k: v for k, v in updated_order.items() if k != "_id"})
 
+async def _shift_portions(order: dict, sign: int) -> None:
+    """Rende (+1) o riprende (-1) le porzioni di un ordine; somma le righe dello stesso piatto."""
+    qty: dict = {}
+    for it in order.get("items", []):
+        if it.get("dishId") and not it.get("isCustomItem"):
+            qty[it["dishId"]] = qty.get(it["dishId"], 0) + int(it.get("quantity", 0))
+    menu = await db.daily_menus.find_one({"date": order["menuDate"]})
+    if not menu or not qty:
+        return
+    in_menu = {mi["dishId"]: mi for mi in menu.get("items", [])}
+    if sign < 0:
+        for dish_id, q in qty.items():
+            if dish_id in in_menu and in_menu[dish_id]["portions"] < q:
+                raise HTTPException(status_code=400, detail=f"Porzioni insufficienti per {in_menu[dish_id]['dishName']}")
+    for dish_id, q in qty.items():
+        if dish_id in in_menu:
+            await db.daily_menus.update_one({"_id": menu["_id"], "items.dishId": dish_id}, {"$inc": {"items.$.portions": sign * q}})
+
+
 @api_router.put("/orders/{order_id}/status", response_model=Order)
 async def update_order_status(order_id: str, status_update: OrderUpdateStatus):
     valid_statuses = ["in_attesa", "in_preparazione", "pronto", "sospeso", "consegnato"]
@@ -1302,33 +1321,11 @@ async def update_order_status(order_id: str, status_update: OrderUpdateStatus):
     
     # If suspending, restore portions
     if status_update.status == "sospeso" and order["status"] != "sospeso":
-        menu = await db.daily_menus.find_one({"date": order["menuDate"]})
-        if menu:
-            for order_item in order["items"]:
-                for mi in menu["items"]:
-                    if mi["dishId"] == order_item["dishId"]:
-                        new_portions = mi["portions"] + order_item["quantity"]
-                        await db.daily_menus.update_one(
-                            {"_id": ObjectId(menu["_id"]), "items.dishId": order_item["dishId"]},
-                            {"$set": {"items.$.portions": new_portions}}
-                        )
-                        break
-    
+        await _shift_portions(order, +1)
+
     # If un-suspending, reduce portions again
     if order["status"] == "sospeso" and status_update.status != "sospeso":
-        menu = await db.daily_menus.find_one({"date": order["menuDate"]})
-        if menu:
-            for order_item in order["items"]:
-                for mi in menu["items"]:
-                    if mi["dishId"] == order_item["dishId"]:
-                        new_portions = mi["portions"] - order_item["quantity"]
-                        if new_portions < 0:
-                            raise HTTPException(status_code=400, detail=f"Porzioni insufficienti per {order_item['dishName']}")
-                        await db.daily_menus.update_one(
-                            {"_id": ObjectId(menu["_id"]), "items.dishId": order_item["dishId"]},
-                            {"$set": {"items.$.portions": new_portions}}
-                        )
-                        break
+        await _shift_portions(order, -1)
     
     await db.orders.update_one(
         {"_id": ObjectId(order_id)},
@@ -1562,19 +1559,8 @@ async def delete_order(order_id: str):
         raise HTTPException(status_code=404, detail="Ordine non trovato")
     
     # Restore portions for each item (only non-custom items)
-    menu = await db.daily_menus.find_one({"date": order["menuDate"]})
-    if menu:
-        for item in order.get("items", []):
-            if item.get("dishId") and not item.get("isCustomItem"):
-                for mi in menu["items"]:
-                    if mi["dishId"] == item["dishId"]:
-                        new_portions = mi["portions"] + item["quantity"]
-                        await db.daily_menus.update_one(
-                            {"_id": ObjectId(menu["_id"]), "items.dishId": item["dishId"]},
-                            {"$set": {"items.$.portions": new_portions}}
-                        )
-                        logger.info(f"[PORZIONI] ORDINE CANCELLATO - Piatto: {item['dishName']}, Ripristinate: {item['quantity']}, Porzioni DOPO: {new_portions}")
-                        break
+    await _shift_portions(order, +1)
+    logger.info(f"[PORZIONI] ORDINE CANCELLATO - ordine {order_id}: porzioni ripristinate")
     
     # Delete the order
     await db.orders.delete_one({"_id": ObjectId(order_id)})

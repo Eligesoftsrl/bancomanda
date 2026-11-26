@@ -141,6 +141,18 @@ class TestPresetFlow:
         entries = [e for g in k.json() for e in g["entries"] if e["orderId"] == S["order"]]
         assert entries and entries[0]["presetChanges"] == {"removed": ["Cheddar"], "added": ["Bacon"]}
 
+    def test_portions_with_repeated_dish_lines(self, H, S):
+        def portions():
+            m = requests.get(f"{API}/menus/date/{TODAY}", headers=H).json()
+            return next(i["portions"] for i in m["items"] if i["dishId"] == S["dish"]["id"])
+        assert portions() == 8  # 10 - 2 righe dello stesso piatto
+        r = requests.put(f"{API}/orders/{S['order']}/status", headers=H, json={"status": "sospeso"})
+        assert r.status_code == 200 and portions() == 10, r.text
+        r = requests.put(f"{API}/orders/{S['order']}/status", headers=H, json={"status": "in_attesa"})
+        assert r.status_code == 200 and portions() == 8, r.text
+        r = requests.delete(f"{API}/orders/{S['order']}", headers=H)
+        assert r.status_code == 200 and portions() == 10, r.text
+
     def test_turn_off_recipe(self, H, S):
         r = requests.put(f"{API}/dishes/{S['dish']['id']}", headers=H, json={"presetSelections": []})
         assert r.status_code == 200 and r.json()["presetSelections"] == [], r.text

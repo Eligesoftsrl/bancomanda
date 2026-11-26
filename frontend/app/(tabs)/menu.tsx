@@ -875,7 +875,7 @@ export default function MenuScreen() {
                       </View>
                       {itemGroups(item).length > 0 && (
                         <Text style={styles.menuItemComposable} testID={`menu-item-composable-${item.dishId}`}>
-                          Componibile · {itemGroups(item).map((g) => g.name).join(' + ')}
+                          {isPreset(dishById(item.dishId)) ? 'Già composto · personalizzabile' : `Componibile · ${itemGroups(item).map((g) => g.name).join(' + ')}`}
                           {(item.unavailableOptionIds || []).length ? ` · ${(item.unavailableOptionIds || []).length} esauriti oggi` : ''}
                         </Text>
                       )}
@@ -1218,6 +1218,7 @@ export default function MenuScreen() {
                   placeholder="Numero di porzioni"
                   placeholderTextColor="#5A6A85"
                   keyboardType="number-pad"
+                  testID="menu-add-portions-input"
                 />
 
                 <Text style={styles.inputLabel}>Prezzo Giornaliero *</Text>
@@ -1228,6 +1229,7 @@ export default function MenuScreen() {
                   placeholder="Prezzo in euro"
                   placeholderTextColor="#5A6A85"
                   keyboardType="decimal-pad"
+                  testID="menu-add-price-input"
                 />
 
                 <Text style={styles.inputLabel}>Note Operative</Text>
@@ -1238,6 +1240,7 @@ export default function MenuScreen() {
                   placeholder="Note per la preparazione..."
                   placeholderTextColor="#5A6A85"
                   multiline
+                  testID="menu-add-notes-input"
                 />
 
                 <TouchableOpacity style={styles.primaryButton} onPress={handleAddDish} testID="menu-add-dish-confirm">
@@ -1272,6 +1275,7 @@ export default function MenuScreen() {
                   placeholder="Numero di porzioni"
                   placeholderTextColor="#5A6A85"
                   keyboardType="number-pad"
+                  testID="menu-edit-portions-input"
                 />
 
                 <Text style={styles.inputLabel}>Prezzo Giornaliero</Text>
@@ -1282,6 +1286,7 @@ export default function MenuScreen() {
                   placeholder="Prezzo in euro"
                   placeholderTextColor="#5A6A85"
                   keyboardType="decimal-pad"
+                  testID="menu-edit-price-input"
                 />
 
                 <Text style={styles.inputLabel}>Note Operative</Text>
@@ -1292,6 +1297,7 @@ export default function MenuScreen() {
                   placeholder="Note per la preparazione..."
                   placeholderTextColor="#5A6A85"
                   multiline
+                  testID="menu-edit-notes-input"
                 />
 
                 {itemGroups(selectedItem).length > 0 && (

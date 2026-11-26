@@ -31,7 +31,7 @@ import { useAppStore } from '../../src/store/appStore';
 import { ordersApi, menusApi, customersApi, categoriesApi, dishesApi, optionGroupsApi } from '../../src/services/api';
 import { Order, MenuItem, Customer, Category, Dish, OptionGroup, Selections } from '../../src/types';
 import { DishComposer } from '../../src/components/composable/DishComposer';
-import { euro, fromPrice, groupsForDish, isPreset, itemCompositionText, presetExtra, presetOf, presetStart, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
+import { euro, fromPrice, groupsForDish, isPreset, itemCompositionText, presetOf, presetStart, priceText, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
 import { PresetChangesBar } from '../../src/components/composable/PresetChangesBar';
 import { sortCategoriesByFixedOrder, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { TimePickerInline } from '../../src/components/TimePickerInline';
@@ -2281,7 +2281,7 @@ export default function OrdersScreen() {
                             <View style={styles.menuItemInfo}>
                               <Text style={styles.menuItemName}>{item.dishName}</Text>
                               {isPreset(dishMap[item.dishId]) ? (
-                                <Text style={styles.menuItemPrice}>{euro(item.dailyPrice + presetExtra(dishMap[item.dishId], itemGroups))} · personalizzabile</Text>
+                                <Text style={styles.menuItemPrice}>{priceText(item.dailyPrice, dishMap[item.dishId], itemGroups, item.unavailableOptionIds)} · personalizzabile</Text>
                               ) : itemGroups.length > 0 ? (
                                 <Text style={styles.menuItemPrice}>Componi · {itemGroups.map((g) => g.name).join(' + ')}</Text>
                               ) : (

@@ -1,0 +1,40 @@
+{
+  "summary": "Frontend-only E2E test of the pre-composed dishes ('Piatto già composto') feature and the 'Gruppi' -> 'Liste di scelta' rename in Pizzeria Napoli, using Playwright at 1920x1080, 1024x768 and 390x844. Everything requested works: the rename, creating/editing a pre-composed dish with all 3 validation toasts, menu prices, removing/adding ingredients in the order footer (tags, changes bar, price changes, Ripristina), saving the order line, editing the line, the kitchen section, and the regression check on TEST_Piatto Fit. Found 1 mobile layout bug in DishComposer: the rows with a tag overflow at 390px and the + button goes past the screen in the order-line edit. Found 1 older backend bug, made more likely by this feature: deleting an order with 2 lines of the same dish gives back only 1 portion.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "DELETE /api/orders/{order_id}", "issue": "When an order has 2+ lines with the same dishId (common now, e.g. 'Panino Classico SENZA Cheddar' plus a standard 'Panino Classico'), only 1 portion comes back to the daily menu. RCA: server.py delete_order loads `menu` once, then for each line sets portions = mi['portions'] + qty from that same stale snapshot, so each line overwrites the previous one. Reproduced: menu 20 -> order with 2 Panino lines (18) -> delete order -> 19. Fix: add up the quantities per dishId first, or use $inc on items.$.portions."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DishComposer OptionRow (multi-select rows with TagPill) at 390px", "issue": "On a phone, the row holds name + tag ('Nella ricetta') + price + stepper and is too wide. The price wraps ('+3.00' / '€') and the stepper overflows the row. Order footer at 390: Hamburger '+' right edge at x=375 while the row ends at x=361. Order-line edit (item-edit-form-0) at 390: Hamburger '+' right edge at x=409 and Cheddar at x=388, past the 390px screen, so the + is cut off and hard to tap. Fine at 1024 and 1920. Suggested fix: name {flex:1,minWidth:0}, price/stepper {flexShrink:0}, and on narrow screens put the tag under the name (or flexWrap the row).", "selector": "[data-testid=composer-plus-<optionId>] inside order-fixed-footer / item-edit-form-<index>", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Menu > Menu di oggi item", "issues": ["A pre-composed dish shows 'Componibile · Pane + Farciture' (menu-item-composable-<dishId>), while the catalog and Piatti cards say 'Già composto'. It should say 'Già composto' here too."]},
+      {"screen": "Scheda piatto", "issues": ["The 'Piatto già composto' card already appears with only 1 list selected. The request said 2+ lists. Fine if intended."]},
+      {"screen": "Order line changes text", "issues": ["Swapping the bread reads 'SENZA Pane al sesamo · + Pane integrale'. It is correct but long, and wraps to 3 lines in the mobile changes bar. Consider showing a swap inside a single-choice list as 'Pane integrale al posto di Pane al sesamo' (optional)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix the DishComposer row overflow at 390px: stepper/+ button go past the row and the screen in the order-line edit and the order footer when tags are shown",
+    "Fix delete_order restoring portions when the same dish is on several lines: use $inc or add up quantities per dishId",
+    "Show 'Già composto' instead of 'Componibile · ...' on today's menu item for pre-composed dishes"
+  ],
+  "critical_code_review_comments": [
+    "priceText() for pre-composed dishes always adds the full recipe value. presetStart() leaves out ingredients marked sold out today, so if a recipe ingredient is unavailable, the menu/order list shows 8.00 € but the footer starts lower. Consider showing that the dish is incomplete, or blocking it.",
+    "A pre-composed line ordered exactly as the recipe shows no composition text (presetChanges is empty, so the text is ''). This is acceptable but make sure it is intended. Kitchen and ticket show just the dish name.",
+    "Dish basePrice is stored as final price minus recipe value. Changing an ingredient price later silently changes the dish's final price. Fine as a design choice, but worth a hint in the UI.",
+    "menu.tsx add-dish modal inputs (portions, daily price) have no testID; tests had to use placeholders.",
+    "index.tsx is 5073 lines, dishes.tsx 1366, menu.tsx 2224, reports.tsx 2326. These should be split."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend only)", "frontend": "95% (all 9 requested flows pass; 1 mobile layout bug)"},
+  "seed_data_creation": "Created TEST_Panino Preset dish (6b0836ca606273b88e8e835f), now deactivated (DELETE is a soft delete). Order #1 6b08372a606273b88e8e8362 was created and deleted. Added Panino Classico (20 portions, 8.00 €) to the Napoli menu of 2026-11-26. It is left there, with portions set back to 20 by hand after the delete_order bug. TEST_Piatto Fit was added and then removed from today's menu. Giorgio Bistrot not touched.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Napoli IDs: Pane list 6b0835f9606273b88e8e8352 (sesamo ...350, integrale ...351), Farciture 6b0835f9606273b88e8e8358 (Hamburger ...353, Cheddar ...354, Bacon ...355, Cipolla ...356, Insalata ...357). Panino Classico 6b0835fa606273b88e8e8359. TEST_Piatto Fit 6b06c4a00018e615ca3a017c. Today's menu id 6b0807df6ecc95dad8556d42 (2026-11-26). RN-web modals slide in: wait about 1.5s after opening before clicking, and use scroll_into_view_if_needed. Flow: new-order-button -> create-order-button opens the order detail with order-menu-item-<dishId>. Retest: composer row widths at 390 (item-edit-form and order-fixed-footer), and delete_order portions with duplicate dish lines.",
+  "rca of the issue": "Mobile overflow: DishComposer.tsx OptionRow is a single flex row (name flex:1 + TagPill + price + stepper 102px + gaps 30px + padding 20px). In item-edit-form the content width is about 263px, smaller than the minimum width of the row's contents, so the stepper overflows; price Text shrinks and wraps. Portion restore: server.py delete_order works from a stale menu document inside the loop."
+}

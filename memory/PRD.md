@@ -327,6 +327,15 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Report giornaliero: barra con interruttore Giornaliero/Periodo a sinistra e data a destra; "Resoconto del giorno" (confronto % con ieri) + grafico "Incasso per ora" oggi vs ieri (GET /api/reports/hourly-revenue?date=, ora italiana di arrivo, annullati esclusi); sezioni sotto in due colonne; periodo: preset e date a destra, impilati a tutta larghezza su telefono
 - Piatti: tinta per categoria (stabile per nome); Clienti: privato azzurro, società viola, fermo da 6 mesi giallo, archiviato grigio
 
+## "Gruppi" → "Liste di scelta" + Piatti già composti — 2026-11-26 ✅ (iteration_26 frontend 95% → fix applicati; backend 27/27)
+- Rinomina in tutta l'interfaccia e nei messaggi del server: "Liste di scelta", "Nuova lista", "Salva lista", "Lista non trovata"…
+- Piatto componibile con ricetta: `dishes.presetSelections` [{optionId, quantity}] validato con le regole delle liste (min/max/ripetibili). Scheda piatto: card "Piatto già composto" (dish-preset-toggle) → si spuntano gli ingredienti; il prezzo inserito è il prezzo finale, salvato come basePrice = prezzo − valore ingredienti
+- Ordine: si parte dalla ricetta (senza gli esauriti di oggi); tag "Nella ricetta/Tolto/Extra", barra "SENZA X · + Y" con Ripristina. Prezzo = prezzo menu + ingredienti scelti (togliere scala il costo, aggiungere paga il supplemento). Riga ordine: `presetChanges {removed, added}` (anche in cucina, porzionatura, scontrino, storico cliente)
+- JSON sito: piatto già composto con prezzo fisso, `ingredients`, `customizable: true`, liste disponibili per personalizzare
+- Fix porzioni: sospensione/riattivazione/cancellazione ordine sommano le righe dello stesso piatto ($inc), prima ne veniva resa solo una
+- Dati di prova Pizzeria Napoli: liste "Pane", "Farciture" e piatto "Panino Classico" (8,00 €)
+
+
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
 - P2: lint globale (setState in useEffect preesistenti)
