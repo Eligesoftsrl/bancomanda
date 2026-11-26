@@ -335,6 +335,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Fix porzioni: sospensione/riattivazione/cancellazione ordine sommano le righe dello stesso piatto ($inc), prima ne veniva resa solo una
 - Dati di prova Pizzeria Napoli: liste "Pane", "Farciture" e piatto "Panino Classico" (8,00 €)
 
+## Fix Ordini (piatti nuovi) + scheda Piatti — 2026-11-26 ✅ (verificato con screenshot)
+- Produzione: l'utente ha creato "Insalata Tonno , Noci e permigiano" (già composto) ma nell'ordine 58 non vedeva ingredienti. Causa: Ordini caricava piatti/liste una sola volta, la sincronizzazione aggiornava solo menu e ordini → piatto nuovo trattato come semplice. Fix: `loadCatalog` in index.tsx all'ingresso nella scheda (useFocusEffect), all'apertura/creazione ordine
+- Piatti: usava lo store condiviso `dishes` che il Menu riscrive con tutti i piatti → filtro categoria attivo ma lista completa al rientro. Ora lista locale, filtro categoria e ricerca sul dispositivo (un solo caricamento, niente richiesta a ogni filtro), ricarica al rientro; disegno a blocchi di 48 (scorrendo o "Mostra altri piatti", `dishes-load-more`), animazione solo sui primi 12 per categoria (`Appear animate`), liste dei piatti calcolate una volta
+- testID: `dishes-filter-all`, `dishes-filter-chip-{id}`
+- Produzione: serve "Save to Github" per avere i fix su Vercel/Railway
+
 
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli

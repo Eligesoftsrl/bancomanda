@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View,
   Text,
@@ -525,6 +526,19 @@ export default function OrdersScreen() {
   const [syncError, setSyncError] = useState<boolean>(false);
   const [nowTs, setNowTs] = useState<number>(Date.now());
 
+  // Piatti e liste di scelta: da ricaricare quando cambiano in Piatti/Menu (o da un altro tablet)
+  const loadCatalog = useCallback(async () => {
+    try {
+      const [allDishes, groups] = await Promise.all([dishesApi.getAll(false), optionGroupsApi.getAll()]);
+      setDishMap(Object.fromEntries(allDishes.map((d) => [d.id, d])));
+      setOptionGroups(groups);
+    } catch (error) {
+      console.error('Error loading dishes/option groups:', error);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { loadCatalog(); }, [loadCatalog]));
+
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -537,14 +551,8 @@ export default function OrdersScreen() {
         console.error('Error loading categories:', error);
       }
       
-      // Piatti e gruppi di scelta (per i piatti componibili)
-      try {
-        const [allDishes, groups] = await Promise.all([dishesApi.getAll(false), optionGroupsApi.getAll()]);
-        setDishMap(Object.fromEntries(allDishes.map((d) => [d.id, d])));
-        setOptionGroups(groups);
-      } catch (error) {
-        console.error('Error loading option groups:', error);
-      }
+      // Piatti e liste di scelta (per i piatti componibili)
+      await loadCatalog();
       
       // Load menu for selected date
       try {
@@ -575,7 +583,7 @@ export default function OrdersScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, loadCatalog]);
 
   // Silent background sync (no loading spinner, no toast on success)
   const silentSync = useCallback(async () => {
@@ -711,6 +719,7 @@ export default function OrdersScreen() {
       setNewOrderNotes('');
       setNewOrderDeliveryTime('');
       setShowAddItemModal(true);
+      loadCatalog();
       showToast('Ordine creato');
     } catch (error: any) {
       showToast(error.response?.data?.detail || 'Impossibile creare l\'ordine', 'error');
@@ -1116,6 +1125,7 @@ export default function OrdersScreen() {
                       onOpen={() => {
                         setSelectedOrder(order);
                         setShowAddItemModal(true);
+                        loadCatalog();
                       }}
                       onPrint={(e) => handlePrintOrder(order, e)}
                       onTogglePayment={() => handleTogglePayment(order)}

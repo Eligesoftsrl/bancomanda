@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View,
   Text,
@@ -15,7 +16,6 @@ import { ChipScroller } from '../../src/components/ChipScroller';
 import { notify } from '../../src/store/toastStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore } from '../../src/store/appStore';
 import { dishesApi, categoriesApi , optionGroupsApi } from '../../src/services/api';
 import { Dish, Category } from '../../src/types';
 import { sortCategoriesByFixedOrder, sortDishesByCategory } from '../../src/utils/categoryOrder';
@@ -47,11 +47,14 @@ const CATEGORY_TINTS = [
 const tintFor = (name: string) =>
   CATEGORY_TINTS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % CATEGORY_TINTS.length];
 
+const PAGE_SIZE = 48;
+
 export default function DishesScreen() {
   const { contentWidth } = useWideLayout();
   const cols = contentWidth >= 1180 ? 3 : contentWidth >= 700 ? 2 : 1;
   const cellW = `${100 / cols}%` as const;
-  const { dishes, setDishes } = useAppStore();
+  // Lista propria: lo store condiviso viene riscritto dal Menu con tutti i piatti
+  const [dishes, setDishes] = useState<Dish[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +106,7 @@ export default function DishesScreen() {
     try {
       setIsLoading(true);
       const [dishesData, categoriesData, groupsData] = await Promise.all([
-        dishesApi.getAll(!showInactive, selectedCategoryFilter || undefined),
+        dishesApi.getAll(!showInactive),
         categoriesApi.getAll(),
         optionGroupsApi.getAll(),
       ]);
@@ -117,11 +120,10 @@ export default function DishesScreen() {
       setIsLoading(false);
       setLoadedOnce(true);
     }
-  }, [showInactive, selectedCategoryFilter]);
+  }, [showInactive]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Ricarica al rientro nella scheda (categoria e ricerca restano quelle scelte)
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -344,13 +346,34 @@ export default function DishesScreen() {
     }
   };
 
-  // Group dishes by category (with search filter - OP07)
-  // Use sortedDishes for proper category ordering
-  const filteredBySearch = searchQuery.trim() 
-    ? sortedDishes.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : sortedDishes;
-    
-  const groupedDishes = filteredBySearch.reduce((acc, dish) => {
+  // Filtro categoria + ricerca sul telefono/tablet, senza tornare al server
+  const filteredDishes = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return sortedDishes.filter(d => (!selectedCategoryFilter || d.categoryId === selectedCategoryFilter) && (!q || d.name.toLowerCase().includes(q)));
+  }, [sortedDishes, selectedCategoryFilter, searchQuery]);
+
+  const groupsById = useMemo(
+    () => Object.fromEntries(dishes.map(d => [d.id, groupsForDish(d, optionGroups)])),
+    [dishes, optionGroups],
+  );
+
+  // Si disegnano i piatti a blocchi (scorrendo arrivano gli altri): con centinaia di piatti la scheda resta veloce
+  const viewKey = `${selectedCategoryFilter}|${searchQuery}|${showInactive}`;
+  const [paging, setPaging] = useState({ key: viewKey, count: PAGE_SIZE });
+  const visibleCount = paging.key === viewKey ? paging.count : PAGE_SIZE;
+  const hasMore = visibleCount < filteredDishes.length;
+  const showMore = () => hasMore && setPaging({ key: viewKey, count: visibleCount + PAGE_SIZE });
+  const onListScroll = ({ nativeEvent: { layoutMeasurement, contentOffset, contentSize } }: any) => {
+    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 800) showMore();
+  };
+
+  const categoryTotals = filteredDishes.reduce((acc, d) => {
+    const key = d.categoryName || 'Senza categoria';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const groupedDishes = filteredDishes.slice(0, visibleCount).reduce((acc, dish) => {
     const categoryName = dish.categoryName || 'Senza categoria';
     if (!acc[categoryName]) {
       acc[categoryName] = [];
@@ -423,6 +446,7 @@ export default function DishesScreen() {
           <TouchableOpacity
             style={[styles.categoryChip, !selectedCategoryFilter && styles.categoryChipActive]}
             onPress={() => setSelectedCategoryFilter(null)}
+            testID="dishes-filter-all"
           >
             <Text style={[styles.categoryChipText, !selectedCategoryFilter && styles.categoryChipTextActive]}>
               Tutte
@@ -434,6 +458,7 @@ export default function DishesScreen() {
               style={[styles.categoryChip, selectedCategoryFilter === category.id && styles.categoryChipActive]}
               onPress={() => setSelectedCategoryFilter(selectedCategoryFilter === category.id ? null : category.id)}
               onLongPress={() => openEditCategoryModal(category)}
+              testID={`dishes-filter-chip-${category.id}`}
             >
               <Text style={[styles.categoryChipText, selectedCategoryFilter === category.id && styles.categoryChipTextActive]}>
                 {category.name}
@@ -447,11 +472,13 @@ export default function DishesScreen() {
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentInner}
+        onScroll={onListScroll}
+        scrollEventThrottle={200}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
-        {dishes.length === 0 ? (
+        {filteredDishes.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="fast-food-outline" size={64} color="#5A6A85" />
             <Text style={styles.emptyStateText}>Nessun piatto trovato</Text>
@@ -466,11 +493,13 @@ export default function DishesScreen() {
               <View style={styles.categorySectionHead}>
                 <View style={[styles.categoryDot, { backgroundColor: tint.fg }]} />
                 <Text style={styles.categorySectionTitle}>{categoryName}</Text>
-                <View style={styles.categoryCount}><Text style={styles.categoryCountText}>{categoryDishes.length}</Text></View>
+                <View style={styles.categoryCount}><Text style={styles.categoryCountText}>{categoryTotals[categoryName]}</Text></View>
               </View>
               <View style={styles.dishGrid}>
-              {categoryDishes.map((dish, dishIdx) => (
-                <Appear index={dishIdx} key={dish.id} style={[styles.gridCell, { width: cellW }]}>
+              {categoryDishes.map((dish, dishIdx) => {
+                const groups = groupsById[dish.id] || [];
+                return (
+                <Appear index={dishIdx} animate={dishIdx < 12} key={dish.id} style={[styles.gridCell, { width: cellW }]}>
                 <View style={[styles.dishCard, { backgroundColor: dish.active ? tint.bg : C.sunken }, !dish.active && styles.dishCardInactive]} testID={`dish-card-${dish.id}`}>
                   <View style={styles.dishHeader}>
                     <View style={styles.dishNameRow}>
@@ -497,15 +526,15 @@ export default function DishesScreen() {
                       <Ionicons name="layers" size={14} color="#0E9F80" />
                       <Text style={styles.composableBadgeText}>
                         {isPreset(dish)
-                          ? `Già composto · ${selectionNames(groupsForDish(dish, optionGroups), presetOf(dish))}`
-                          : `Componibile · ${groupsForDish(dish, optionGroups).map(g => g.name).join(' + ') || 'nessuna lista'}`}
+                          ? `Già composto · ${selectionNames(groups, presetOf(dish))}`
+                          : `Componibile · ${groups.map(g => g.name).join(' + ') || 'nessuna lista'}`}
                       </Text>
                     </View>
                   )}
                   
                   <View style={styles.dishPriceRow}>
                     <Text style={styles.dishPrice}>
-                      {priceText(dish.basePrice, dish, groupsForDish(dish, optionGroups))}
+                      {priceText(dish.basePrice, dish, groups)}
                     </Text>
                     {dish.isFavorite && (
                       <Text style={styles.favoriteText}>Auto Menu</Text>
@@ -544,10 +573,16 @@ export default function DishesScreen() {
                   </View>
                 </View>
                 </Appear>
-              ))}
+              );
+              })}
               </View>
             </View>
           )})
+        )}
+        {hasMore && (
+          <TouchableOpacity style={styles.loadMore} onPress={showMore} testID="dishes-load-more">
+            <Text style={styles.loadMoreText}>Mostra altri piatti ({filteredDishes.length - visibleCount})</Text>
+          </TouchableOpacity>
         )}
       </ScrollView>
 
@@ -1269,6 +1304,20 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     marginLeft: 8,
+  },
+  loadMore: {
+    alignSelf: 'center',
+    marginVertical: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+    backgroundColor: C.primarySoft,
+  },
+  loadMoreText: {
+    fontFamily: FONT,
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.primaryDark,
   },
   composableBadge: {
     flexDirection: 'row',
