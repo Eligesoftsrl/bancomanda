@@ -20,3 +20,11 @@ export const SERVICE_TYPES = [
 ];
 
 export const serviceOf = (id?: string) => SERVICE_TYPES.find((s) => s.id === id) || SERVICE_TYPES[0];
+
+export const STATUS_ICONS: Record<string, string> = {
+  in_attesa: 'hourglass-outline',
+  in_preparazione: 'flame-outline',
+  pronto: 'checkmark-done-outline',
+  sospeso: 'pause-circle-outline',
+  consegnato: 'bag-check-outline',
+};

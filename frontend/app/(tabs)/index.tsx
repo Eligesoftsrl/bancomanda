@@ -35,7 +35,7 @@ import { compositionText, euro, fromPrice, groupsForDish, selectionError, select
 import { sortCategoriesByFixedOrder, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { TimePickerInline } from '../../src/components/TimePickerInline';
 import Animated, { SlideInDown, ZoomIn } from 'react-native-reanimated';
-import { CHANNELS, STATUS_LABELS } from '../../src/components/orders/orderMeta';
+import { CHANNELS, STATUS_LABELS, STATUS_ICONS, serviceOf } from '../../src/components/orders/orderMeta';
 import { OrdersHeader } from '../../src/components/orders/OrdersHeader';
 import { StatusCounters } from '../../src/components/orders/StatusCounters';
 import { OrderTicket } from '../../src/components/orders/OrderTicket';
@@ -1554,37 +1554,41 @@ export default function OrdersScreen() {
                 </View>
                 
                 {!editOrderHeader ? (
-                  <View>
-                    <View style={styles.orderHeaderInfoLine}>
-                      <Ionicons name="person-outline" size={16} color="#5A6A85" />
-                      <Text style={styles.orderHeaderInfoLabel}>Intestatario: </Text>
-                      <Text style={styles.orderHeaderInfoValue}>
-                        {selectedOrder?.customerName || 'Anonimo'}
-                      </Text>
-                    </View>
-                    <View style={styles.orderHeaderInfoLine}>
-                      <Ionicons name="restaurant-outline" size={16} color="#5A6A85" />
-                      <Text style={styles.orderHeaderInfoLabel}>Tipologia: </Text>
-                      <Text style={styles.orderHeaderInfoValue}>
-                        {selectedOrder?.serviceType === 'da_consegnare' ? 'Da consegnare' : 
-                         selectedOrder?.serviceType === 'da_ritirare' ? 'Da ritirare' : 'In sede'}
-                      </Text>
-                    </View>
-                    {!!selectedOrder?.deliveryTime && (
-                      <View style={styles.orderHeaderInfoLine}>
-                        <Ionicons name="time-outline" size={16} color="#FFAE1F" />
-                        <Text style={styles.orderHeaderInfoLabel}>Ora consegna: </Text>
-                        <Text style={[styles.orderHeaderInfoValue, { color: '#FFAE1F', fontWeight: '700' }]}>
-                          {selectedOrder.deliveryTime}
+                  <View style={styles.infoTiles}>
+                    <Appear index={0} style={[styles.infoTile, { backgroundColor: C.primarySoft }]} testID="order-info-customer">
+                      <View style={styles.infoTileIcon}><Ionicons name="person-outline" size={19} color={C.primary} /></View>
+                      <View style={styles.infoTileText}>
+                        <Text style={styles.infoTileLabel}>Intestatario</Text>
+                        <Text style={[styles.infoTileValue, { color: C.primaryDark }]} numberOfLines={2}>{selectedOrder?.customerName || 'Anonimo'}</Text>
+                      </View>
+                    </Appear>
+                    <Appear index={1} style={[styles.infoTile, { backgroundColor: C.secondarySoft }]} testID="order-info-service">
+                      <View style={styles.infoTileIcon}><Ionicons name={serviceOf(selectedOrder?.serviceType).icon as any} size={19} color={C.secondary} /></View>
+                      <View style={styles.infoTileText}>
+                        <Text style={styles.infoTileLabel}>Tipologia</Text>
+                        <Text style={[styles.infoTileValue, { color: C.secondary }]}>
+                          {selectedOrder?.serviceType === 'da_consegnare' ? 'Da consegnare' :
+                           selectedOrder?.serviceType === 'da_ritirare' ? 'Da ritirare' : 'In sede'}
                         </Text>
                       </View>
+                    </Appear>
+                    {!!selectedOrder?.deliveryTime && (
+                      <Appear index={2} style={[styles.infoTile, { backgroundColor: C.warningSoft }]} testID="order-info-delivery-time">
+                        <View style={styles.infoTileIcon}><Ionicons name="time-outline" size={19} color={C.warning} /></View>
+                        <View style={styles.infoTileText}>
+                          <Text style={styles.infoTileLabel}>Ora consegna</Text>
+                          <Text style={[styles.infoTileValue, { color: C.warningFg }]}>{selectedOrder.deliveryTime}</Text>
+                        </View>
+                      </Appear>
                     )}
                     {!!selectedOrder?.notes && (
-                      <View style={[styles.orderHeaderInfoLine, { alignItems: 'flex-start' }]}>
-                        <Ionicons name="document-text-outline" size={16} color="#00A1FF" style={{ marginTop: 2 }} />
-                        <Text style={styles.orderHeaderInfoLabel}>Note: </Text>
-                        <Text style={[styles.orderHeaderInfoValue, { flex: 1 }]}>{selectedOrder.notes}</Text>
-                      </View>
+                      <Appear index={3} style={[styles.infoTile, styles.infoTileWide, { backgroundColor: C.sunken }]} testID="order-info-notes">
+                        <View style={styles.infoTileIcon}><Ionicons name="document-text-outline" size={19} color={C.text2} /></View>
+                        <View style={styles.infoTileText}>
+                          <Text style={styles.infoTileLabel}>Note</Text>
+                          <Text style={[styles.infoTileValue, styles.infoTileNotes]}>{selectedOrder.notes}</Text>
+                        </View>
+                      </Appear>
                     )}
                   </View>
                 ) : (
@@ -1967,30 +1971,37 @@ export default function OrdersScreen() {
                 {/* Status Section */}
                 {selectedOrder && (
                   <View style={styles.statusSection}>
-                    <Text style={styles.statusSectionTitle}>Stato Ordine</Text>
-                    <View style={[styles.currentStatusBadge, { backgroundColor: statusOf(selectedOrder.status).bg, borderColor: statusOf(selectedOrder.status).solid }]} testID="order-current-status">
-                      <Text style={[styles.currentStatusText, { color: statusOf(selectedOrder.status).fg }]}>{STATUS_LABELS[selectedOrder.status]}</Text>
-                    </View>
-                    
-                    <Text style={styles.changeStatusLabel}>Cambia stato:</Text>
+                    <Appear key={selectedOrder.status} from="zoom" style={[styles.statusTile, { backgroundColor: statusOf(selectedOrder.status).bg }]} testID="order-current-status">
+                      <View style={styles.texts}>
+                        <Text style={styles.infoTileLabel}>Stato ordine</Text>
+                        <Text style={[styles.statusTileValue, { color: statusOf(selectedOrder.status).fg }]}>{STATUS_LABELS[selectedOrder.status]}</Text>
+                      </View>
+                      <View style={[styles.statusTileIcon, { backgroundColor: '#fff' }]}>
+                        <Ionicons name={(STATUS_ICONS[selectedOrder.status] || 'ellipse-outline') as any} size={24} color={statusOf(selectedOrder.status).solid} />
+                      </View>
+                    </Appear>
+
+                    <Text style={styles.changeStatusLabel}>Cambia stato</Text>
                     <View style={styles.statusButtonsGrid}>
                       {ORDER_STATUSES.filter(s => s !== selectedOrder.status).map(status => (
                         <TouchableOpacity
                           key={status}
-                          style={[styles.statusGridButton, { backgroundColor: statusOf(status).bg, borderColor: statusOf(status).bd }]}
+                          style={[styles.statusGridButton, { backgroundColor: statusOf(status).bg }]}
                           onPress={() => handleUpdateStatus(selectedOrder.id, status)}
                           testID={`order-status-btn-${status}`}
                         >
+                          <Ionicons name={(STATUS_ICONS[status] || 'ellipse-outline') as any} size={16} color={statusOf(status).solid} />
                           <Text style={[styles.statusGridButtonText, { color: statusOf(status).fg }]}>{STATUS_LABELS[status]}</Text>
                         </TouchableOpacity>
                       ))}
                       {/* Pulsante Consegnato - sempre visibile, solo manuale */}
                       {selectedOrder.status !== 'consegnato' && (
                         <TouchableOpacity
-                          style={[styles.statusGridButton, { backgroundColor: statusOf('consegnato').bg, borderColor: statusOf('consegnato').bd }]}
+                          style={[styles.statusGridButton, { backgroundColor: statusOf('consegnato').bg }]}
                           onPress={() => handleUpdateStatus(selectedOrder.id, 'consegnato')}
                           testID="order-status-btn-consegnato"
                         >
+                          <Ionicons name={STATUS_ICONS.consegnato as any} size={16} color={statusOf('consegnato').solid} />
                           <Text style={[styles.statusGridButtonText, { color: statusOf('consegnato').fg }]}>Consegnato</Text>
                         </TouchableOpacity>
                       )}
@@ -2004,19 +2015,25 @@ export default function OrdersScreen() {
                           selectedOrder.isPaid ? styles.paymentChipPaid : styles.paymentChipUnpaid
                         ]}
                         onPress={() => handleTogglePayment(selectedOrder)}
+                        testID="order-detail-payment-toggle"
                       >
-                        <Ionicons 
-                          name="card" 
-                          size={18} 
-                          color={selectedOrder.isPaid ? "#0E9F80" : "#00A1FF"} 
-                        />
-                        <Text style={[
-                          styles.paymentChipText,
-                          selectedOrder.isPaid ? styles.paymentChipTextPaid : styles.paymentChipTextUnpaid
-                        ]}>
-                          {selectedOrder.isPaid ? 'Pagato' : 'Da pagare'}
-                        </Text>
-                        <Ionicons name="chevron-forward" size={16} color="#5A6A85" />
+                        <View style={styles.infoTileIcon}>
+                          <Ionicons
+                            name={selectedOrder.isPaid ? 'checkmark-circle' : 'card-outline'}
+                            size={19}
+                            color={selectedOrder.isPaid ? C.success : C.errorFg}
+                          />
+                        </View>
+                        <View style={styles.infoTileText}>
+                          <Text style={styles.infoTileLabel}>Pagamento</Text>
+                          <Text style={[
+                            styles.paymentChipText,
+                            selectedOrder.isPaid ? styles.paymentChipTextPaid : styles.paymentChipTextUnpaid
+                          ]}>
+                            {selectedOrder.isPaid ? 'Pagato' : 'Da pagare'}
+                          </Text>
+                        </View>
+                        <Ionicons name="swap-horizontal" size={18} color={C.text2} />
                       </TouchableOpacity>
                       
                       {/* Receipt Button */}
@@ -2028,9 +2045,10 @@ export default function OrdersScreen() {
                                 <TouchableOpacity 
                                   style={styles.receiptPreviewBtn}
                                   onPress={() => setShowInlineReceipt(true)}
+                                  testID="order-receipt-preview"
                                 >
-                                  <Ionicons name="document-text" size={18} color="#0E9F80" />
-                                  <Text style={styles.receiptPreviewText}>Scontrino</Text>
+                                  <View style={styles.infoTileIcon}><Ionicons name="document-text-outline" size={19} color={C.success} /></View>
+                                  <Text style={styles.receiptPreviewText}>Vedi scontrino</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity 
                                   style={styles.receiptDeleteBtn}
@@ -2069,9 +2087,10 @@ export default function OrdersScreen() {
                           <TouchableOpacity 
                             style={styles.receiptCaptureBtn}
                             onPress={handleTakeReceiptPhoto}
+                            testID="order-receipt-capture"
                           >
-                            <Ionicons name="camera" size={18} color="#00A1FF" />
-                            <Text style={styles.receiptCaptureText}>Allega Scontrino</Text>
+                            <View style={styles.infoTileIcon}><Ionicons name="camera-outline" size={19} color={C.primary} /></View>
+                            <Text style={styles.receiptCaptureText}>Allega scontrino</Text>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -3054,6 +3073,83 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  infoTiles: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  infoTile: {
+    flexGrow: 1,
+    flexBasis: 200,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: R.md,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  infoTileWide: {
+    flexBasis: '100%',
+    alignItems: 'flex-start',
+  },
+  infoTileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoTileText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  infoTileLabel: {
+    fontFamily: FONT,
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.text2,
+  },
+  infoTileValue: {
+    fontFamily: FONT,
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 1,
+  },
+  infoTileNotes: {
+    color: C.text,
+    fontWeight: '500',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  statusTile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderRadius: R.lg,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 16,
+  },
+  statusTileValue: {
+    fontFamily: FONT,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    marginTop: 2,
+  },
+  statusTileIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  texts: {
+    flex: 1,
+    minWidth: 0,
+  },
   orderHeaderInfoLine: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -3937,10 +4033,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.6,
   },
   statusSection: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E6EB',
+    marginTop: 18,
   },
   statusSectionTitle: {
     fontFamily: FONT,
@@ -3963,8 +4056,11 @@ const styles = StyleSheet.create({
   },
   changeStatusLabel: {
     fontFamily: FONT,
-    color: '#5A6A85',
-    fontSize: 13,
+    color: C.text2,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
     marginBottom: 10,
   },
   statusButtonsGrid: {
@@ -3973,11 +4069,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusGridButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
     paddingHorizontal: 16,
-    paddingVertical: 11,
-    borderRadius: R.pill,
-    minWidth: 110,
-    borderWidth: 1.5,
+    minHeight: 46,
+    borderRadius: R.md,
+    minWidth: 130,
+    flexGrow: 1,
   },
   statusGridButtonText: {
     fontFamily: FONT,
@@ -4543,39 +4643,32 @@ const styles = StyleSheet.create({
   },
   paymentSection: {
     marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E6EB',
   },
   paymentChip: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: R.pill,
-    gap: 8,
+    paddingHorizontal: 14,
+    borderRadius: R.md,
+    gap: 12,
   },
   paymentChipPaid: {
-    backgroundColor: '#E1F7F1',
-    borderWidth: 1,
-    borderColor: '#0E9F80',
+    backgroundColor: C.successSoft,
   },
   paymentChipUnpaid: {
-    backgroundColor: '#FDECEC',
-    borderWidth: 1,
-    borderColor: '#F2545B',
+    backgroundColor: C.errorSoft,
   },
   paymentChipText: {
     fontFamily: FONT,
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 1,
   },
   paymentChipTextPaid: {
     color: '#0E9F80',
   },
   paymentChipTextUnpaid: {
-    color: '#F2545B',
+    color: C.errorFg,
   },
   orderFooterRight: {
     flexDirection: 'row',
@@ -4646,19 +4739,17 @@ const styles = StyleSheet.create({
   receiptPreviewBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E1F7F1',
-    borderWidth: 1,
-    borderColor: '#0E9F80',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    gap: 6,
+    backgroundColor: C.successSoft,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: R.md,
+    gap: 12,
   },
   receiptPreviewText: {
     fontFamily: FONT,
-    color: '#0E9F80',
-    fontSize: 14,
-    fontWeight: '600',
+    color: C.success,
+    fontSize: 15,
+    fontWeight: '800',
   },
   receiptDeleteBtn: {
     flexDirection: 'row',
@@ -4697,19 +4788,17 @@ const styles = StyleSheet.create({
   receiptCaptureBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E5F5FF',
-    borderWidth: 1,
-    borderColor: '#00A1FF',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    gap: 6,
+    backgroundColor: C.primarySoft,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: R.md,
+    gap: 12,
   },
   receiptCaptureText: {
     fontFamily: FONT,
-    color: '#00A1FF',
-    fontSize: 14,
-    fontWeight: '600',
+    color: C.primaryDark,
+    fontSize: 15,
+    fontWeight: '800',
   },
   receiptModalOverlay: {
     ...Platform.select({ web: { backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' } as any }),
