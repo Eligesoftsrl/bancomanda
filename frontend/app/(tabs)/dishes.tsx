@@ -33,6 +33,15 @@ import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { HeaderButton } from '../../src/components/ui2/HeaderButton';
 import { useWideLayout } from '../../src/theme/layout';
 
+// Tinta tenue per categoria, come i riquadri del dettaglio ordine
+const CATEGORY_TINTS = [
+  { bg: C.primarySoft, fg: C.primaryDark },
+  { bg: C.secondarySoft, fg: C.secondary },
+  { bg: C.successSoft, fg: C.success },
+  { bg: C.warningSoft, fg: C.warningFg },
+  { bg: C.errorSoft, fg: C.errorFg },
+];
+
 export default function DishesScreen() {
   const { contentWidth } = useWideLayout();
   const cols = contentWidth >= 1180 ? 3 : contentWidth >= 700 ? 2 : 1;
@@ -414,18 +423,23 @@ export default function DishesScreen() {
             <Text style={styles.emptyStateSubtext}>Crea il tuo primo piatto</Text>
           </View>
         ) : (
-          sortedCategoryNames.map((categoryName) => {
+          sortedCategoryNames.map((categoryName, catIdx) => {
             const categoryDishes = groupedDishes[categoryName];
+            const tint = CATEGORY_TINTS[catIdx % CATEGORY_TINTS.length];
             return (
             <View key={categoryName} style={styles.categorySection}>
-              <Text style={styles.categorySectionTitle}>{categoryName}</Text>
+              <View style={styles.categorySectionHead}>
+                <View style={[styles.categoryDot, { backgroundColor: tint.fg }]} />
+                <Text style={styles.categorySectionTitle}>{categoryName}</Text>
+                <View style={styles.categoryCount}><Text style={styles.categoryCountText}>{categoryDishes.length}</Text></View>
+              </View>
               <View style={styles.dishGrid}>
               {categoryDishes.map((dish, dishIdx) => (
                 <Appear index={dishIdx} key={dish.id} style={[styles.gridCell, { width: cellW }]}>
-                <View style={[styles.dishCard, !dish.active && styles.dishCardInactive]} testID={`dish-card-${dish.id}`}>
+                <View style={[styles.dishCard, { backgroundColor: dish.active ? tint.bg : C.sunken }, !dish.active && styles.dishCardInactive]} testID={`dish-card-${dish.id}`}>
                   <View style={styles.dishHeader}>
                     <View style={styles.dishNameRow}>
-                      <Text style={styles.dishName}>{dish.name}</Text>
+                      <Text style={[styles.dishName, { color: dish.active ? tint.fg : C.text2 }]}>{dish.name}</Text>
                       {dish.isFavorite && (
                         <Ionicons name="heart" size={18} color="#00A1FF" style={styles.favoriteIcon} />
                       )}
@@ -895,31 +909,48 @@ const styles = StyleSheet.create({
   categorySection: {
     marginBottom: 20,
   },
+  categorySectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
+  categoryDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  categoryCount: {
+    minWidth: 24,
+    height: 22,
+    paddingHorizontal: 7,
+    borderRadius: 11,
+    backgroundColor: C.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryCountText: {
+    fontFamily: FONT,
+    fontSize: 12,
+    fontWeight: '800',
+    color: C.text2,
+  },
   categorySectionTitle: {
     fontFamily: FONT,
     fontSize: 18,
-    fontWeight: '600',
-    color: '#00A1FF',
-    marginBottom: 12,
-    paddingLeft: 4,
+    fontWeight: '800',
+    color: C.text,
   },
   dishGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
   gridCell: { paddingHorizontal: 6, marginBottom: 12 },
   dishCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
     borderRadius: 14,
     padding: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: '#5A6A85',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
   },
   dishCardInactive: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   dishHeader: {
     flexDirection: 'row',
@@ -973,13 +1004,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   editButton: {
-    backgroundColor: C.primarySoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   deactivateButton: {
-    backgroundColor: C.errorSoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   activateButton: {
-    backgroundColor: C.successSoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   dishActionText: {
     fontFamily: FONT,
@@ -1198,7 +1229,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     alignSelf: 'flex-start',
-    backgroundColor: '#EAF6F0',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,

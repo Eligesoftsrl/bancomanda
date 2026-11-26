@@ -1930,6 +1930,41 @@ async def get_daily_revenue(start_date: str, end_date: str):
         d += timedelta(days=1)
     return days
 
+@api_router.get("/reports/hourly-revenue")
+async def get_hourly_revenue(date: str):
+    """Incasso e ordini ora per ora (ora italiana di arrivo) del giorno e del giorno prima"""
+    try:
+        day = datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Data non valida")
+    prev = (day - timedelta(days=1)).isoformat()
+    rome = ZoneInfo("Europe/Rome")
+    buckets = {d: [{"revenue": 0.0, "orders": 0} for _ in range(24)] for d in (date, prev)}
+    cursor = db.orders.find(
+        {"menuDate": {"$in": [date, prev]}, "status": {"$ne": "annullato"}},
+        {"menuDate": 1, "createdAt": 1, "total": 1},
+    )
+    async for o in cursor:
+        created = o.get("createdAt")
+        if not isinstance(created, datetime):
+            continue
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        b = buckets[o["menuDate"]][created.astimezone(rome).hour]
+        b["revenue"] += o.get("total") or 0
+        b["orders"] += 1
+    hours = [
+        {
+            "hour": h,
+            "revenue": round(buckets[date][h]["revenue"], 2),
+            "orders": buckets[date][h]["orders"],
+            "prevRevenue": round(buckets[prev][h]["revenue"], 2),
+            "prevOrders": buckets[prev][h]["orders"],
+        }
+        for h in range(24)
+    ]
+    return {"date": date, "prevDate": prev, "hours": hours}
+
 @api_router.get("/reports/missed-sales-summary")
 async def get_missed_sales_summary(start_date: Optional[str] = None, end_date: Optional[str] = None):
     """Get missed sales summary"""

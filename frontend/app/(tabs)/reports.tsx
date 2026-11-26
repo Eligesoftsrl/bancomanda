@@ -29,6 +29,9 @@ import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { DatePill } from '../../src/components/ui2/DatePill';
 import { StatCard } from '../../src/components/ui2/StatCard';
 import { RevenueChart } from '../../src/components/reports/RevenueChart';
+import { DailyOverview } from '../../src/components/reports/DailyOverview';
+import { HourPoint } from '../../src/components/reports/HourlyCompareChart';
+import { useWideLayout } from '../../src/theme/layout';
 
 // Configure Italian locale for react-native-calendars
 LocaleConfig.locales['it'] = {
@@ -87,6 +90,9 @@ export default function ReportsScreen() {
   } | null>(null);
 
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenuePoint[]>([]);
+  const [hourly, setHourly] = useState<HourPoint[]>([]);
+  const { contentWidth } = useWideLayout();
+  const twoCols = contentWidth >= 1000;
 
   // Unpaid orders
   const [unpaidOrders, setUnpaidOrders] = useState<Order[]>([]);
@@ -195,6 +201,7 @@ export default function ReportsScreen() {
   const loadDailyData = async () => {
     try {
       setIsLoading(true);
+      reportsApi.getHourlyRevenue(selectedDate).then((r) => setHourly(r.hours)).catch(() => setHourly([]));
       const [summaryData, missedData, topData] = await Promise.all([
         reportsApi.getDailySummary(selectedDate),
         missedSalesApi.getAll(selectedDate),
@@ -565,8 +572,9 @@ export default function ReportsScreen() {
           </>
         }
       >
+        <View style={[styles.reportToolbar, isCompactR && styles.reportToolbarCompact]} testID="report-toolbar">
         {/* Mode Selector */}
-        <View style={styles.modeSelector}>
+        <View style={[styles.modeSelector, isCompactR && styles.modeSelectorCompact]}>
           <TouchableOpacity
             style={[styles.modeButton, reportMode === 'daily' && styles.modeButtonActive]}
             onPress={() => setReportMode('daily')}
@@ -589,11 +597,11 @@ export default function ReportsScreen() {
         
         {/* Date Selector */}
         {reportMode === 'daily' ? (
-          <View style={styles.dateSelector}>
+          <View style={[styles.dateSelector, isCompactR && styles.dateSelectorCompact]}>
             <DatePill selectedDate={selectedDate} onChange={changeDate} compact={isCompactR} idPrefix="report-" />
           </View>
         ) : (
-          <View style={styles.rangeDateSelector}>
+          <View style={[styles.rangeDateSelector, isCompactR && styles.rangeDateSelectorCompact]}>
             {/* Preset shortcuts */}
             <View style={styles.presetRow}>
               <TouchableOpacity 
@@ -660,6 +668,7 @@ export default function ReportsScreen() {
             </TouchableOpacity>
           </View>
         )}
+        </View>
       </PageHeader>
 
       {/* Content */}
@@ -670,23 +679,35 @@ export default function ReportsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
         }
       >
+        {reportMode === 'daily' && (
+          <DailyOverview
+            date={selectedDate}
+            totalOrders={summary?.totalOrders || 0}
+            totalRevenue={summary?.totalRevenue || 0}
+            missed={totalMissedQuantity}
+            hours={hourly}
+            wide={twoCols}
+          />
+        )}
+
         {/* Summary Cards */}
+        {reportMode === 'range' && (
         <View style={styles.summaryGrid}>
           <StatCard
             icon="receipt-outline"
             tone="primary"
             index={0}
             testID="report-stat-orders"
-            value={reportMode === 'daily' ? (summary?.totalOrders || 0) : (rangeStats?.totalOrders || 0)}
-            label={reportMode === 'daily' ? 'Ordini totali' : 'Ordini periodo'}
+            value={rangeStats?.totalOrders || 0}
+            label="Ordini periodo"
           />
           <StatCard
             icon="cash-outline"
             tone="success"
             index={1}
             testID="report-stat-revenue"
-            value={`${(reportMode === 'daily' ? (summary?.totalRevenue || 0) : (rangeStats?.totalRevenue || 0)).toFixed(2)} €`}
-            label={reportMode === 'daily' ? 'Incasso giorno' : 'Incasso periodo'}
+            value={`${(rangeStats?.totalRevenue || 0).toFixed(2)} €`}
+            label="Incasso periodo"
           />
           <StatCard
             icon="alert-circle-outline"
@@ -697,36 +718,121 @@ export default function ReportsScreen() {
             label="Mancate vendite"
           />
         </View>
+        )}
 
         {reportMode === 'range' && <RevenueChart data={dailyRevenue} loading={isLoading} />}
 
-        {/* Daily-only sections */}
+        <View style={[styles.sectionsGrid, twoCols && styles.sectionsGridWide]} testID="report-sections-grid">
+        <View style={[styles.sectionsCol, twoCols && styles.sectionsColMain]}>
+        {/* Kitchen Section - only in daily mode */}
         {reportMode === 'daily' && (
-          <>
-            {/* Channel Breakdown */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Vendite per Canale</Text>
-              <View style={styles.channelGrid}>
-                {Object.entries(summary?.channelBreakdown || {}).map(([channel, count]) => (
-                  <View key={channel} style={styles.channelCard}>
-                    <Ionicons
-                      name={
-                        channel === 'whatsapp' ? 'logo-whatsapp' :
-                        channel === 'telefono' ? 'call' : 'person'
-                      }
-                      size={24}
-                      color="#00A1FF"
-                    />
-                    <Text style={styles.channelCount}>{count as number}</Text>
-                    <Text style={styles.channelLabel}>{CHANNEL_LABELS[channel] || channel}</Text>
-                  </View>
-                ))}
-                {Object.keys(summary?.channelBreakdown || {}).length === 0 && (
-                  <Text style={styles.noDataText}>Nessun dato disponibile</Text>
-                )}
+          <View style={styles.section} testID="kitchen-section">
+            <View style={styles.kitchenHeader}>
+              <View style={styles.kitchenHeaderLeft}>
+                <View style={styles.kitchenIconBubble}>
+                  <Ionicons name="person" size={22} color="#fff" />
+                </View>
+                <View>
+                  <Text style={styles.sectionTitle}>Cucina</Text>
+                  <Text style={styles.kitchenSubtitle}>
+                    {kitchenGroups.reduce((s, g) => s + g.pendingQuantity, 0)} da preparare · {kitchenGroups.length} tipi piatto
+                  </Text>
+                </View>
               </View>
+              <TouchableOpacity onPress={() => loadKitchen()} style={styles.kitchenRefreshBtn} testID="kitchen-refresh">
+                <Ionicons name="refresh" size={20} color="#8965E5" />
+              </TouchableOpacity>
             </View>
 
+            {isLoadingKitchen ? (
+              <ActivityIndicator size="small" color="#FFAE1F" style={{ marginVertical: 16 }} />
+            ) : kitchenGroups.length === 0 ? (
+              <Text style={styles.noDataText}>Nessun piatto in cucina per oggi.{"\n"}Marca i piatti negli ordini con l&apos;icona 👨‍🍳 per farli comparire qui.</Text>
+            ) : (
+              kitchenGroups.map((group, groupIdx) => (
+                <Appear index={groupIdx} key={group.dishName} style={styles.kitchenGroup}>
+                  <View style={styles.kitchenGroupHeader}>
+                    <Text style={styles.kitchenGroupName}>{group.dishName}</Text>
+                    <View style={styles.kitchenGroupBadge}>
+                      <Text style={styles.kitchenGroupBadgeText}>
+                        {group.pendingQuantity}/{group.totalQuantity}
+                      </Text>
+                    </View>
+                  </View>
+                  {group.entries.map((entry) => {
+                    const isReady = entry.itemStatus === 'ready';
+                    const serviceMap: Record<string, { label: string; color: string }> = {
+                      da_consegnare: { label: 'Da consegnare', color: '#00A1FF' },
+                      da_ritirare: { label: 'Da ritirare', color: '#FFAE1F' },
+                      in_sede: { label: 'In sede', color: '#0E9F80' },
+                    };
+                    const svc = serviceMap[entry.serviceType] || { label: entry.serviceType, color: '#5A6A85' };
+                    return (
+                      <View
+                        key={`${entry.orderId}-${entry.itemIndex}`}
+                        style={[styles.kitchenEntry, isReady && styles.kitchenEntryReady]}
+                        testID={`kitchen-entry-${entry.orderId}-${entry.itemIndex}`}
+                      >
+                        <View style={styles.kitchenQtyBubble}>
+                          <Text style={styles.kitchenQty}>{entry.quantity}x</Text>
+                        </View>
+                        <View style={styles.kitchenEntryInfo}>
+                          <View style={styles.kitchenEntryMainRow}>
+                            <Text style={[styles.kitchenEntryText, isReady && styles.kitchenEntryTextReady]}>
+                              Ordine #{entry.orderNumber}
+                              {entry.customerName ? ` · ${entry.customerName}` : ''}
+                            </Text>
+                            {entry.deliveryTime ? (
+                              <View style={styles.kitchenTimeBadge}>
+                                <Ionicons name="time-outline" size={12} color="#5A6A85" />
+                                <Text style={styles.kitchenTimeText}>{entry.deliveryTime}</Text>
+                              </View>
+                            ) : null}
+                          </View>
+                          <View style={styles.kitchenEntryMeta}>
+                            <View style={[styles.kitchenServiceBadge, { backgroundColor: svc.color }]}>
+                              <Text style={styles.kitchenServiceText}>{svc.label}</Text>
+                            </View>
+                            {!!entry.composition?.length && (
+                              <Text style={styles.kitchenEntryComposition} testID={`kitchen-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
+                                {compositionText(entry.composition)}
+                              </Text>
+                            )}
+                            {entry.notes ? (
+                              <Text style={styles.kitchenEntryNote} numberOfLines={2}>
+                                📝 {entry.notes}
+                              </Text>
+                            ) : null}
+                          </View>
+                        </View>
+                        <TouchableOpacity
+                          style={[styles.kitchenCompleteBtn, isReady && styles.kitchenCompleteBtnDone]}
+                          onPress={() => handleToggleKitchenItemReady(entry)}
+                          testID={`kitchen-complete-btn-${entry.orderId}-${entry.itemIndex}`}
+                          activeOpacity={0.7}
+                        >
+                          {isReady ? (
+                            <>
+                              <Ionicons name="checkmark-circle" size={18} color="#fff" />
+                              <Text style={styles.kitchenCompleteBtnDoneText}>Fatto</Text>
+                            </>
+                          ) : (
+                            <>
+                              <Ionicons name="checkmark" size={18} color="#0E9F80" />
+                              <Text style={styles.kitchenCompleteBtnText}>Completa</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </Appear>
+              ))
+            )}
+          </View>
+        )}
+        {reportMode === 'daily' && (
+          <>
             {/* Porzionatura - piatti degli ordini NON flag Cucina, con conferma per singola porzione */}
             <View style={styles.section} testID="porzionatura-section">
               <View style={styles.kitchenHeader}>
@@ -853,140 +959,8 @@ export default function ReportsScreen() {
                 })
               )}
             </View>
-
-            {/* Menu Availability */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Disponibilità Menu</Text>
-              {summary?.menuItems && summary.menuItems.length > 0 ? (
-                summary.menuItems.map((item, index) => (
-                  <Appear index={index} key={`menu-avail-${item.dishId || item.dishName}-${index}`} style={styles.menuAvailRow}>
-                    <Text style={styles.menuAvailName}>{item.dishName}</Text>
-                    <View style={[
-                      styles.availBadge,
-                      item.portions === 0 && styles.availBadgeEmpty,
-                      item.portions > 0 && item.portions <= 3 && styles.availBadgeLow,
-                    ]}>
-                      <Text style={styles.availBadgeText}>
-                        {item.portions === 0 ? 'Esaurito' : `${item.portions} disp.`}
-                      </Text>
-                    </View>
-                  </Appear>
-                ))
-              ) : (
-                <Text style={styles.noDataText}>Nessun menu per oggi</Text>
-              )}
-            </View>
           </>
         )}
-
-        {/* Kitchen Section - only in daily mode */}
-        {reportMode === 'daily' && (
-          <View style={styles.section} testID="kitchen-section">
-            <View style={styles.kitchenHeader}>
-              <View style={styles.kitchenHeaderLeft}>
-                <View style={styles.kitchenIconBubble}>
-                  <Ionicons name="person" size={22} color="#fff" />
-                </View>
-                <View>
-                  <Text style={styles.sectionTitle}>Cucina</Text>
-                  <Text style={styles.kitchenSubtitle}>
-                    {kitchenGroups.reduce((s, g) => s + g.pendingQuantity, 0)} da preparare · {kitchenGroups.length} tipi piatto
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity onPress={() => loadKitchen()} style={styles.kitchenRefreshBtn} testID="kitchen-refresh">
-                <Ionicons name="refresh" size={20} color="#8965E5" />
-              </TouchableOpacity>
-            </View>
-
-            {isLoadingKitchen ? (
-              <ActivityIndicator size="small" color="#FFAE1F" style={{ marginVertical: 16 }} />
-            ) : kitchenGroups.length === 0 ? (
-              <Text style={styles.noDataText}>Nessun piatto in cucina per oggi.{"\n"}Marca i piatti negli ordini con l&apos;icona 👨‍🍳 per farli comparire qui.</Text>
-            ) : (
-              kitchenGroups.map((group, groupIdx) => (
-                <Appear index={groupIdx} key={group.dishName} style={styles.kitchenGroup}>
-                  <View style={styles.kitchenGroupHeader}>
-                    <Text style={styles.kitchenGroupName}>{group.dishName}</Text>
-                    <View style={styles.kitchenGroupBadge}>
-                      <Text style={styles.kitchenGroupBadgeText}>
-                        {group.pendingQuantity}/{group.totalQuantity}
-                      </Text>
-                    </View>
-                  </View>
-                  {group.entries.map((entry) => {
-                    const isReady = entry.itemStatus === 'ready';
-                    const serviceMap: Record<string, { label: string; color: string }> = {
-                      da_consegnare: { label: 'Da consegnare', color: '#00A1FF' },
-                      da_ritirare: { label: 'Da ritirare', color: '#FFAE1F' },
-                      in_sede: { label: 'In sede', color: '#0E9F80' },
-                    };
-                    const svc = serviceMap[entry.serviceType] || { label: entry.serviceType, color: '#5A6A85' };
-                    return (
-                      <View
-                        key={`${entry.orderId}-${entry.itemIndex}`}
-                        style={[styles.kitchenEntry, isReady && styles.kitchenEntryReady]}
-                        testID={`kitchen-entry-${entry.orderId}-${entry.itemIndex}`}
-                      >
-                        <View style={styles.kitchenQtyBubble}>
-                          <Text style={styles.kitchenQty}>{entry.quantity}x</Text>
-                        </View>
-                        <View style={styles.kitchenEntryInfo}>
-                          <View style={styles.kitchenEntryMainRow}>
-                            <Text style={[styles.kitchenEntryText, isReady && styles.kitchenEntryTextReady]}>
-                              Ordine #{entry.orderNumber}
-                              {entry.customerName ? ` · ${entry.customerName}` : ''}
-                            </Text>
-                            {entry.deliveryTime ? (
-                              <View style={styles.kitchenTimeBadge}>
-                                <Ionicons name="time-outline" size={12} color="#5A6A85" />
-                                <Text style={styles.kitchenTimeText}>{entry.deliveryTime}</Text>
-                              </View>
-                            ) : null}
-                          </View>
-                          <View style={styles.kitchenEntryMeta}>
-                            <View style={[styles.kitchenServiceBadge, { backgroundColor: svc.color }]}>
-                              <Text style={styles.kitchenServiceText}>{svc.label}</Text>
-                            </View>
-                            {!!entry.composition?.length && (
-                              <Text style={styles.kitchenEntryComposition} testID={`kitchen-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
-                                {compositionText(entry.composition)}
-                              </Text>
-                            )}
-                            {entry.notes ? (
-                              <Text style={styles.kitchenEntryNote} numberOfLines={2}>
-                                📝 {entry.notes}
-                              </Text>
-                            ) : null}
-                          </View>
-                        </View>
-                        <TouchableOpacity
-                          style={[styles.kitchenCompleteBtn, isReady && styles.kitchenCompleteBtnDone]}
-                          onPress={() => handleToggleKitchenItemReady(entry)}
-                          testID={`kitchen-complete-btn-${entry.orderId}-${entry.itemIndex}`}
-                          activeOpacity={0.7}
-                        >
-                          {isReady ? (
-                            <>
-                              <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                              <Text style={styles.kitchenCompleteBtnDoneText}>Fatto</Text>
-                            </>
-                          ) : (
-                            <>
-                              <Ionicons name="checkmark" size={18} color="#0E9F80" />
-                              <Text style={styles.kitchenCompleteBtnText}>Completa</Text>
-                            </>
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  })}
-                </Appear>
-              ))
-            )}
-          </View>
-        )}
-
         {/* Unpaid Orders Section */}
         <View style={styles.section} testID="unpaid-orders-section">
           <View style={styles.unpaidHeader}>
@@ -1038,7 +1012,61 @@ export default function ReportsScreen() {
             </>
           )}
         </View>
-
+        </View>
+        <View style={[styles.sectionsCol, twoCols && styles.sectionsColSide]}>
+        {reportMode === 'daily' && (
+          <>
+            {/* Channel Breakdown */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Vendite per Canale</Text>
+              <View style={styles.channelGrid}>
+                {Object.entries(summary?.channelBreakdown || {}).map(([channel, count]) => (
+                  <View key={channel} style={styles.channelCard}>
+                    <Ionicons
+                      name={
+                        channel === 'whatsapp' ? 'logo-whatsapp' :
+                        channel === 'telefono' ? 'call' : 'person'
+                      }
+                      size={24}
+                      color="#00A1FF"
+                    />
+                    <Text style={styles.channelCount}>{count as number}</Text>
+                    <Text style={styles.channelLabel}>{CHANNEL_LABELS[channel] || channel}</Text>
+                  </View>
+                ))}
+                {Object.keys(summary?.channelBreakdown || {}).length === 0 && (
+                  <Text style={styles.noDataText}>Nessun dato disponibile</Text>
+                )}
+              </View>
+            </View>
+          </>
+        )}
+        {reportMode === 'daily' && (
+          <>
+            {/* Menu Availability */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Disponibilità Menu</Text>
+              {summary?.menuItems && summary.menuItems.length > 0 ? (
+                summary.menuItems.map((item, index) => (
+                  <Appear index={index} key={`menu-avail-${item.dishId || item.dishName}-${index}`} style={styles.menuAvailRow}>
+                    <Text style={styles.menuAvailName}>{item.dishName}</Text>
+                    <View style={[
+                      styles.availBadge,
+                      item.portions === 0 && styles.availBadgeEmpty,
+                      item.portions > 0 && item.portions <= 3 && styles.availBadgeLow,
+                    ]}>
+                      <Text style={styles.availBadgeText}>
+                        {item.portions === 0 ? 'Esaurito' : `${item.portions} disp.`}
+                      </Text>
+                    </View>
+                  </Appear>
+                ))
+              ) : (
+                <Text style={styles.noDataText}>Nessun menu per oggi</Text>
+              )}
+            </View>
+          </>
+        )}
         {/* Top Dishes - Show in both modes */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -1062,7 +1090,6 @@ export default function ReportsScreen() {
             <Text style={styles.noDataText}>Nessun dato disponibile</Text>
           )}
         </View>
-
         {/* Missed Sales */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -1099,6 +1126,9 @@ export default function ReportsScreen() {
             </View>
           )}
         </View>
+        </View>
+        </View>
+
       </ScrollView>
 
       {/* Calendar Modal for selecting date range */}
@@ -1528,13 +1558,49 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  reportToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  reportToolbarCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
   modeSelector: {
     flexDirection: 'row',
     backgroundColor: C.sunken,
     borderRadius: 999,
     padding: 4,
-    maxWidth: 440,
+    width: 320,
+  },
+  modeSelectorCompact: {
     width: '100%',
+  },
+  dateSelectorCompact: {
+    alignSelf: 'stretch',
+  },
+  rangeDateSelectorCompact: {
+    alignItems: 'stretch',
+  },
+  sectionsGrid: {
+    gap: 0,
+  },
+  sectionsGridWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  sectionsCol: {
+    minWidth: 0,
+  },
+  sectionsColMain: {
+    flex: 1.4,
+  },
+  sectionsColSide: {
+    flex: 1,
   },
   modeButton: {
     flex: 1,
@@ -1560,7 +1626,12 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   rangeDateSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: 10,
+    flexShrink: 1,
   },
   dateRangeRow: {
     flexDirection: 'row',

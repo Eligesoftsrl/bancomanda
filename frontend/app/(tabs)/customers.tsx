@@ -30,6 +30,14 @@ import { ConfirmDialog } from '../../src/components/ui2/ConfirmDialog';
 import { CustomerFilterChips, CustomerView } from '../../src/components/customers/CustomerFilterChips';
 import { CustomerViewBanner } from '../../src/components/customers/CustomerViewBanner';
 
+// Tinta tenue della scheda: privato azzurro, società viola, fermo da 6 mesi giallo, archiviato grigio
+const customerTone = (c: Customer, cutoff: string) => {
+  if (c.archived) return { bg: C.sunken, fg: C.text2 };
+  if (isInactive(c, cutoff)) return { bg: C.warningSoft, fg: C.warningFg };
+  if (c.customerType === 'societa') return { bg: C.secondarySoft, fg: C.secondary };
+  return { bg: C.primarySoft, fg: C.primaryDark };
+};
+
 // Senza ordini da 6 mesi: ultimo ordine (o creazione, se non ha mai ordinato) prima della soglia
 const isInactive = (c: Customer, cutoff: string) =>
   !c.archived && (c.lastOrderDate || (c.createdAt || '').slice(0, 10)) < cutoff;
@@ -299,16 +307,16 @@ export default function CustomersScreen() {
           <View style={styles.customerGrid}>
           {filteredCustomers.map((customer, customerIdx) => (
             <Appear index={customerIdx} key={customer.id} style={[styles.gridCell, { width: cellW }]}>
-            <View style={[styles.customerCard, customer.archived && styles.customerCardArchived]} testID={`customer-card-${customer.id}`}>
+            <View style={[styles.customerCard, { backgroundColor: customerTone(customer, cutoff).bg }]} testID={`customer-card-${customer.id}`}>
               <View style={styles.customerHeader}>
                 <View style={styles.customerAvatar}>
-                  <Text style={styles.customerAvatarText}>
+                  <Text style={[styles.customerAvatarText, { color: customerTone(customer, cutoff).fg }]}>
                     {customer.name.charAt(0).toUpperCase()}
                   </Text>
                 </View>
                 <View style={styles.customerInfo}>
                   <View style={styles.customerNameRow}>
-                    <Text style={styles.customerName}>{customer.name}</Text>
+                    <Text style={[styles.customerName, { color: customerTone(customer, cutoff).fg }]}>{customer.name}</Text>
                     {customer.requiresInvoice && (
                       <View style={styles.invoiceBadge}>
                         <Ionicons name="document-text" size={12} color="#fff" />
@@ -666,16 +674,8 @@ const styles = StyleSheet.create({
   gridCell: { paddingHorizontal: 6, marginBottom: 12 },
   customerCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
     borderRadius: 14,
     padding: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    shadowColor: '#5A6A85',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
   },
   customerHeader: {
     flexDirection: 'row',
@@ -684,17 +684,16 @@ const styles = StyleSheet.create({
   customerAvatar: {
     width: 50,
     height: 50,
-    borderRadius: 25,
-    backgroundColor: '#00A1FF',
+    borderRadius: 14,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
   customerAvatarText: {
     fontFamily: FONT,
-    color: '#ffffff',
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   customerInfo: {
     flex: 1,
@@ -744,7 +743,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E0E6EB',
+    borderTopColor: 'rgba(42,53,71,0.1)',
   },
   customerActions: {
     flexDirection: 'row',
@@ -761,10 +760,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   historyButton: {
-    backgroundColor: C.secondarySoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   restoreButton: {
-    backgroundColor: C.successSoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   archiveIconButton: {
     width: 44,
@@ -772,7 +771,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: C.warningSoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   customerCardArchived: {
     backgroundColor: C.hover,
@@ -786,10 +785,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: C.sunken,
+    backgroundColor: 'rgba(255,255,255,0.8)',
   },
   lastOrderPillOld: {
-    backgroundColor: C.warningSoft,
+    backgroundColor: '#fff',
   },
   lastOrderText: {
     fontFamily: FONT,
@@ -798,7 +797,7 @@ const styles = StyleSheet.create({
     color: C.text2,
   },
   editButton: {
-    backgroundColor: C.primarySoft,
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   actionButtonText: {
     fontFamily: FONT,

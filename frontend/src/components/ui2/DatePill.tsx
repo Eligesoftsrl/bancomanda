@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: C.surface, borderRadius: R.pill,
     borderWidth: 1, borderColor: C.border, padding: 4, minWidth: 380, ...elevation(1),
   },
-  pillCompact: { minWidth: 0, alignSelf: 'stretch' },
+  pillCompact: { minWidth: 0, alignSelf: 'stretch', flexGrow: 1 },
   btn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: C.sunken },
   center: { flex: 1, overflow: 'hidden', alignItems: 'center', paddingHorizontal: 10 },
   inner: { flexDirection: 'row', alignItems: 'center', gap: 8 },

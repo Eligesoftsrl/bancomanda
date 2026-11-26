@@ -35,10 +35,17 @@ import { C, FONT } from '../../src/theme/tokens';
 import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { DatePill } from '../../src/components/ui2/DatePill';
+import { useWideLayout } from '../../src/theme/layout';
 
 
 export default function MenuScreen() {
   const isCompact = useWindowDimensions().width < 768;
+  const { contentWidth } = useWideLayout();
+  const wideMenu = contentWidth >= 1000;
+  const leftColW = wideMenu ? (contentWidth - 32 - 16) * 0.58 : contentWidth - 32;
+  const menuTileW = `${leftColW >= 560 ? 50 : 100}%` as const;
+  const [mobileMenuTab, setMobileMenuTab] = useState<'menu' | 'catalog'>('menu');
+  const [openCatalogCats, setOpenCatalogCats] = useState<Record<string, boolean>>({});
   const { selectedDate, setSelectedDate, dishes, setDishes, currentMenu, setCurrentMenu } = useAppStore();
   // Local "all dishes" list for the Menu tab so it isn't affected when
   // the Piatti tab filters the shared `dishes` store by category.
@@ -694,94 +701,21 @@ export default function MenuScreen() {
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-
-      {/* Header */}
-      <PageHeader
-        title="Menu del giorno"
-        subtitle="Scegli i piatti, le porzioni e pubblica sul sito"
-        testID="menu-header"
-        right={<DatePill selectedDate={selectedDate} onChange={changeDate} compact={isCompact} idPrefix="menu-" />}
-      />
-
-      {/* Content */}
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentInner}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
-        }
-      >
-        {!currentMenu ? (
-          <View style={styles.noMenuContainer}>
-            <Ionicons name="calendar-outline" size={64} color="#5A6A85" />
-            <Text style={styles.noMenuText}>Nessun menu per questa data</Text>
-            <TouchableOpacity style={styles.createMenuButton} onPress={handleCreateMenu}>
-              <Ionicons name="add-circle" size={20} color="#fff" />
-              <Text style={styles.createMenuButtonText}>Crea Menu</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+  const renderMenuToday = (currentMenu: DailyMenu) => (
           <>
-            {/* Pubblicazione sito web */}
-            <View style={styles.publishBar} testID="publish-bar">
-              <View style={styles.publishBarLeft}>
-                <Ionicons
-                  name={currentMenu.isPublished ? 'globe' : 'globe-outline'}
-                  size={20}
-                  color={currentMenu.isPublished ? '#16a34a' : '#5A6A85'}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.publishBarTitle}>Pubblica sul sito</Text>
-                  <Text style={styles.publishBarSubtitle} testID="publish-status-text">
-                    {currentMenu.isPublished
-                      ? `Online sul sito${currentMenu.publishedAt ? ' · inviato alle ' + format(new Date(currentMenu.publishedAt), 'HH:mm') : ''}`
-                      : 'Attiva per inviare il menu al sito'}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.publishBarRight}>
-                {publishLoading && <ActivityIndicator size="small" color="#16a34a" testID="publish-loading" />}
-                {currentMenu.isPublished && !publishLoading && (
-                  <TouchableOpacity
-                    style={styles.publishInfoButton}
-                    onPress={() => handleTogglePublish(true)}
-                    testID="publish-resend-btn"
-                  >
-                    <Ionicons name="cloud-upload-outline" size={18} color="#2A3547" />
-                    <Text style={styles.publishInfoButtonText}>Aggiorna</Text>
-                  </TouchableOpacity>
-                )}
-                <Switch
-                  testID="publish-toggle"
-                  value={!!currentMenu.isPublished}
-                  onValueChange={handleTogglePublish}
-                  disabled={publishLoading}
-                  trackColor={{ false: '#E0E6EB', true: '#86efac' }}
-                  thumbColor={currentMenu.isPublished ? '#16a34a' : '#EFF4FA'}
-                />
-                <TouchableOpacity
-                  style={styles.publishInfoButton}
-                  onPress={() => setShowPublishModal(true)}
-                  testID="publish-info-btn"
-                >
-                  <Ionicons name="code-slash-outline" size={18} color="#2A3547" />
-                  <Text style={styles.publishInfoButtonText}>Codice</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
             {/* Menu Items */}
-            <View style={styles.section}>
+            <View style={[styles.section, wideMenu && styles.sectionFill]} testID="menu-today-section">
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                  Piatti nel Menu ({currentMenu.items.length})
-                </Text>
+                <View style={styles.sectionTitleRow}>
+                  <View style={[styles.sectionIcon, { backgroundColor: C.primarySoft }]}><Ionicons name="restaurant-outline" size={18} color={C.primary} /></View>
+                  <Text style={styles.sectionTitle}>Menu di oggi</Text>
+                  <View style={styles.countPill}><Text style={styles.countPillText} testID="menu-today-count">{currentMenu.items.length}</Text></View>
+                </View>
                 {/* OP10: Print Menu Button */}
                 {currentMenu.items.length > 0 && (
                   <TouchableOpacity 
                     style={styles.printMenuButton}
+                    testID='menu-share-button'
                     onPress={() => {
                       // Get unique categories from menu items
                       const menuCategories = [...new Set(currentMenu.items.map(item => item.categoryName || 'Altro'))];
@@ -898,11 +832,14 @@ export default function MenuScreen() {
                   );
                 }
                 
-                return filteredItems.map((item, index) => (
-                  <Appear key={`menu-item-${item.dishId}-${index}`} index={index}>
+                return (
+                  <View style={styles.menuTileGrid}>
+                  {filteredItems.map((item, index) => (
+                  <Appear key={`menu-item-${item.dishId}-${index}`} index={index} style={[styles.menuTileCell, { width: menuTileW }]}>
 <TouchableOpacity 
                     key={`menu-item-${item.dishId}-${index}`} 
-                    style={[styles.menuItemCard, item.portions === 0 && styles.menuItemCardSoldOut]}
+                    testID={`menu-item-${item.dishId}`}
+                    style={[styles.menuItemCard, item.portions > 0 && item.portions <= 3 && styles.menuItemCardLow, item.portions === 0 && styles.menuItemCardSoldOut]}
                     onPress={() => {
                       if (item.portions === 0) {
                         setMissedSaleItem(item);
@@ -915,7 +852,7 @@ export default function MenuScreen() {
                   >
                     <View style={styles.menuItemInfo}>
                       <View style={styles.menuItemNameRow}>
-                        <Text style={styles.menuItemName}>{item.dishName}</Text>
+                        <Text style={styles.menuItemName} numberOfLines={2}>{item.dishName}</Text>
                         {item.categoryName && !selectedCategoryFilter && (
                           <View style={styles.categoryBadge}>
                             <Text style={styles.categoryBadgeText}>{item.categoryName}</Text>
@@ -935,10 +872,10 @@ export default function MenuScreen() {
                         </Text>
                       )}
                       {item.notes && (
-                        <Text style={styles.menuItemNotes}>{item.notes}</Text>
+                        <Text style={styles.menuItemNotes} numberOfLines={2}>{item.notes}</Text>
                       )}
                       <View style={styles.menuItemDetails}>
-                        <Text style={styles.menuItemPrice}>
+                        <Text style={styles.menuItemPrice} numberOfLines={1}>
                           {itemGroups(item).length ? `da ${euro(fromPrice(item.dailyPrice, itemGroups(item), item.unavailableOptionIds))}` : `${item.dailyPrice.toFixed(2)} €`}
                         </Text>
                         <View style={[
@@ -958,6 +895,7 @@ export default function MenuScreen() {
                     <View style={styles.menuItemActions}>
                       <TouchableOpacity
                         style={styles.actionButton}
+                        testID={`menu-item-edit-${item.dishId}`}
                         onPress={(e) => {
                           e.stopPropagation();
                           openEditModal(item);
@@ -967,6 +905,7 @@ export default function MenuScreen() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.actionButton}
+                        testID={`menu-item-remove-${item.dishId}`}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleRemoveItem(item.dishId);
@@ -977,16 +916,24 @@ export default function MenuScreen() {
                     </View>
                   </TouchableOpacity>
 </Appear>
-                ));
+                  ))}
+                  </View>
+                );
               })()}
             </View>
+          </>
+  );
 
+  const renderCatalog = () => (
+          <>
             {/* Available Dishes - Grouped by Category */}
-            <View style={styles.section}>
+            <View style={[styles.section, wideMenu && styles.sectionFill]} testID="menu-catalog-section">
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>
-                  Piatti Disponibili ({availableDishes.length})
-                </Text>
+                <View style={styles.sectionTitleRow}>
+                  <View style={[styles.sectionIcon, { backgroundColor: C.successSoft }]}><Ionicons name="add-circle-outline" size={18} color={C.success} /></View>
+                  <Text style={styles.sectionTitle}>Catalogo piatti</Text>
+                  <View style={styles.countPill}><Text style={styles.countPillText} testID="menu-catalog-count">{availableDishes.length}</Text></View>
+                </View>
               </View>
 
               {/* Free-text search for available dishes */}
@@ -996,7 +943,7 @@ export default function MenuScreen() {
                   style={styles.availableSearchInput}
                   value={availableSearchQuery}
                   onChangeText={setAvailableSearchQuery}
-                  placeholder="Cerca piatto per nome..."
+                  placeholder="Cerca nel catalogo..."
                   placeholderTextColor="#5A6A85"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -1030,39 +977,153 @@ export default function MenuScreen() {
                     groupedDishes[catName].push(dish);
                   });
                   
-                  return Object.entries(groupedDishes).map(([categoryName, dishesInCategory]) => (
-                    <View key={`cat-${categoryName}`}>
-                      <View style={styles.availableCategoryHeader}>
+                  const searching = !!availableSearchQuery.trim();
+                  return Object.entries(groupedDishes).map(([categoryName, dishesInCategory], catIdx) => {
+                    const open = searching || !!selectedCategoryFilter || !!openCatalogCats[categoryName];
+                    return (
+                    <Appear key={`cat-${categoryName}`} index={catIdx} style={styles.catalogGroup}>
+                      <TouchableOpacity
+                        style={[styles.availableCategoryHeader, open && styles.availableCategoryHeaderOpen]}
+                        onPress={() => setOpenCatalogCats((prev) => ({ ...prev, [categoryName]: !prev[categoryName] }))}
+                        testID={`catalog-category-${categoryName}`}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name={open ? 'chevron-down' : 'chevron-forward'} size={18} color={C.text2} />
                         <Text style={styles.availableCategoryTitle}>{categoryName}</Text>
-                        <Text style={styles.availableCategoryCount}>{dishesInCategory.length}</Text>
-                      </View>
-                      {dishesInCategory.map((dish, dishIdx) => (
+                        <View style={styles.countPill}><Text style={styles.countPillText}>{dishesInCategory.length}</Text></View>
+                      </TouchableOpacity>
+                      {open && dishesInCategory.map((dish, dishIdx) => (
                         <Appear key={dish.id} index={dishIdx}>
 <TouchableOpacity
                           key={dish.id}
                           style={styles.dishCard}
                           onPress={() => openAddModal(dish)}
+                          testID={`catalog-dish-${dish.id}`}
                         >
                           <View style={styles.dishInfo}>
-                            <Text style={styles.dishName}>{dish.name}</Text>
+                            <Text style={styles.dishName} numberOfLines={1}>{dish.name}</Text>
                             {dish.description && (
-                              <Text style={styles.dishDescription}>{dish.description}</Text>
+                              <Text style={styles.dishDescription} numberOfLines={1}>{dish.description}</Text>
                             )}
                             <Text style={styles.dishPrice}>
                               {dish.isComposable ? `Componibile · da ${euro(fromPrice(dish.basePrice, groupsForDish(dish, optionGroups)))}` : `Prezzo base: ${dish.basePrice.toFixed(2)} €`}
                             </Text>
                           </View>
                           <View style={styles.addDishButton}>
-                            <Ionicons name="add-circle" size={32} color="#0E9F80" />
+                            <Ionicons name="add" size={22} color="#fff" />
                           </View>
                         </TouchableOpacity>
 </Appear>
                       ))}
-                    </View>
-                  ));
+                    </Appear>
+                    );
+                  });
                 })()
               )}
             </View>
+          </>
+  );
+
+  const renderLists = (currentMenu: DailyMenu) => wideMenu ? (
+    <View style={styles.menuColumns}>
+      <View style={styles.menuColLeft}>{renderMenuToday(currentMenu)}</View>
+      <View style={styles.menuColRight}>{renderCatalog()}</View>
+    </View>
+  ) : (
+    <>
+      <View style={styles.menuTabs} testID="menu-mobile-tabs">
+        {([['menu', 'Menu di oggi', currentMenu.items.length], ['catalog', 'Aggiungi piatti', availableDishes.length]] as const).map(([key, label, n]) => (
+          <TouchableOpacity key={key} style={[styles.menuTab, mobileMenuTab === key && styles.menuTabActive]} onPress={() => setMobileMenuTab(key)} testID={`menu-tab-${key}`}>
+            <Text style={[styles.menuTabText, mobileMenuTab === key && styles.menuTabTextActive]}>{label}</Text>
+            <View style={[styles.menuTabCount, mobileMenuTab === key && styles.menuTabCountActive]}>
+              <Text style={[styles.menuTabCountText, mobileMenuTab === key && { color: C.primary }]}>{n}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {mobileMenuTab === 'menu' ? renderMenuToday(currentMenu) : renderCatalog()}
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+
+      {/* Header */}
+      <PageHeader
+        title="Menu del giorno"
+        subtitle="Scegli i piatti, le porzioni e pubblica sul sito"
+        testID="menu-header"
+        right={<DatePill selectedDate={selectedDate} onChange={changeDate} compact={isCompact} idPrefix="menu-" />}
+      />
+
+      {/* Content */}
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentInner}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A1FF" />
+        }
+      >
+        {!currentMenu ? (
+          <View style={styles.noMenuContainer}>
+            <Ionicons name="calendar-outline" size={64} color="#5A6A85" />
+            <Text style={styles.noMenuText}>Nessun menu per questa data</Text>
+            <TouchableOpacity style={styles.createMenuButton} onPress={handleCreateMenu}>
+              <Ionicons name="add-circle" size={20} color="#fff" />
+              <Text style={styles.createMenuButtonText}>Crea Menu</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {/* Pubblicazione sito web */}
+            <View style={styles.publishBar} testID="publish-bar">
+              <View style={styles.publishBarLeft}>
+                <Ionicons
+                  name={currentMenu.isPublished ? 'globe' : 'globe-outline'}
+                  size={20}
+                  color={currentMenu.isPublished ? '#16a34a' : '#5A6A85'}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.publishBarTitle}>Pubblica sul sito</Text>
+                  <Text style={styles.publishBarSubtitle} testID="publish-status-text">
+                    {currentMenu.isPublished
+                      ? `Online sul sito${currentMenu.publishedAt ? ' · inviato alle ' + format(new Date(currentMenu.publishedAt), 'HH:mm') : ''}`
+                      : 'Attiva per inviare il menu al sito'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.publishBarRight}>
+                {publishLoading && <ActivityIndicator size="small" color="#16a34a" testID="publish-loading" />}
+                {currentMenu.isPublished && !publishLoading && (
+                  <TouchableOpacity
+                    style={styles.publishInfoButton}
+                    onPress={() => handleTogglePublish(true)}
+                    testID="publish-resend-btn"
+                  >
+                    <Ionicons name="cloud-upload-outline" size={18} color="#2A3547" />
+                    <Text style={styles.publishInfoButtonText}>Aggiorna</Text>
+                  </TouchableOpacity>
+                )}
+                <Switch
+                  testID="publish-toggle"
+                  value={!!currentMenu.isPublished}
+                  onValueChange={handleTogglePublish}
+                  disabled={publishLoading}
+                  trackColor={{ false: '#E0E6EB', true: '#86efac' }}
+                  thumbColor={currentMenu.isPublished ? '#16a34a' : '#EFF4FA'}
+                />
+                <TouchableOpacity
+                  style={styles.publishInfoButton}
+                  onPress={() => setShowPublishModal(true)}
+                  testID="publish-info-btn"
+                >
+                  <Ionicons name="code-slash-outline" size={18} color="#2A3547" />
+                  <Text style={styles.publishInfoButtonText}>Codice</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {renderLists(currentMenu)}
           </>
         )}
       </ScrollView>
@@ -1427,6 +1488,114 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E6EB',
   },
+  sectionFill: {
+    marginBottom: 0,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flexShrink: 1,
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countPill: {
+    minWidth: 26,
+    height: 24,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: C.sunken,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countPillText: {
+    fontFamily: FONT,
+    fontSize: 12,
+    fontWeight: '800',
+    color: C.text2,
+  },
+  menuColumns: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  menuColLeft: {
+    flex: 1.38,
+    minWidth: 0,
+  },
+  menuColRight: {
+    flex: 1,
+    minWidth: 0,
+  },
+  menuTileGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+  },
+  menuTileCell: {
+    padding: 6,
+  },
+  menuItemCardLow: {
+    backgroundColor: C.warningSoft,
+  },
+  catalogGroup: {
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
+  },
+  availableCategoryHeaderOpen: {
+    backgroundColor: C.hover,
+  },
+  menuTabs: {
+    flexDirection: 'row',
+    backgroundColor: C.sunken,
+    borderRadius: 999,
+    padding: 4,
+    marginBottom: 14,
+  },
+  menuTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
+    borderRadius: 999,
+  },
+  menuTabActive: {
+    backgroundColor: C.primary,
+  },
+  menuTabText: {
+    fontFamily: FONT,
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.text2,
+  },
+  menuTabTextActive: {
+    color: '#fff',
+  },
+  menuTabCount: {
+    minWidth: 24,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 7,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuTabCountActive: {
+    backgroundColor: '#fff',
+  },
+  menuTabCountText: {
+    fontFamily: FONT,
+    fontSize: 12,
+    fontWeight: '800',
+    color: C.text2,
+  },
   sectionTitle: {
     fontFamily: FONT,
     fontSize: 18,
@@ -1462,11 +1631,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   menuItemCard: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E6EB',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: C.primarySoft,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   menuItemInfo: {
     flex: 1,
@@ -1494,14 +1667,16 @@ const styles = StyleSheet.create({
   menuItemDetails: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
     marginTop: 8,
-    gap: 12,
   },
   menuItemPrice: {
     fontFamily: FONT,
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0E9F80',
+    flexShrink: 0,
   },
   portionsBadge: {
     backgroundColor: '#0E9F80',
@@ -1526,40 +1701,51 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
-    padding: 10,
-    backgroundColor: '#F4F7FB',
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 999,
   },
   dishCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E6EB',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
   },
   dishInfo: {
     flex: 1,
   },
   dishName: {
     fontFamily: FONT,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#2A3547',
   },
   dishDescription: {
     fontFamily: FONT,
-    fontSize: 13,
+    fontSize: 12,
     color: '#5A6A85',
-    marginTop: 4,
+    marginTop: 2,
   },
   dishPrice: {
     fontFamily: FONT,
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '600',
     color: '#0E9F80',
-    marginTop: 6,
+    marginTop: 3,
   },
   addDishButton: {
-    padding: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: C.success,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   publishBar: {
     flexDirection: 'row',
@@ -1776,8 +1962,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   menuItemCardSoldOut: {
-    borderColor: '#F2545B',
-    borderWidth: 2,
+    borderColor: '#F9C4C6',
     backgroundColor: '#FDECEC',
   },
   menuItemNameRow: {
@@ -1940,12 +2125,9 @@ const styles = StyleSheet.create({
   availableCategoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#E0E6EB',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F4F7FB',
+    minHeight: 50,
   },
   availableCategoryTitle: {
     fontFamily: FONT,

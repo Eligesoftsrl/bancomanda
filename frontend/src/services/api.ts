@@ -330,6 +330,10 @@ export const reportsApi = {
     const response = await api.get(`/reports/range-summary?start_date=${startDate}&end_date=${endDate}`);
     return response.data;
   },
+  getHourlyRevenue: async (date: string): Promise<{ date: string; prevDate: string; hours: { hour: number; revenue: number; orders: number; prevRevenue: number; prevOrders: number }[] }> => {
+    const response = await api.get(`/reports/hourly-revenue?date=${date}`);
+    return response.data;
+  },
   getDailyRevenue: async (startDate: string, endDate: string): Promise<DailyRevenuePoint[]> => {
     const response = await api.get(`/reports/daily-revenue?start_date=${startDate}&end_date=${endDate}`);
     return response.data;
