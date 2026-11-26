@@ -24,6 +24,7 @@ import { reportsApi, missedSalesApi, setupApi, ordersApi, kitchenApi, porzionatu
 import { DailySummary, DailyRevenuePoint, MissedSale, Order } from '../../src/types';
 import { AccountButton } from '../../src/components/AccountButton';
 import { C, FONT } from '../../src/theme/tokens';
+import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { DatePill } from '../../src/components/ui2/DatePill';
 import { StatCard } from '../../src/components/ui2/StatCard';
@@ -858,7 +859,7 @@ export default function ReportsScreen() {
               <Text style={styles.sectionTitle}>Disponibilità Menu</Text>
               {summary?.menuItems && summary.menuItems.length > 0 ? (
                 summary.menuItems.map((item, index) => (
-                  <View key={`menu-avail-${item.dishId || item.dishName}-${index}`} style={styles.menuAvailRow}>
+                  <Appear index={index} key={`menu-avail-${item.dishId || item.dishName}-${index}`} style={styles.menuAvailRow}>
                     <Text style={styles.menuAvailName}>{item.dishName}</Text>
                     <View style={[
                       styles.availBadge,
@@ -869,7 +870,7 @@ export default function ReportsScreen() {
                         {item.portions === 0 ? 'Esaurito' : `${item.portions} disp.`}
                       </Text>
                     </View>
-                  </View>
+                  </Appear>
                 ))
               ) : (
                 <Text style={styles.noDataText}>Nessun menu per oggi</Text>
@@ -903,8 +904,8 @@ export default function ReportsScreen() {
             ) : kitchenGroups.length === 0 ? (
               <Text style={styles.noDataText}>Nessun piatto in cucina per oggi.{"\n"}Marca i piatti negli ordini con l&apos;icona 👨‍🍳 per farli comparire qui.</Text>
             ) : (
-              kitchenGroups.map((group) => (
-                <View key={group.dishName} style={styles.kitchenGroup}>
+              kitchenGroups.map((group, groupIdx) => (
+                <Appear index={groupIdx} key={group.dishName} style={styles.kitchenGroup}>
                   <View style={styles.kitchenGroupHeader}>
                     <Text style={styles.kitchenGroupName}>{group.dishName}</Text>
                     <View style={styles.kitchenGroupBadge}>
@@ -980,7 +981,7 @@ export default function ReportsScreen() {
                       </View>
                     );
                   })}
-                </View>
+                </Appear>
               ))
             )}
           </View>
@@ -1010,8 +1011,8 @@ export default function ReportsScreen() {
             </Text>
           ) : (
             <>
-              {unpaidOrders.map((order) => (
-                <View key={order.id} style={styles.unpaidOrderRow} testID={`unpaid-order-${order.id}`}>
+              {unpaidOrders.map((order, unpaidIdx) => (
+                <Appear index={unpaidIdx} key={order.id} style={styles.unpaidOrderRow} testID={`unpaid-order-${order.id}`}>
                   <View style={styles.unpaidOrderInfo}>
                     <Text style={styles.unpaidOrderCustomer}>
                       {order.customerName || 'Anonimo'}
@@ -1028,7 +1029,7 @@ export default function ReportsScreen() {
                     <Ionicons name="checkmark-circle" size={22} color="#fff" />
                     <Text style={styles.markPaidBtnText}>Paga ora</Text>
                   </TouchableOpacity>
-                </View>
+                </Appear>
               ))}
               <View style={styles.unpaidTotalRow}>
                 <Text style={styles.unpaidTotalLabel}>Totale da incassare:</Text>
@@ -1045,7 +1046,7 @@ export default function ReportsScreen() {
           </Text>
           {topDishes.length > 0 ? (
             topDishes.slice(0, 10).map((dish, index) => (
-              <View key={`top-dish-${dish.dishId || dish.dishName}-${index}`} style={styles.topDishRow}>
+              <Appear index={index} key={`top-dish-${dish.dishId || dish.dishName}-${index}`} style={styles.topDishRow}>
                 <View style={styles.rankBadge}>
                   <Text style={styles.rankText}>{index + 1}</Text>
                 </View>
@@ -1055,7 +1056,7 @@ export default function ReportsScreen() {
                     {dish.totalQuantity} porzioni • {dish.totalRevenue.toFixed(2)} €
                   </Text>
                 </View>
-              </View>
+              </Appear>
             ))
           ) : (
             <Text style={styles.noDataText}>Nessun dato disponibile</Text>
@@ -1069,7 +1070,7 @@ export default function ReportsScreen() {
           </Text>
           {missedSales.length > 0 ? (
             missedSales.map((ms, index) => (
-              <View key={ms.id || `missed-${index}`} style={styles.missedSaleRow}>
+              <Appear index={index} key={ms.id || `missed-${index}`} style={styles.missedSaleRow}>
                 <View style={styles.missedSaleInfo}>
                   <Text style={styles.missedSaleName}>{ms.dishName}</Text>
                   {reportMode === 'daily' && ms.timeSlot && (
@@ -1083,7 +1084,7 @@ export default function ReportsScreen() {
                     {ms.quantity || 1} {(ms.quantity || 1) === 1 ? 'richiesta' : 'richieste'}
                   </Text>
                 </View>
-              </View>
+              </Appear>
             ))
           ) : (
             <Text style={styles.noDataText}>

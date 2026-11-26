@@ -56,6 +56,14 @@ const ALL_ORDER_STATUSES = ['in_attesa', 'in_preparazione', 'pronto', 'sospeso',
 
 
 
+// Colore della scheda nel riepilogo, come i riquadri di "All Notes": tinta tenue e titolo nello stesso tono
+const itemTone = (item: { itemStatus?: string; sendToKitchen?: boolean }) => {
+  if (item.itemStatus === 'problem') return { bg: C.errorSoft, fg: C.errorFg };
+  if (item.itemStatus === 'ready') return { bg: C.successSoft, fg: C.success };
+  if (item.sendToKitchen) return { bg: C.warningSoft, fg: C.warningFg };
+  return { bg: C.primarySoft, fg: C.primaryDark };
+};
+
 export default function OrdersScreen() {
   const { width } = useWindowDimensions();
   const isSmallScreen = width < 768;
@@ -705,6 +713,14 @@ export default function OrdersScreen() {
     }
   };
 
+  const closeDishFooter = () => {
+    setSelectedMenuItem(null);
+    setComposerSel({});
+    setItemQuantity('1');
+    setItemCustomPrice('');
+    setItemNotes('');
+  };
+
   const handleAddItem = async () => {
     if (!selectedOrder || !selectedMenuItem) return;
     
@@ -1172,7 +1188,7 @@ export default function OrdersScreen() {
                   <Ionicons
                     name={type.icon as any}
                     size={20}
-                    color={newOrderServiceType === type.id ? '#2A3547' : '#5A6A85'}
+                    color={newOrderServiceType === type.id ? C.primary : C.text2}
                   />
                   <Text
                     style={[
@@ -1674,11 +1690,12 @@ export default function OrdersScreen() {
                             editOrderServiceType === type.id && styles.serviceTypeButtonActive,
                           ]}
                           onPress={() => setEditOrderServiceType(type.id as any)}
+                          testID={`edit-service-${type.id}`}
                         >
                           <Ionicons
                             name={type.icon as any}
                             size={18}
-                            color={editOrderServiceType === type.id ? '#fff' : '#5A6A85'}
+                            color={editOrderServiceType === type.id ? C.primary : C.text2}
                           />
                           <Text
                             style={[
@@ -1736,13 +1753,13 @@ export default function OrdersScreen() {
                 {selectedOrder?.items.length === 0 ? (
                   <Text style={styles.emptyOrderText}>Nessun piatto nell&apos;ordine</Text>
                 ) : (
-                  selectedOrder?.items.map((item, index) => (
-                    <View key={`order-${item.dishId || 'custom'}-${index}`} style={[
-                      styles.orderItemRow,
-                      isSmallScreen && styles.orderItemRowCompact,
-                      item.sendToKitchen && styles.orderItemKitchen,
-                      item.itemStatus === 'ready' && styles.orderItemReady,
-                      item.itemStatus === 'problem' && styles.orderItemProblem,
+                  selectedOrder?.items.map((item, index) => {
+                    const tone = itemTone(item);
+                    return (
+                    <Appear key={`order-${item.dishId || 'custom'}-${index}`} index={index} testID={`order-item-card-${index}`} style={[
+                      styles.orderItemCard,
+                      { backgroundColor: tone.bg },
+                      editingItemIndex === index && styles.orderItemCardEditing,
                     ]}>
                       {editingItemIndex === index ? (
                         /* INLINE EDIT FORM */
@@ -1839,116 +1856,104 @@ export default function OrdersScreen() {
                       ) : (
                         /* NORMAL ITEM ROW */
                         <>
-                          <View style={styles.orderItemInfo}>
-                            <View style={styles.orderItemNameRow}>
-                              <Text style={styles.orderItemName}>{item.dishName}</Text>
-                              {item.isCustomItem && (
-                                <View style={styles.customItemBadge}>
-                                  <Text style={styles.customItemBadgeText}>LIBERO</Text>
+                          <View style={styles.orderItemTop}>
+                            <View style={styles.orderItemInfo}>
+                              <View style={styles.orderItemNameRow}>
+                                <Text style={[styles.orderItemName, { color: tone.fg }]} numberOfLines={2}>{item.dishName}</Text>
+                                {item.isCustomItem && (
+                                  <View style={styles.customItemBadge}>
+                                    <Text style={styles.customItemBadgeText}>LIBERO</Text>
+                                  </View>
+                                )}
+                              </View>
+                              {!!item.composition?.length && (
+                                <Text style={styles.orderItemComposition} testID={`order-item-composition-${index}`}>
+                                  {compositionText(item.composition)}
+                                </Text>
+                              )}
+                              {item.notes ? (
+                                <View style={styles.orderItemNotesRow}>
+                                  <Ionicons name="create-outline" size={13} color={C.text2} />
+                                  <Text style={styles.orderItemNotes}>{item.notes}</Text>
                                 </View>
-                              )}
+                              ) : null}
                             </View>
-                            {!!item.composition?.length && (
-                              <Text style={styles.orderItemComposition} testID={`order-item-composition-${index}`}>
-                                {compositionText(item.composition)}
-                              </Text>
-                            )}
-                            {item.notes ? (
-                              <Text style={styles.orderItemNotes}>📝 {item.notes}</Text>
-                            ) : null}
+                            <Text style={styles.orderItemSubtotal} testID={`order-item-subtotal-${index}`}>{item.subtotal.toFixed(2)} €</Text>
+                          </View>
+
+                          <View style={styles.orderItemBottom}>
                             <Text style={styles.orderItemDetails}>
-                              {item.quantity} x {item.unitPrice.toFixed(2)} €
+                              {item.quantity} × {item.unitPrice.toFixed(2)} €
                             </Text>
-                          </View>
+                            <View style={styles.orderItemActions}>
+                              {/* Item Status Icons */}
+                              <TouchableOpacity
+                                style={[styles.itemStatusBtn, item.sendToKitchen && styles.itemKitchenActive]}
+                                onPress={() => selectedOrder && handleToggleKitchen(index)}
+                                testID={`item-kitchen-btn-${index}`}
+                              >
+                                <Ionicons name="person" size={18} color={item.sendToKitchen ? '#fff' : C.warningFg} />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={[styles.itemStatusBtn, item.itemStatus === 'ready' && styles.itemStatusBtnReady]}
+                                onPress={() => selectedOrder && handleItemStatusChange(
+                                  selectedOrder.id,
+                                  index,
+                                  item.itemStatus === 'ready' ? 'pending' : 'ready'
+                                )}
+                                testID={`item-ready-btn-${index}`}
+                              >
+                                <Ionicons name="checkmark-circle" size={18} color={item.itemStatus === 'ready' ? '#fff' : C.success} />
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={[styles.itemStatusBtn, item.itemStatus === 'problem' && styles.itemStatusBtnProblem]}
+                                onPress={() => selectedOrder && handleItemStatusChange(
+                                  selectedOrder.id,
+                                  index,
+                                  item.itemStatus === 'problem' ? 'pending' : 'problem'
+                                )}
+                                testID={`item-problem-btn-${index}`}
+                              >
+                                <Ionicons name="alert-circle" size={18} color={item.itemStatus === 'problem' ? '#fff' : C.error} />
+                              </TouchableOpacity>
 
-                          {/* Item Status Icons */}
-                          <View style={styles.itemStatusIcons}>
-                            <TouchableOpacity
-                              style={[
-                                styles.itemStatusBtn,
-                                item.sendToKitchen && styles.itemKitchenActive,
-                              ]}
-                              onPress={() => selectedOrder && handleToggleKitchen(index)}
-                              testID={`item-kitchen-btn-${index}`}
-                            >
-                              <Ionicons
-                                name="person"
-                                size={22}
-                                color={item.sendToKitchen ? '#fff' : '#FFAE1F'}
-                              />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[
-                                styles.itemStatusBtn,
-                                item.itemStatus === 'ready' && styles.itemStatusBtnActive,
-                                item.itemStatus === 'ready' && styles.itemStatusBtnReady,
-                              ]}
-                              onPress={() => selectedOrder && handleItemStatusChange(
-                                selectedOrder.id, 
-                                index, 
-                                item.itemStatus === 'ready' ? 'pending' : 'ready'
+                              <View style={styles.orderItemActionsDivider} />
+
+                              {/* Edit + Duplicate (only for today's orders) */}
+                              {canEditOrderItems && (
+                                <>
+                                  <TouchableOpacity
+                                    style={styles.itemActionBtn}
+                                    onPress={() => openEditItem(index)}
+                                    testID={`item-edit-btn-${index}`}
+                                  >
+                                    <Ionicons name="create-outline" size={17} color={C.secondary} />
+                                  </TouchableOpacity>
+                                  {item.isCustomItem && (
+                                    <TouchableOpacity
+                                      style={styles.itemActionBtn}
+                                      onPress={() => handleDuplicateCustomItem(index)}
+                                      testID={`item-duplicate-btn-${index}`}
+                                    >
+                                      <Ionicons name="copy-outline" size={17} color={C.success} />
+                                    </TouchableOpacity>
+                                  )}
+                                </>
                               )}
-                            >
-                              <Ionicons 
-                                name="checkmark-circle" 
-                                size={22} 
-                                color={item.itemStatus === 'ready' ? '#fff' : '#0E9F80'} 
-                              />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[
-                                styles.itemStatusBtn,
-                                item.itemStatus === 'problem' && styles.itemStatusBtnActive,
-                                item.itemStatus === 'problem' && styles.itemStatusBtnProblem,
-                              ]}
-                              onPress={() => selectedOrder && handleItemStatusChange(
-                                selectedOrder.id, 
-                                index, 
-                                item.itemStatus === 'problem' ? 'pending' : 'problem'
-                              )}
-                            >
-                              <Ionicons 
-                                name="alert-circle" 
-                                size={22} 
-                                color={item.itemStatus === 'problem' ? '#fff' : '#F2545B'} 
-                              />
-                            </TouchableOpacity>
-                          </View>
-
-                          <Text style={styles.orderItemSubtotal}>{item.subtotal.toFixed(2)} €</Text>
-
-                          {/* Edit + Duplicate (only for today's orders) */}
-                          {canEditOrderItems && (
-                            <>
                               <TouchableOpacity
                                 style={styles.itemActionBtn}
-                                onPress={() => openEditItem(index)}
-                                testID={`item-edit-btn-${index}`}
+                                onPress={() => handleRemoveItem(index)}
+                                testID={`item-remove-btn-${index}`}
                               >
-                                <Ionicons name="create-outline" size={18} color="#8965E5" />
+                                <Ionicons name="trash-outline" size={17} color={C.error} />
                               </TouchableOpacity>
-                              {item.isCustomItem && (
-                                <TouchableOpacity
-                                  style={styles.itemActionBtn}
-                                  onPress={() => handleDuplicateCustomItem(index)}
-                                  testID={`item-duplicate-btn-${index}`}
-                                >
-                                  <Ionicons name="copy-outline" size={18} color="#0E9F80" />
-                                </TouchableOpacity>
-                              )}
-                            </>
-                          )}
-
-                          <TouchableOpacity
-                            style={styles.removeItemButton}
-                            onPress={() => handleRemoveItem(index)}
-                          >
-                            <Ionicons name="trash-outline" size={18} color="#F2545B" />
-                          </TouchableOpacity>
+                            </View>
+                          </View>
                         </>
                       )}
-                    </View>
-                  ))
+                    </Appear>
+                    );
+                  })
                 )}
 
                 <View style={styles.orderTotalRow}>
@@ -2221,7 +2226,7 @@ export default function OrdersScreen() {
                           const itemGroups = groupsForDish(dishMap[item.dishId], optionGroups);
                           const isSelected = selectedMenuItem?.dishId === item.dishId;
                           return (
-                          <React.Fragment key={`menu-${item.dishId}-${index}`}>
+                          <Appear key={`menu-${item.dishId}-${index}`} index={index}>
                           <TouchableOpacity
                             style={[
                               styles.menuItemCard,
@@ -2259,7 +2264,7 @@ export default function OrdersScreen() {
                               </Animated.View>
                             )}
                           </TouchableOpacity>
-                          </React.Fragment>
+                          </Appear>
                           );
                         })}
                       </View>
@@ -2273,6 +2278,9 @@ export default function OrdersScreen() {
             {selectedMenuItem && (
               <Animated.View entering={SlideInDown.springify().damping(20).stiffness(200)} style={styles.fixedFooter} testID="order-fixed-footer">
                 <View style={styles.footerSelectedItem}>
+                  <TouchableOpacity style={styles.footerCloseBtn} onPress={closeDishFooter} testID="order-footer-close" accessibilityLabel="Chiudi">
+                    <Ionicons name="close" size={20} color={C.text} />
+                  </TouchableOpacity>
                   <Text style={styles.footerItemName} numberOfLines={1}>
                     {selectedMenuItem.dishName}
                   </Text>
@@ -3382,7 +3390,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   serviceTypeButtonTextActive: {
-    color: '#2A3547',
+    color: C.primaryDark,
     fontWeight: '700',
   },
   customerSelector: {
@@ -3700,15 +3708,61 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 15,
   },
-  orderItemRow: {
+  orderItemCard: {
+    borderRadius: R.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  orderItemCardEditing: {
+    backgroundColor: C.surface,
+    borderColor: C.primary,
+    ...elevation(2),
+  },
+  orderItemTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  orderItemBottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E6EB',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  orderItemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  orderItemActionsDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: 'rgba(42,53,71,0.12)',
+    marginHorizontal: 2,
+  },
+  orderItemNotesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 5,
+    marginTop: 6,
+  },
+  footerCloseBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: C.sunken,
+    marginRight: 10,
   },
   orderItemInfo: {
     flex: 1,
+    minWidth: 0,
   },
   orderItemRowCompact: {
     flexWrap: 'wrap',
@@ -3717,9 +3771,10 @@ const styles = StyleSheet.create({
   orderItemComposition: {
     fontFamily: FONT,
     fontSize: 13,
-    fontWeight: '700',
-    color: '#0E9F80',
-    marginTop: 2,
+    fontWeight: '600',
+    color: C.text2,
+    lineHeight: 19,
+    marginTop: 5,
   },
   footerComposerScroll: {
     maxHeight: 320,
@@ -3733,34 +3788,41 @@ const styles = StyleSheet.create({
   },
   orderItemName: {
     fontFamily: FONT,
-    color: '#2A3547',
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    flexShrink: 1,
   },
   orderItemDetails: {
     fontFamily: FONT,
-    color: '#5A6A85',
+    color: C.text2,
     fontSize: 12,
-    marginTop: 2,
+    fontWeight: '600',
   },
   orderItemNotes: {
     fontFamily: FONT,
-    color: C.warningFg,
-    fontSize: 12,
+    color: C.text2,
+    fontSize: 13,
     fontStyle: 'italic',
-    marginTop: 2,
+    lineHeight: 18,
+    flex: 1,
   },
   orderItemSubtotal: {
     fontFamily: FONT,
-    color: '#0E9F80',
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 12,
+    color: C.text,
+    fontSize: 16,
+    fontWeight: '800',
   },
   removeItemButton: {
     padding: 8,
   },
   itemActionBtn: {
-    padding: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   orderItemNameRow: {
     flexDirection: 'row',
@@ -3769,10 +3831,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   customItemBadge: {
-    backgroundColor: '#8965E5',
-    paddingHorizontal: 6,
+    backgroundColor: C.secondary,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 999,
   },
   customItemBadgeText: {
     fontFamily: FONT,
@@ -4546,7 +4608,7 @@ const styles = StyleSheet.create({
     borderLeftColor: '#F2545B',
   },
   itemKitchenActive: {
-    backgroundColor: '#FFAE1F',
+    backgroundColor: C.warning,
   },
   orderItemKitchen: {
     borderLeftWidth: 3,
@@ -4559,14 +4621,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   itemStatusBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#E0E6EB',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   itemStatusBtnActive: {
     borderWidth: 0,

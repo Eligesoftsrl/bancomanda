@@ -28,6 +28,7 @@ import { ComposableDishFields } from '../../src/components/composable/Composable
 import { OptionGroup } from '../../src/types';
 import { fromPrice, groupsForDish, euro } from '../../src/utils/composition';
 import { C, FONT } from '../../src/theme/tokens';
+import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { HeaderButton } from '../../src/components/ui2/HeaderButton';
 import { useWideLayout } from '../../src/theme/layout';
@@ -419,8 +420,8 @@ export default function DishesScreen() {
             <View key={categoryName} style={styles.categorySection}>
               <Text style={styles.categorySectionTitle}>{categoryName}</Text>
               <View style={styles.dishGrid}>
-              {categoryDishes.map((dish) => (
-                <View key={dish.id} style={[styles.gridCell, { width: cellW }]}>
+              {categoryDishes.map((dish, dishIdx) => (
+                <Appear index={dishIdx} key={dish.id} style={[styles.gridCell, { width: cellW }]}>
                 <View style={[styles.dishCard, !dish.active && styles.dishCardInactive]} testID={`dish-card-${dish.id}`}>
                   <View style={styles.dishHeader}>
                     <View style={styles.dishNameRow}>
@@ -491,7 +492,7 @@ export default function DishesScreen() {
                     )}
                   </View>
                 </View>
-                </View>
+                </Appear>
               ))}
               </View>
             </View>

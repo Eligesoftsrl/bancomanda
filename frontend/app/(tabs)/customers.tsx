@@ -22,6 +22,7 @@ import { customersApi } from '../../src/services/api';
 import { Customer, Order } from '../../src/types';
 import { compositionText } from '../../src/utils/composition';
 import { C, FONT } from '../../src/theme/tokens';
+import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { HeaderButton } from '../../src/components/ui2/HeaderButton';
 import { useWideLayout } from '../../src/theme/layout';
@@ -296,8 +297,8 @@ export default function CustomersScreen() {
           </View>
         ) : (
           <View style={styles.customerGrid}>
-          {filteredCustomers.map((customer) => (
-            <View key={customer.id} style={[styles.gridCell, { width: cellW }]}>
+          {filteredCustomers.map((customer, customerIdx) => (
+            <Appear index={customerIdx} key={customer.id} style={[styles.gridCell, { width: cellW }]}>
             <View style={[styles.customerCard, customer.archived && styles.customerCardArchived]} testID={`customer-card-${customer.id}`}>
               <View style={styles.customerHeader}>
                 <View style={styles.customerAvatar}>
@@ -382,7 +383,7 @@ export default function CustomersScreen() {
                 )}
               </View>
             </View>
-            </View>
+            </Appear>
           ))}
           </View>
         )}

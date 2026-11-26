@@ -32,6 +32,7 @@ import { euro, fromPrice, groupsForDish, optionsSummary } from '../../src/utils/
 import { sortCategoriesByFixedOrder, sortDishesByCategory, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { useFocusEffect } from 'expo-router';
 import { C, FONT } from '../../src/theme/tokens';
+import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
 import { DatePill } from '../../src/components/ui2/DatePill';
 
@@ -898,7 +899,8 @@ export default function MenuScreen() {
                 }
                 
                 return filteredItems.map((item, index) => (
-                  <TouchableOpacity 
+                  <Appear key={`menu-item-${item.dishId}-${index}`} index={index}>
+<TouchableOpacity 
                     key={`menu-item-${item.dishId}-${index}`} 
                     style={[styles.menuItemCard, item.portions === 0 && styles.menuItemCardSoldOut]}
                     onPress={() => {
@@ -974,6 +976,7 @@ export default function MenuScreen() {
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
+</Appear>
                 ));
               })()}
             </View>
@@ -1033,8 +1036,9 @@ export default function MenuScreen() {
                         <Text style={styles.availableCategoryTitle}>{categoryName}</Text>
                         <Text style={styles.availableCategoryCount}>{dishesInCategory.length}</Text>
                       </View>
-                      {dishesInCategory.map((dish) => (
-                        <TouchableOpacity
+                      {dishesInCategory.map((dish, dishIdx) => (
+                        <Appear key={dish.id} index={dishIdx}>
+<TouchableOpacity
                           key={dish.id}
                           style={styles.dishCard}
                           onPress={() => openAddModal(dish)}
@@ -1052,6 +1056,7 @@ export default function MenuScreen() {
                             <Ionicons name="add-circle" size={32} color="#0E9F80" />
                           </View>
                         </TouchableOpacity>
+</Appear>
                       ))}
                     </View>
                   ));
