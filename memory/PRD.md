@@ -308,6 +308,13 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Report Periodo: GET /api/reports/daily-revenue (un punto per giorno, max 2 anni); grafico Barre/Linea con incassi + numero ordini, suggerimento al tocco, media e giorno migliore; oltre 120 giorni raggruppa per settimana
 - Dati di prova: ordini "TEST_Grafico" (26 ott–24 nov 2026) in Pizzeria Napoli
 
+## Dettaglio ordine: riepilogo in stile "All Notes" + cascata — 2026-11-26 ✅ (iteration_23 frontend 95% → fix applicati)
+- Riepilogo Ordine: ogni piatto è una scheda tenue (azzurro normale, giallo in cucina, verde pronto, rosa problema) con titolo nello stesso tono; contenuti invariati (nome, scelte, nota, qtà × prezzo, pulsanti)
+- Pannello del piatto selezionato: pulsante X di chiusura (order-footer-close); il tocco su un piatto azzera qtà/note/prezzo; la lista scorre sopra il pannello (padding = altezza pannello)
+- Tipologia: icona azzurra visibile sul pulsante selezionato (nuovo ordine e modifica)
+- Apertura a cascata (Appear, 70ms per voce, massimo 12) su tutte le liste: Ordini, riepilogo, piatti del menu nel dettaglio, Menu, Piatti, Clienti, liste del Report
+- NOTA UTENTE: niente note colorate e niente funzioni inventate; MaterialM vale solo come riferimento grafico
+
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
 - P2: lint globale (setState in useEffect preesistenti)

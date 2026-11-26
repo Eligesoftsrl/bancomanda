@@ -110,6 +110,7 @@ export default function OrdersScreen() {
   const [editCustomerSearchQuery, setEditCustomerSearchQuery] = useState('');
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
+  const [footerH, setFooterH] = useState(0);
   // Piatti componibili: anagrafica piatti/gruppi e scelte in corso
   const [dishMap, setDishMap] = useState<Record<string, Dish>>({});
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
@@ -1534,7 +1535,7 @@ export default function OrdersScreen() {
             <ScrollView 
               style={styles.modalScrollContent} 
               showsVerticalScrollIndicator={true}
-              contentContainerStyle={[styles.modalScrollContentContainer, selectedMenuItem && styles.modalScrollWithFooter]}
+              contentContainerStyle={[styles.modalScrollContentContainer, selectedMenuItem && { paddingBottom: footerH + 24 }]}
             >
               {/* Order Header Info - Editable */}
               <Appear index={0} style={styles.mobileSectionCard} testID="order-header-info">
@@ -2235,8 +2236,8 @@ export default function OrdersScreen() {
                             ]}
                             onPress={() => {
                               if (item.portions <= 0) return;
-                              setComposerSel({});
-                              setSelectedMenuItem(isSelected ? null : item);
+                              closeDishFooter();
+                              if (!isSelected) setSelectedMenuItem(item);
                             }}
                             disabled={item.portions === 0}
                             testID={`order-menu-item-${item.dishId}`}
@@ -2276,7 +2277,7 @@ export default function OrdersScreen() {
 
             {/* FIXED FOOTER - Appears when item is selected */}
             {selectedMenuItem && (
-              <Animated.View entering={SlideInDown.springify().damping(20).stiffness(200)} style={styles.fixedFooter} testID="order-fixed-footer">
+              <Animated.View entering={SlideInDown.springify().damping(20).stiffness(200)} style={styles.fixedFooter} testID="order-fixed-footer" onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}>
                 <View style={styles.footerSelectedItem}>
                   <TouchableOpacity style={styles.footerCloseBtn} onPress={closeDishFooter} testID="order-footer-close" accessibilityLabel="Chiudi">
                     <Ionicons name="close" size={20} color={C.text} />
@@ -3370,14 +3371,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     backgroundColor: C.sunken,
     borderRadius: R.md,
     borderWidth: 2,
     borderColor: 'transparent',
     gap: 6,
-    minHeight: 44,
+    minHeight: 48,
   },
   serviceTypeButtonActive: {
     borderColor: C.primary,
@@ -3388,6 +3389,8 @@ const styles = StyleSheet.create({
     color: C.text2,
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
+    flexShrink: 1,
   },
   serviceTypeButtonTextActive: {
     color: C.primaryDark,
@@ -3845,11 +3848,6 @@ const styles = StyleSheet.create({
   },
   itemEditForm: {
     flex: 1,
-    backgroundColor: '#F6F9FC',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#8965E5',
   },
   itemEditLabel: {
     fontFamily: FONT,

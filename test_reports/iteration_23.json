@@ -1,0 +1,42 @@
+{
+  "summary": "Frontend-only test of the 4 requested fixes (footer close, Riepilogo 'All Notes' cards, Tipologia icon colour, cascade animation) plus a regression check, on Pizzeria Napoli at 1366x900, 820x1180 and 390x844. I created a TEST_ order for today (2026-11-26) with a dish with a long note and a free dish, so the edit and duplicate buttons could be tested. All requested items PASS. Two minor issues in the dish footer, one small layout issue.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Order detail > dish footer (order-fixed-footer)", "issue": "The scroll content has no bottom padding for the footer, which is about 306px tall at 1366x900. While the footer is open, the last dish card(s) in 'Aggiungi dal Menu del Giorno' stay hidden under it, even when scrolled to the end. In the test the 'ALTRO / TEST_Piatto Fit' card could not be reached. The new close button gets around this, but the user cannot pick or untoggle a covered dish without closing the footer first.", "selector": "[data-testid=order-fixed-footer]", "priority": "MEDIUM"},
+      {"component": "Order detail > dish card toggle (index.tsx about line 2236-2239)", "issue": "Tapping a dish card only calls setComposerSel({}) and setSelectedMenuItem(...). It does not reset itemQuantity, itemNotes or itemCustomPrice the way closeDishFooter() does. Confirmed: after typing the note 'TEST_abc' and toggling off by tapping the same card, reopening showed 'TEST_abc'. In code, switching straight to another dish also keeps the previous qty, notes and custom price (not run in the browser). Suggested fix: call closeDishFooter() when isSelected, and reset qty, notes and price before calling setSelectedMenuItem(item).", "selector": "[data-testid^=order-menu-item-]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Nuovo Ordine modal at 390px", "issues": ["The 'Da Consegnare' label in the selected Tipologia button wraps to 2 lines and the word 'Consegnare' sits against the button's right border (little or no inner padding)."]},
+      {"screen": "Riepilogo inline edit form", "issues": ["While editing, the card shows two borders: the outer orderItemCardEditing border plus the itemEditForm's own border. The tint is also lost (white). Minor visual detail."]}
+    ]
+  },
+  "passed_tests": [
+    "Footer close: 'order-footer-close' hides 'order-fixed-footer' (count 0). After setting qty 3 and notes, closing and reopening shows qty 1 and empty notes. Tapping the same card toggles the footer off (once the card is scrolled above the footer).",
+    "Riepilogo cards 'order-item-card-<i>': default bg rgb(229,245,255) light blue. Kitchen gives rgb(255,244,224) yellow, and tapping again goes back to blue. Ready gives rgb(225,247,241) green, then back. Problem gives rgb(253,236,236) pink, then back. The title takes the tone colour and the subtotal is on the right.",
+    "Composition text 'order-item-composition-0' ('Patate e carote + Uova') and the note with its icon ('senza limone') show correctly on the 2026-11-25 order at 820 and 390. The edit button is hidden for the past date, as expected.",
+    "Today's order: 'item-edit-btn-0' opens 'item-edit-form-0' inside the card and Annulla closes it. 'item-duplicate-btn-1' is shown only for the free item. 'item-remove-btn' is present.",
+    "No overlapping text nodes inside the cards at 1366, 820 or 390 (checked by bounding boxes). The long note and long free-item name wrap correctly.",
+    "Tipologia: the selected 'edit-service-*' and 'new-order-service-*' buttons have bg rgb(229,245,255), a blue #00A1FF icon and a #0085D6 label. The icon is clearly visible.",
+    "Cascade: the early screenshots show staggered fade-in on the Riepilogo cards, the Clienti grid (including after a filter change) and the Ordini grid. After the animations, no text element is left with opacity below 0.98 on Menu, Piatti, Clienti or Report.",
+    "Regression: Clienti filters work (Attivi 5, Senza ordini da 6 mesi 1, Archiviati 0). Report Periodo with 30 giorni gives 84 orders / 2007.50 EUR, the revenue chart shows its bars and the Barre/Linea toggle, and the Top dishes / Unpaid / Missed sales lists display. The Piatti grid gives 1 column at 390 and 2 columns at 820."
+  ],
+  "test_report_links": ["/app/tests/setup_iter23.py"],
+  "action_items": [
+    "Add bottom padding to the order detail ScrollView equal to the footer height while selectedMenuItem is set, so the dishes at the bottom stay reachable while the footer is open.",
+    "When a dish card is tapped, reset qty, notes and custom price (reuse closeDishFooter) on deselect and when switching to another dish.",
+    "Optional: give the Tipologia buttons in the 390px Nuovo Ordine modal more inner padding, or a smaller label, so 'Consegnare' does not touch the border."
+  ],
+  "critical_code_review_comments": [
+    "index.tsx is 4951 lines, far above 700. Split the order detail modal, the Riepilogo item card and the dish footer into components.",
+    "Appear wraps items with stable keys and the tabs stay mounted. The cascade therefore replays only for items that remount (first open, filter change), not when returning to a tab that was already open. This matches the request but is worth knowing.",
+    "Marking an item as 'problem' also switches the order status to 'Sospeso', and it goes back when the problem is removed. This was already the behaviour; I note it only so nobody reads it as a regression."
+  ],
+  "updated_files": ["/app/tests/setup_iter23.py"],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "95%"},
+  "seed_data_creation": "I created a daily menu for 2026-11-26 on Pizzeria Napoli (id 6b0807df6ecc95dad8556d42, none existed before) and a TEST_Oggi Riepilogo order (6b0807df6ecc95dad8556d43). The order has been deleted and the two TEST_ dishes removed from the menu. The empty menu document for 2026-11-26 is still there, because the API has no endpoint to delete a menu. The 2026-11-25 TEST_Composizione order was not changed (kitchen = true, note 'senza limone'). Giorgio Bistrot was not touched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The preview date is 2026-11-26. Pizzeria Napoli has an empty menu for 2026-11-26. To test editing, run /app/tests/setup_iter23.py after writing a fresh token to /tmp/tok; it creates the menu items and an order with 2 items. The footer controls are order-footer-close, order-footer-price and order-confirm-dish-btn. The notes input has the placeholder 'Note (es: senza sale, ben cotto...)'. The Clienti filters are customers-view-active and customers-view-inactive. The tabs stay mounted, so to see the cascade replay, change the filter or reload."
+}
