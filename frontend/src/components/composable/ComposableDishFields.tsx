@@ -24,9 +24,9 @@ export const ComposableDishFields = ({ enabled, groupIds, groups, onToggle, onCh
     </TouchableOpacity>
     {enabled && (
       <View style={styles.groupsBox}>
-        <Text style={styles.label}>Gruppi di scelta, nell&apos;ordine in cui si scelgono</Text>
+        <Text style={styles.label}>Liste di scelta, nell&apos;ordine in cui si scelgono</Text>
         {groups.length === 0 ? (
-          <Text style={styles.hint} testID="dish-no-groups-hint">Non hai ancora gruppi di scelta: chiudi e crea i gruppi dal pulsante &quot;Gruppi&quot; in alto.</Text>
+          <Text style={styles.hint} testID="dish-no-groups-hint">Non hai ancora liste di scelta: chiudi e creale dal pulsante &quot;Liste di scelta&quot; in alto.</Text>
         ) : (
           <View style={styles.chips}>
             {groups.map((g) => {

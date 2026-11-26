@@ -48,7 +48,7 @@ export const OptionGroupEditor = ({ draft, onChange }: Props) => {
   const addOption = () => onChange({ ...draft, options: [...draft.options, { name: '', priceText: '', allergens: [], active: true }] });
   return (
     <View style={styles.wrap} testID="option-group-editor">
-      <Text style={styles.label}>Nome del gruppo *</Text>
+      <Text style={styles.label}>Nome della lista *</Text>
       <TextInput
         style={styles.input}
         value={draft.name}

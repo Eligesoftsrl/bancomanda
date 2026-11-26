@@ -33,7 +33,7 @@ from tenancy import ScopedDatabase, TenantContextMiddleware
 from tenant_profile import FtpNotConfigured, current_tenant_doc, encrypt_secret, ftp_config, ftp_error_message, ftp_upload_menu_json, logo_data_url, menu_message
 from auth.jwt_handler import hash_password
 from auth.dependencies import CurrentUser, require_roles
-from composable import CompositionEntry, Selection, build_composition, composition_extra, load_groups, public_options, validate_group_ids
+from composable import CompositionEntry, PresetChanges, Selection, build_composition, composition_extra, load_groups, preset_changes, preset_summary, public_options, validate_group_ids
 
 # Collezioni dati filtrate automaticamente per locale (vedi tenancy.py)
 db = ScopedDatabase(raw_db)
@@ -134,7 +134,8 @@ class DishBase(BaseModel):
     tags: List[str] = []       # Es: "senza_glutine", "vegetariano", "piccante"
     allergens: List[str] = []  # Es: "glutine", "latte", "uova" (Reg. UE 1169/2011)
     isComposable: bool = False       # Piatto componibile (es. base + proteine)
-    optionGroupIds: List[str] = []   # Gruppi di scelta collegati, in ordine
+    optionGroupIds: List[str] = []   # Liste di scelta collegate, in ordine
+    presetSelections: List[Selection] = []  # Piatto già composto: ricetta di partenza
 
 class DishCreate(BaseModel):
     name: str
@@ -146,6 +147,7 @@ class DishCreate(BaseModel):
     allergens: List[str] = []
     isComposable: bool = False
     optionGroupIds: List[str] = []
+    presetSelections: List[Selection] = []
 
 class DishUpdate(BaseModel):
     name: Optional[str] = None
@@ -158,6 +160,7 @@ class DishUpdate(BaseModel):
     allergens: Optional[List[str]] = None
     isComposable: Optional[bool] = None
     optionGroupIds: Optional[List[str]] = None
+    presetSelections: Optional[List[Selection]] = None
 
 class Dish(DishBase):
     id: str
@@ -221,6 +224,7 @@ class OrderItemBase(BaseModel):
     portionStatuses: List[str] = []  # 1 stato per porzione (lunghezza = quantity)
     notes: Optional[str] = ""
     composition: List[CompositionEntry] = []  # Scelte del piatto componibile (fotografia di nomi e prezzi)
+    presetChanges: Optional[PresetChanges] = None  # Piatto già composto: ingredienti tolti/aggiunti
 
 # Ordini (Orders)
 class OrderBase(BaseModel):
@@ -388,13 +392,18 @@ async def delete_category(category_id: str):
 # ============ ROUTES - DISHES ============
 
 async def _check_composable(data: dict):
-    """Un piatto componibile deve avere almeno un gruppo di scelta valido del locale."""
+    """Un piatto componibile deve avere almeno una lista di scelta valida; la ricetta (se c'è) ne rispetta le regole."""
     if not data.get("isComposable"):
-        data["optionGroupIds"] = []
+        data["optionGroupIds"], data["presetSelections"] = [], []
         return
     data["optionGroupIds"] = await validate_group_ids(db, list(dict.fromkeys(data.get("optionGroupIds") or [])))
     if not data["optionGroupIds"]:
-        raise HTTPException(status_code=400, detail="Scegli almeno un gruppo di scelta per il piatto componibile")
+        raise HTTPException(status_code=400, detail="Scegli almeno una lista di scelta per il piatto componibile")
+    preset = [Selection(**p) for p in data.get("presetSelections") or []]
+    if preset:
+        composition, _ = build_composition(await load_groups(db, data["optionGroupIds"]), preset, [])
+        preset = [{"optionId": c["optionId"], "quantity": c["quantity"]} for c in composition]
+    data["presetSelections"] = preset
 
 
 @api_router.post("/dishes", response_model=Dish)
@@ -447,10 +456,10 @@ async def update_dish(dish_id: str, dish_update: DishUpdate):
         raise HTTPException(status_code=400, detail="Nessun dato da aggiornare")
     if update_data.get("basePrice", 0) < 0:
         raise HTTPException(status_code=400, detail="Prezzo non valido")
-    if "isComposable" in update_data or "optionGroupIds" in update_data:
+    if {"isComposable", "optionGroupIds", "presetSelections"} & update_data.keys():
         current = await db.dishes.find_one({"_id": ObjectId(dish_id)}) or {}
-        merged = {"isComposable": update_data.get("isComposable", current.get("isComposable", False)),
-                  "optionGroupIds": update_data.get("optionGroupIds", current.get("optionGroupIds", []))}
+        merged = {k: update_data.get(k, current.get(k, d)) for k, d in
+                  (("isComposable", False), ("optionGroupIds", []), ("presetSelections", []))}
         await _check_composable(merged)
         update_data.update(merged)
     
@@ -670,9 +679,16 @@ async def _add_public_composition(entry: dict, dish: dict, unavailable: List[str
     """Piatto componibile: prezzo "da", elenco delle scelte disponibili oggi e allergeni possibili."""
     groups = await load_groups(db, dish.get("optionGroupIds", []))
     floor, public_groups, text = public_options(groups, unavailable)
+    entry["optionGroups"] = public_groups
+    if dish.get("presetSelections"):
+        # Piatto già composto: prezzo fisso della ricetta, personalizzabile togliendo o aggiungendo
+        names, extra, allergens = preset_summary(groups, dish["presetSelections"])
+        entry.update(price=round(entry["price"] + extra, 2), priceFrom=False, ingredients=names, customizable=True,
+                     notes=" · ".join(x for x in (", ".join(names), entry["notes"]) if x))
+        entry["allergens"] += [a for a in allergens if a not in entry["allergens"]]
+        return
     entry["price"] = round(entry["price"] + floor, 2)
     entry["priceFrom"] = True
-    entry["optionGroups"] = public_groups
     entry["notes"] = " · ".join(x for x in (text, entry["notes"]) if x)
     for grp in public_groups:
         for opt in grp["options"]:
@@ -961,13 +977,16 @@ async def add_order_item(order_id: str, item: OrderAddItem):
         )
     
     # Piatto componibile: regole dei gruppi e prezzo calcolati qui, mai dal client
-    composition, extra = [], 0.0
+    composition, extra, changes = [], 0.0, None
     dish = await db.dishes.find_one({"_id": ObjectId(item.dishId)})
     if dish and dish.get("isComposable"):
         groups = await load_groups(db, dish.get("optionGroupIds", []))
         if not groups or len(groups) != len(dish.get("optionGroupIds", [])):
-            raise HTTPException(status_code=400, detail="Piatto componibile senza gruppi di scelta: controlla la scheda del piatto")
-        composition, extra = build_composition(groups, item.selections or [], menu_item.get("unavailableOptionIds") or [])
+            raise HTTPException(status_code=400, detail="Piatto componibile senza liste di scelta: controlla la scheda del piatto")
+        preset = dish.get("presetSelections") or []
+        selections = item.selections if item.selections is not None else [Selection(**p) for p in preset]
+        composition, extra = build_composition(groups, selections, menu_item.get("unavailableOptionIds") or [])
+        changes = preset_changes(groups, preset, composition)
     elif item.selections:
         raise HTTPException(status_code=400, detail="Questo piatto non è componibile")
 
@@ -987,6 +1006,7 @@ async def add_order_item(order_id: str, item: OrderAddItem):
         "portionStatuses": ["pending"] * item.quantity,
         "notes": item.notes or "",
         "composition": composition,
+        "presetChanges": changes,
     }
     
     # Se il prezzo è stato modificato, logga
@@ -1168,11 +1188,12 @@ async def update_order_item(order_id: str, item_index: int, update: OrderItemUpd
         old = item.get("composition") or []
         groups = await load_groups(db, dish.get("optionGroupIds", []))
         if not groups or len(groups) != len(dish.get("optionGroupIds", [])):
-            raise HTTPException(status_code=400, detail="Piatto componibile senza gruppi di scelta: controlla la scheda del piatto")
+            raise HTTPException(status_code=400, detail="Piatto componibile senza liste di scelta: controlla la scheda del piatto")
         composition, extra = build_composition(groups, update.selections, menu_item.get("unavailableOptionIds") or [],
                                                keep_ids={c["optionId"] for c in old})
         item["unitPrice"] = round(item["unitPrice"] - composition_extra(old) + extra, 2)
         item["composition"] = composition
+        item["presetChanges"] = preset_changes(groups, dish.get("presetSelections") or [], composition)
 
     # Flag "manda in cucina" (consentito per tutti)
     # Se stiamo ATTIVANDO il flag (era false, diventa true), resettiamo TUTTE le porzioni a 'pending':
@@ -1743,6 +1764,7 @@ async def get_kitchen_items(menu_date: str):
                 "itemStatus": item.get("itemStatus", "pending"),
                 "isCustomItem": item.get("isCustomItem", False),
                 "composition": item.get("composition") or [],
+                "presetChanges": item.get("presetChanges"),
             })
 
     # Ordina i gruppi per nome piatto; entries ordinati per orario consegna (vuote in fondo)
@@ -1805,6 +1827,7 @@ async def get_porzionatura_items(menu_date: str):
                 "itemStatus": item.get("itemStatus", "pending"),
                 "isCustomItem": item.get("isCustomItem", False),
                 "composition": item.get("composition") or [],
+                "presetChanges": item.get("presetChanges"),
             })
 
     # Ordina gruppi per nome; entries per orario consegna crescente (vuote in fondo)

@@ -14,7 +14,7 @@ const toDraft = (g?: OptionGroup, order = 0): GroupDraft =>
     : { name: '', minSelect: 0, maxSelect: null, allowRepeat: true, options: [], order };
 
 const parseDraft = (d: GroupDraft): Omit<OptionGroup, 'id'> | string => {
-  if (!d.name.trim()) return 'Inserisci il nome del gruppo';
+  if (!d.name.trim()) return 'Inserisci il nome della lista';
   if (!d.options.length) return 'Aggiungi almeno un ingrediente';
   const options = [];
   for (const o of d.options) {
@@ -51,9 +51,9 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
       const saved = draft.id ? await optionGroupsApi.update(draft.id, body) : await optionGroupsApi.create(body);
       onChanged(draft.id ? groups.map((g) => (g.id === saved.id ? saved : g)) : [...groups, saved]);
       setDraft(null);
-      onToast('Gruppo salvato');
+      onToast('Lista salvata');
     } catch (e: any) {
-      onToast(e?.response?.data?.detail || 'Impossibile salvare il gruppo', 'error');
+      onToast(e?.response?.data?.detail || 'Impossibile salvare la lista', 'error');
     } finally {
       setSaving(false);
     }
@@ -66,9 +66,9 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
       await optionGroupsApi.remove(draft.id);
       onChanged(groups.filter((g) => g.id !== draft.id));
       setDraft(null);
-      onToast('Gruppo eliminato');
+      onToast('Lista eliminata');
     } catch (e: any) {
-      onToast(e?.response?.data?.detail || 'Impossibile eliminare il gruppo', 'error');
+      onToast(e?.response?.data?.detail || 'Impossibile eliminare la lista', 'error');
     } finally {
       setConfirmDelete(false);
     }
@@ -82,10 +82,10 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
             {draft ? (
               <TouchableOpacity onPress={() => setDraft(null)} style={styles.back} testID="option-groups-back-btn">
                 <Ionicons name="chevron-back" size={20} color="#2A3547" />
-                <Text style={styles.title}>{draft.id ? 'Modifica gruppo' : 'Nuovo gruppo'}</Text>
+                <Text style={styles.title}>{draft.id ? 'Modifica lista' : 'Nuova lista'}</Text>
               </TouchableOpacity>
             ) : (
-              <Text style={styles.title}>Gruppi di scelta</Text>
+              <Text style={styles.title}>Liste di scelta</Text>
             )}
             <TouchableOpacity onPress={close} testID="option-groups-close-btn">
               <Ionicons name="close" size={24} color="#2A3547" />
@@ -98,9 +98,9 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
             ) : (
               <>
                 <Text style={styles.intro}>
-                  Liste di ingredienti da scegliere nei piatti componibili (es. Base, Proteine). Un gruppo può servire a più piatti.
+                  Liste di ingredienti da scegliere nei piatti componibili (es. Base, Proteine). Una lista può servire a più piatti.
                 </Text>
-                {groups.length === 0 && <Text style={styles.empty}>Nessun gruppo ancora.</Text>}
+                {groups.length === 0 && <Text style={styles.empty}>Nessuna lista ancora.</Text>}
                 {groups.map((g) => (
                   <TouchableOpacity key={g.id} style={styles.groupCard} onPress={() => edit(g)} testID={`option-group-card-${g.id}`}>
                     <View style={{ flex: 1 }}>
@@ -126,13 +126,13 @@ export const OptionGroupsManager = ({ visible, groups, onClose, onChanged }: Pro
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={save} disabled={saving} testID="option-group-save-btn">
-                  <Text style={styles.btnPrimaryText}>{saving ? 'Salvataggio…' : 'Salva gruppo'}</Text>
+                  <Text style={styles.btnPrimaryText}>{saving ? 'Salvataggio…' : 'Salva lista'}</Text>
                 </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity style={[styles.btn, styles.btnPrimary]} onPress={() => edit()} testID="option-group-new-btn">
                 <Ionicons name="add" size={18} color="#fff" />
-                <Text style={styles.btnPrimaryText}>Nuovo gruppo</Text>
+                <Text style={styles.btnPrimaryText}>Nuova lista</Text>
               </TouchableOpacity>
             )}
           </View>

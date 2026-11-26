@@ -31,7 +31,8 @@ import { useAppStore } from '../../src/store/appStore';
 import { ordersApi, menusApi, customersApi, categoriesApi, dishesApi, optionGroupsApi } from '../../src/services/api';
 import { Order, MenuItem, Customer, Category, Dish, OptionGroup, Selections } from '../../src/types';
 import { DishComposer } from '../../src/components/composable/DishComposer';
-import { compositionText, euro, fromPrice, groupsForDish, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
+import { euro, fromPrice, groupsForDish, isPreset, itemCompositionText, presetExtra, presetOf, presetStart, selectionError, selectionExtra, selectionsFrom, toSelectionList } from '../../src/utils/composition';
+import { PresetChangesBar } from '../../src/components/composable/PresetChangesBar';
 import { sortCategoriesByFixedOrder, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { TimePickerInline } from '../../src/components/TimePickerInline';
 import Animated, { SlideInDown, ZoomIn } from 'react-native-reanimated';
@@ -325,7 +326,9 @@ export default function OrdersScreen() {
               <span class="item-name">${item.quantity}x ${escapeHtml(item.dishName)}</span>
               <span class="item-price">${item.subtotal.toFixed(2)}€</span>
             </div>
-            ${(item.composition || []).map((c, ci) => `<div class="item-note">${ci > 0 && c.groupId !== item.composition![0].groupId ? '+ ' : ''}${escapeHtml(c.name)}${c.quantity > 1 ? ` ×${c.quantity}` : ''}</div>`).join('')}
+            ${item.presetChanges
+              ? [...item.presetChanges.removed.map((n) => `SENZA ${n}`), ...item.presetChanges.added.map((n) => `+ ${n}`)].map((t) => `<div class="item-note"><b>${escapeHtml(t)}</b></div>`).join('')
+              : (item.composition || []).map((c, ci) => `<div class="item-note">${ci > 0 && c.groupId !== item.composition![0].groupId ? '+ ' : ''}${escapeHtml(c.name)}${c.quantity > 1 ? ` ×${c.quantity}` : ''}</div>`).join('')}
             ${item.notes ? `<div class="item-note">&gt; ${escapeHtml(item.notes)}</div>` : ''}
           </div>
         `).join('')}
@@ -1823,12 +1826,21 @@ export default function OrdersScreen() {
                               <Text style={styles.itemEditLabel}>
                                 Composizione · {euro(item.unitPrice - selectionExtra(groupsForDish(dishMap[item.dishId], optionGroups), selectionsFrom(item.composition)) + selectionExtra(groupsForDish(dishMap[item.dishId], optionGroups), itemEditSel))} cad.
                               </Text>
+                              {isPreset(dishMap[item.dishId]) && (
+                                <PresetChangesBar
+                                  groups={groupsForDish(dishMap[item.dishId], optionGroups)}
+                                  preset={presetOf(dishMap[item.dishId])}
+                                  value={itemEditSel}
+                                  onReset={() => setItemEditSel(presetStart(dishMap[item.dishId], groupsForDish(dishMap[item.dishId], optionGroups), currentMenu?.items.find((mi) => mi.dishId === item.dishId)?.unavailableOptionIds))}
+                                />
+                              )}
                               <DishComposer
                                 groups={groupsForDish(dishMap[item.dishId], optionGroups)}
                                 value={itemEditSel}
                                 onChange={setItemEditSel}
                                 unavailable={currentMenu?.items.find((mi) => mi.dishId === item.dishId)?.unavailableOptionIds || []}
                                 keepIds={(item.composition || []).map((c) => c.optionId)}
+                                preset={isPreset(dishMap[item.dishId]) ? presetOf(dishMap[item.dishId]) : undefined}
                               />
                             </>
                           )}
@@ -1873,9 +1885,9 @@ export default function OrdersScreen() {
                                   </View>
                                 )}
                               </View>
-                              {!!item.composition?.length && (
-                                <Text style={styles.orderItemComposition} testID={`order-item-composition-${index}`}>
-                                  {compositionText(item.composition)}
+                              {!!itemCompositionText(item) && (
+                                <Text style={[styles.orderItemComposition, !!item.presetChanges && styles.orderItemPresetChanges]} testID={`order-item-composition-${index}`}>
+                                  {itemCompositionText(item)}
                                 </Text>
                               )}
                               {item.notes ? (
@@ -2258,14 +2270,19 @@ export default function OrdersScreen() {
                             onPress={() => {
                               if (item.portions <= 0) return;
                               closeDishFooter();
-                              if (!isSelected) setSelectedMenuItem(item);
+                              if (isSelected) return;
+                              setSelectedMenuItem(item);
+                              // Piatto già composto: si parte dalla ricetta
+                              setComposerSel(presetStart(dishMap[item.dishId], itemGroups, item.unavailableOptionIds));
                             }}
                             disabled={item.portions === 0}
                             testID={`order-menu-item-${item.dishId}`}
                           >
                             <View style={styles.menuItemInfo}>
                               <Text style={styles.menuItemName}>{item.dishName}</Text>
-                              {itemGroups.length > 0 ? (
+                              {isPreset(dishMap[item.dishId]) ? (
+                                <Text style={styles.menuItemPrice}>{euro(item.dailyPrice + presetExtra(dishMap[item.dishId], itemGroups))} · personalizzabile</Text>
+                              ) : itemGroups.length > 0 ? (
                                 <Text style={styles.menuItemPrice}>Componi · {itemGroups.map((g) => g.name).join(' + ')}</Text>
                               ) : (
                                 <Text style={styles.menuItemPrice}>{item.dailyPrice.toFixed(2)} €</Text>
@@ -2318,6 +2335,14 @@ export default function OrdersScreen() {
                   </View>
                 </View>
                 {/* Piatto componibile: scelte dentro il footer, sempre visibili */}
+                {isPreset(dishMap[selectedMenuItem.dishId]) && (
+                  <PresetChangesBar
+                    groups={groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups)}
+                    preset={presetOf(dishMap[selectedMenuItem.dishId])}
+                    value={composerSel}
+                    onReset={() => setComposerSel(presetStart(dishMap[selectedMenuItem.dishId], groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups), selectedMenuItem.unavailableOptionIds))}
+                  />
+                )}
                 {groupsForDish(dishMap[selectedMenuItem.dishId], optionGroups).length > 0 && (
                   <ScrollView style={styles.footerComposerScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
                     <DishComposer
@@ -2325,6 +2350,7 @@ export default function OrdersScreen() {
                       value={composerSel}
                       onChange={setComposerSel}
                       unavailable={selectedMenuItem.unavailableOptionIds || []}
+                      preset={isPreset(dishMap[selectedMenuItem.dishId]) ? presetOf(dishMap[selectedMenuItem.dishId]) : undefined}
                     />
                   </ScrollView>
                 )}
@@ -3879,6 +3905,10 @@ const styles = StyleSheet.create({
     color: C.text2,
     lineHeight: 19,
     marginTop: 5,
+  },
+  orderItemPresetChanges: {
+    color: '#B25E09',
+    fontWeight: '700',
   },
   footerComposerScroll: {
     maxHeight: 320,

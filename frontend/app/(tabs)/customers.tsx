@@ -20,7 +20,7 @@ import { it } from 'date-fns/locale';
 import { useAppStore } from '../../src/store/appStore';
 import { customersApi } from '../../src/services/api';
 import { Customer, Order } from '../../src/types';
-import { compositionText } from '../../src/utils/composition';
+import { itemCompositionText } from '../../src/utils/composition';
 import { C, FONT } from '../../src/theme/tokens';
 import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
@@ -560,7 +560,7 @@ export default function CustomersScreen() {
                     <View style={styles.orderHistoryItems}>
                       {order.items.map((item, idx) => (
                         <Text key={idx} style={styles.orderHistoryItem}>
-                          {item.quantity}x {item.dishName}{item.composition?.length ? `: ${compositionText(item.composition)}` : ''}
+                          {item.quantity}x {item.dishName}{itemCompositionText(item) ? `: ${itemCompositionText(item)}` : ''}
                         </Text>
                       ))}
                     </View>

@@ -28,7 +28,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { escapeHtml } from '../../src/utils/escapeHtml';
 import { DailyMenu, Dish, MenuItem, Category, OptionGroup } from '../../src/types';
 import { TodayOptionsToggles } from '../../src/components/composable/TodayOptionsToggles';
-import { euro, fromPrice, groupsForDish, optionsSummary } from '../../src/utils/composition';
+import { euro, groupsForDish, isPreset, optionsSummary, presetExtra, priceText, round2 } from '../../src/utils/composition';
 import { sortCategoriesByFixedOrder, sortDishesByCategory, sortMenuItemsByCategory } from '../../src/utils/categoryOrder';
 import { useFocusEffect } from 'expo-router';
 import { C, FONT } from '../../src/theme/tokens';
@@ -241,9 +241,11 @@ export default function MenuScreen() {
       return;
     }
     
-    // Piatto componibile: prezzo di partenza anche 0 (lo danno le scelte)
-    if (isNaN(priceNum) || priceNum < 0 || (priceNum === 0 && !selectedDish.isComposable)) {
-      showToast('Inserisci un prezzo valido', 'error');
+    // Piatto componibile: prezzo di partenza anche 0 (lo danno le scelte); già composto: prezzo con ingredienti
+    const preset = isPreset(selectedDish);
+    const recipe = preset ? presetExtra(selectedDish, groupsForDish(selectedDish, optionGroups)) : 0;
+    if (isNaN(priceNum) || priceNum < recipe || (priceNum === 0 && (!selectedDish.isComposable || preset))) {
+      showToast(recipe > 0 && priceNum < recipe ? `Il prezzo deve essere almeno ${euro(recipe)}: è il valore degli ingredienti` : 'Inserisci un prezzo valido', 'error');
       return;
     }
 
@@ -251,7 +253,7 @@ export default function MenuScreen() {
       const updatedMenu = await menusApi.addItem(currentMenu.id, {
         dishId: selectedDish.id,
         portions: portionsNum,
-        dailyPrice: priceNum,
+        dailyPrice: round2(priceNum - recipe),
         notes: notes,
       });
       
@@ -279,9 +281,14 @@ export default function MenuScreen() {
     }
     
     if (dailyPrice) {
-      const priceNum = parseFloat((dailyPrice || '').replace(',', '.'));
-      const composable = !!dishById(selectedItem.dishId)?.isComposable;
-      if (!isNaN(priceNum) && (priceNum > 0 || (composable && priceNum === 0)) && priceNum !== selectedItem.dailyPrice) {
+      const dish = dishById(selectedItem.dishId);
+      const recipe = isPreset(dish) ? presetExtra(dish, itemGroups(selectedItem)) : 0;
+      const priceNum = round2(parseFloat((dailyPrice || '').replace(',', '.')) - recipe);
+      if (priceNum < 0) {
+        showToast(`Il prezzo deve essere almeno ${euro(recipe)}: è il valore degli ingredienti`, 'error');
+        return;
+      }
+      if (!isNaN(priceNum) && (priceNum > 0 || (!!dish?.isComposable && priceNum === 0)) && priceNum !== selectedItem.dailyPrice) {
         updates.dailyPrice = priceNum;
       }
     }
@@ -352,7 +359,8 @@ export default function MenuScreen() {
     setSelectedItem(item);
     setTodayUnavailable(item.unavailableOptionIds || []);
     setPortions(item.portions.toString());
-    setDailyPrice(item.dailyPrice.toString());
+    const dish = dishById(item.dishId);
+    setDailyPrice(String(isPreset(dish) ? round2(item.dailyPrice + presetExtra(dish, itemGroups(item))) : item.dailyPrice));
     setNotes(item.notes || '');
     setShowEditItemModal(true);
   };
@@ -360,7 +368,7 @@ export default function MenuScreen() {
   const openAddModal = (dish: Dish) => {
     setSelectedDish(dish);
     setPortions('');
-    setDailyPrice(dish.basePrice.toString());
+    setDailyPrice(String(isPreset(dish) ? round2(dish.basePrice + presetExtra(dish, groupsForDish(dish, optionGroups))) : dish.basePrice));
     setNotes('');
     setShowAddDishModal(true);
   };
@@ -446,7 +454,7 @@ export default function MenuScreen() {
             <div class="menu-item">
               <span class="item-name">${escapeHtml(item.dishName)}</span>
               <span class="item-dots"></span>
-              <span class="item-price">${itemGroups(item).length ? 'da ' + fromPrice(item.dailyPrice, itemGroups(item), item.unavailableOptionIds).toFixed(2) : item.dailyPrice.toFixed(2)} €</span>
+              <span class="item-price">${priceText(item.dailyPrice, dishById(item.dishId), itemGroups(item), item.unavailableOptionIds)}</span>
             </div>
             ${itemGroups(item).length ? `<div class="item-notes">${escapeHtml(optionsSummary(itemGroups(item), item.unavailableOptionIds))}</div>` : ''}
             ${item.notes ? `<div class="item-notes">${escapeHtml(item.notes)}</div>` : ''}
@@ -876,7 +884,7 @@ export default function MenuScreen() {
                       )}
                       <View style={styles.menuItemDetails}>
                         <Text style={styles.menuItemPrice} numberOfLines={1}>
-                          {itemGroups(item).length ? `da ${euro(fromPrice(item.dailyPrice, itemGroups(item), item.unavailableOptionIds))}` : `${item.dailyPrice.toFixed(2)} €`}
+                          {priceText(item.dailyPrice, dishById(item.dishId), itemGroups(item), item.unavailableOptionIds)}
                         </Text>
                         <View style={[
                           styles.portionsBadge,
@@ -1006,7 +1014,7 @@ export default function MenuScreen() {
                               <Text style={styles.dishDescription} numberOfLines={1}>{dish.description}</Text>
                             )}
                             <Text style={styles.dishPrice}>
-                              {dish.isComposable ? `Componibile · da ${euro(fromPrice(dish.basePrice, groupsForDish(dish, optionGroups)))}` : `Prezzo base: ${dish.basePrice.toFixed(2)} €`}
+                              {isPreset(dish) ? `Già composto · ${priceText(dish.basePrice, dish, groupsForDish(dish, optionGroups))}` : dish.isComposable ? `Componibile · ${priceText(dish.basePrice, dish, groupsForDish(dish, optionGroups))}` : `Prezzo base: ${dish.basePrice.toFixed(2)} €`}
                             </Text>
                           </View>
                           <View style={styles.addDishButton}>
@@ -1820,7 +1828,6 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   codeText: {
-    fontFamily: FONT,
     color: '#FFAE1F',
     fontSize: 12,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',

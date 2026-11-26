@@ -240,7 +240,7 @@ class TestCrossTenant:
             assert requests.put(f"{API}/option-groups/{gid}", headers=HB, json={"name": "hack", "options": []}).status_code == 404
             assert requests.delete(f"{API}/option-groups/{gid}", headers=HB).status_code == 404
             r = requests.post(f"{API}/dishes", headers=HB, json={"name": "TEST_B", "basePrice": 1, "isComposable": True, "optionGroupIds": [gid]})
-            assert r.status_code == 400 and r.json()["detail"] == "Gruppo di scelta non trovato"
+            assert r.status_code == 400 and r.json()["detail"] == "Lista di scelta non trovata"
             # A's group still intact
             assert any(g["id"] == gid and g["name"].startswith("TEST_Proteine") for g in requests.get(f"{API}/option-groups", headers=H).json())
         finally:

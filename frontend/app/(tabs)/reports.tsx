@@ -1,4 +1,4 @@
-import { compositionText } from '../../src/utils/composition';
+import { itemCompositionText } from '../../src/utils/composition';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -798,9 +798,9 @@ export default function ReportsScreen() {
                             <View style={[styles.kitchenServiceBadge, { backgroundColor: svc.color }]}>
                               <Text style={styles.kitchenServiceText}>{svc.label}</Text>
                             </View>
-                            {!!entry.composition?.length && (
+                            {!!itemCompositionText(entry) && (
                               <Text style={styles.kitchenEntryComposition} testID={`kitchen-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
-                                {compositionText(entry.composition)}
+                                {itemCompositionText(entry)}
                               </Text>
                             )}
                             {entry.notes ? (
@@ -925,9 +925,9 @@ export default function ReportsScreen() {
                                   <View style={[styles.kitchenServiceBadge, { backgroundColor: svc.color }]}>
                                     <Text style={styles.kitchenServiceText}>{svc.label}</Text>
                                   </View>
-                                  {!!entry.composition?.length && (
+                                  {!!itemCompositionText(entry) && (
                                     <Text style={styles.kitchenEntryComposition} testID={`porz-entry-composition-${entry.orderId}-${entry.itemIndex}`}>
-                                      {compositionText(entry.composition)}
+                                      {itemCompositionText(entry)}
                                     </Text>
                                   )}
                                   {entry.notes ? (

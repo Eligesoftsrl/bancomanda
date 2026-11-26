@@ -1,4 +1,4 @@
-import { CompositionEntry, Dish, OptionGroup, Selections } from '../types';
+import { CompositionEntry, Dish, OptionGroup, PresetChanges, Selections } from '../types';
 
 export const euro = (v: number) => `${v.toFixed(2)} €`;
 
@@ -77,3 +77,49 @@ export const optionsSummary = (groups: OptionGroup[], unavailable: string[] = []
     })
     .filter(Boolean)
     .join(' · ');
+
+export const round2 = (v: number) => Math.round(v * 100) / 100;
+
+// Piatto già composto: componibile con una ricetta di partenza
+export const isPreset = (dish?: Dish) => !!dish?.isComposable && !!dish.presetSelections?.length;
+
+export const presetOf = (dish?: Dish): Selections =>
+  Object.fromEntries((isPreset(dish) ? dish!.presetSelections! : []).map((s) => [s.optionId, s.quantity]));
+
+export const presetExtra = (dish: Dish | undefined, groups: OptionGroup[]) => selectionExtra(groups, presetOf(dish));
+
+// Da dove parte l'ordine: la ricetta senza gli ingredienti esauriti oggi
+export const presetStart = (dish: Dish | undefined, groups: OptionGroup[], unavailable: string[] = []): Selections => {
+  const ok = new Set(groups.flatMap((g) => g.options.filter((o) => o.active && o.id && !unavailable.includes(o.id)).map((o) => o.id as string)));
+  return Object.fromEntries(Object.entries(presetOf(dish)).filter(([id]) => ok.has(id)));
+};
+
+const label = (name: string, qty: number) => (qty === 1 ? name : `${name} ×${qty}`);
+
+// Stessa logica del server: cosa è stato tolto o aggiunto alla ricetta
+export const presetDiff = (groups: OptionGroup[], preset: Selections, s: Selections): PresetChanges => {
+  const out: PresetChanges = { removed: [], added: [] };
+  groups.forEach((g) => g.options.forEach((o) => {
+    const diff = (o.id ? s[o.id] || 0 : 0) - (o.id ? preset[o.id] || 0 : 0);
+    if (diff > 0) out.added.push(label(o.name, diff));
+    if (diff < 0) out.removed.push(label(o.name, -diff));
+  }));
+  return out;
+};
+
+// "SENZA Cipolla · + Bacon"
+export const presetChangesText = (pc?: PresetChanges | null) =>
+  pc ? [...pc.removed.map((n) => `SENZA ${n}`), ...pc.added.map((n) => `+ ${n}`)].join(' · ') : '';
+
+export const itemCompositionText = (item: { composition?: CompositionEntry[]; presetChanges?: PresetChanges | null }) =>
+  item.presetChanges ? presetChangesText(item.presetChanges) : compositionText(item.composition);
+
+// "Pane al sesamo, Hamburger ×2"
+export const selectionNames = (groups: OptionGroup[], s: Selections) =>
+  groups.flatMap((g) => g.options.filter((o) => o.id && s[o.id] > 0).map((o) => label(o.name, s[o.id as string]))).join(', ');
+
+// Prezzo da mostrare: fisso per i piatti già composti, "da" per i componibili
+export const priceText = (base: number, dish: Dish | undefined, groups: OptionGroup[], unavailable: string[] = []) => {
+  if (isPreset(dish)) return euro(base + presetExtra(dish, groups));
+  return groups.length ? `da ${euro(fromPrice(base, groups, unavailable))}` : euro(base);
+};

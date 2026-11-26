@@ -4,7 +4,7 @@ import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { Order } from '../../types';
-import { compositionText } from '../../utils/composition';
+import { itemCompositionText } from '../../utils/composition';
 import { PressableScale } from '../motion/PressableScale';
 import { C, FONT, R, statusOf } from '../../theme/tokens';
 import { CHANNELS, STATUS_LABELS, serviceOf } from './orderMeta';
@@ -61,7 +61,7 @@ export const OrderTicket = ({ order, selected, onOpen, onPrint, onTogglePayment,
             <Text key={`${order.id}-item-${idx}`} style={styles.itemLine} numberOfLines={2}>
               <Text style={styles.qty}>{item.quantity}× </Text>
               {item.dishName}
-              {!!item.composition?.length && <Text style={styles.itemNote}>: {compositionText(item.composition)}</Text>}
+              {!!itemCompositionText(item) && <Text style={styles.itemNote}>: {itemCompositionText(item)}</Text>}
               {!!item.notes && <Text style={styles.itemNote}> ({item.notes})</Text>}
             </Text>
           ))}

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, DailyRevenuePoint, Category, OptionGroup, CompositionEntry } from '../types';
+import { Dish, DailyMenu, Order, MissedSale, Customer, DailySummary, DailyRevenuePoint, Category, OptionGroup, CompositionEntry, PresetChanges } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { API_URL } from './config';
 
@@ -68,7 +68,7 @@ export const dishesApi = {
     return response.data;
   },
   
-  create: async (data: { name: string; description?: string; basePrice: number; categoryId?: string; isFavorite?: boolean; tags?: string[]; allergens?: string[]; isComposable?: boolean; optionGroupIds?: string[] }): Promise<Dish> => {
+  create: async (data: { name: string; description?: string; basePrice: number; categoryId?: string; isFavorite?: boolean; tags?: string[]; allergens?: string[]; isComposable?: boolean; optionGroupIds?: string[]; presetSelections?: SelectionInput[] }): Promise<Dish> => {
     const response = await api.post('/dishes', data);
     return response.data;
   },
@@ -361,6 +361,7 @@ export interface KitchenEntry {
   itemStatus: string;
   isCustomItem: boolean;
   composition?: CompositionEntry[];
+  presetChanges?: PresetChanges | null;
 }
 export interface KitchenGroup {
   dishName: string;

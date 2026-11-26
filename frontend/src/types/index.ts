@@ -20,6 +20,7 @@ export interface Dish {
   allergens?: string[];
   isComposable?: boolean;
   optionGroupIds?: string[];
+  presetSelections?: { optionId: string; quantity: number }[];  // piatto già composto: ricetta di partenza
   createdAt: string;
 }
 
@@ -49,6 +50,12 @@ export interface CompositionEntry {
   name: string;
   price: number;
   quantity: number;
+}
+
+// Piatto già composto: ingredienti tolti/aggiunti rispetto alla ricetta
+export interface PresetChanges {
+  removed: string[];
+  added: string[];
 }
 
 // optionId -> quantità scelta
@@ -86,6 +93,7 @@ export interface OrderItem {
   sendToKitchen?: boolean;
   notes?: string;
   composition?: CompositionEntry[];
+  presetChanges?: PresetChanges | null;
 }
 
 export interface Order {

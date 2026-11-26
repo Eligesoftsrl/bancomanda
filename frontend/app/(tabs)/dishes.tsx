@@ -25,8 +25,9 @@ import { DishLabelsSummary } from '../../src/components/DishLabelsSummary';
 
 import { OptionGroupsManager } from '../../src/components/composable/OptionGroupsManager';
 import { ComposableDishFields } from '../../src/components/composable/ComposableDishFields';
-import { OptionGroup } from '../../src/types';
-import { fromPrice, groupsForDish, euro } from '../../src/utils/composition';
+import { OptionGroup, Selections } from '../../src/types';
+import { PresetDishFields } from '../../src/components/composable/PresetDishFields';
+import { euro, groupsForDish, isPreset, presetExtra, presetOf, priceText, round2, selectionError, selectionExtra, selectionNames, toSelectionList } from '../../src/utils/composition';
 import { C, FONT } from '../../src/theme/tokens';
 import { Appear } from '../../src/components/motion/Appear';
 import { PageHeader } from '../../src/components/ui2/PageHeader';
@@ -81,6 +82,8 @@ export default function DishesScreen() {
   const [allergens, setAllergens] = useState<string[]>([]);
   const [isComposable, setIsComposable] = useState(false);
   const [optionGroupIds, setOptionGroupIds] = useState<string[]>([]);
+  const [presetOn, setPresetOn] = useState(false);
+  const [presetSel, setPresetSel] = useState<Selections>({});
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
   const [showGroupsModal, setShowGroupsModal] = useState(false);
   
@@ -136,6 +139,8 @@ export default function DishesScreen() {
     setAllergens([]);
     setIsComposable(false);
     setOptionGroupIds([]);
+    setPresetOn(false);
+    setPresetSel({});
     setEditingDish(null);
   };
 
@@ -154,13 +159,16 @@ export default function DishesScreen() {
     setEditingDish(dish);
     setName(dish.name);
     setDescription(dish.description || '');
-    setBasePrice(dish.basePrice.toString());
+    // Piatto già composto: in scheda si vede il prezzo finale, ingredienti compresi
+    setBasePrice(String(isPreset(dish) ? round2(dish.basePrice + presetExtra(dish, groupsForDish(dish, optionGroups))) : dish.basePrice));
     setSelectedCategoryId(dish.categoryId || null);
     setIsFavorite(dish.isFavorite || false);
     setTags(dish.tags || []);
     setAllergens(dish.allergens || []);
     setIsComposable(!!dish.isComposable);
     setOptionGroupIds(dish.optionGroupIds || []);
+    setPresetOn(isPreset(dish));
+    setPresetSel(presetOf(dish));
     setShowDishModal(true);
   };
 
@@ -177,6 +185,8 @@ export default function DishesScreen() {
     setShowCategoryModal(true);
   };
 
+  const formGroups = groupsForDish({ isComposable: true, optionGroupIds } as Dish, optionGroups);
+
   const handleSaveDish = async () => {
     if (!name.trim()) {
       showToast('Inserisci il nome del piatto', 'error');
@@ -184,28 +194,48 @@ export default function DishesScreen() {
     }
 
     // Piatto componibile: il prezzo di partenza può essere 0 (lo danno le scelte)
-    const price = parseFloat((basePrice || (isComposable ? '0' : '')).replace(',', '.'));
-    if (isNaN(price) || price < 0 || (price === 0 && !isComposable)) {
+    const preset = isComposable && presetOn;
+    const price = parseFloat((basePrice || (isComposable && !preset ? '0' : '')).replace(',', '.'));
+    if (isNaN(price) || price < 0 || (price === 0 && (!isComposable || preset))) {
       showToast('Inserisci un prezzo valido', 'error');
       return;
     }
     if (isComposable && optionGroupIds.length === 0) {
-      showToast('Scegli almeno un gruppo di scelta', 'error');
+      showToast('Scegli almeno una lista di scelta', 'error');
       return;
     }
+    // Ricetta: solo ingredienti delle liste collegate, con le loro regole
+    const recipe = Object.fromEntries(Object.entries(presetSel).filter(([id]) => formGroups.some((g) => g.options.some((o) => o.id === id))));
+    const presetSelections = preset ? toSelectionList(recipe) : [];
+    if (preset && !presetSelections.length) {
+      showToast('Spunta gli ingredienti del piatto già composto', 'error');
+      return;
+    }
+    const recipeError = preset ? selectionError(formGroups, recipe) : null;
+    if (recipeError) {
+      showToast(recipeError, 'error');
+      return;
+    }
+    const recipeValue = preset ? selectionExtra(formGroups, recipe) : 0;
+    if (price < recipeValue) {
+      showToast(`Il prezzo deve essere almeno ${euro(recipeValue)}: è il valore degli ingredienti`, 'error');
+      return;
+    }
+    const dishBase = round2(price - recipeValue);
 
     try {
       if (editingDish) {
         const updated = await dishesApi.update(editingDish.id, {
           name: name.trim(),
           description: description.trim(),
-          basePrice: price,
+          basePrice: dishBase,
           categoryId: selectedCategoryId || undefined,
           isFavorite,
           tags,
           allergens,
           isComposable,
           optionGroupIds,
+          presetSelections,
         });
         setDishes(dishes.map(d => d.id === updated.id ? updated : d));
         showToast('Piatto aggiornato');
@@ -213,13 +243,14 @@ export default function DishesScreen() {
         const newDish = await dishesApi.create({
           name: name.trim(),
           description: description.trim(),
-          basePrice: price,
+          basePrice: dishBase,
           categoryId: selectedCategoryId || undefined,
           isFavorite,
           tags,
           allergens,
           isComposable,
           optionGroupIds,
+          presetSelections,
         });
         setDishes([newDish, ...dishes]);
         showToast('Piatto creato');
@@ -356,13 +387,13 @@ export default function DishesScreen() {
       {/* Header */}
       <PageHeader
         title="Piatti"
-        subtitle="Anagrafica, categorie e gruppi di scelta"
+        subtitle="Anagrafica, categorie e liste di scelta"
         testID="dishes-header"
         right={
           <>
             <HeaderButton icon={showInactive ? 'eye' : 'eye-off-outline'} label={showInactive ? 'Tutti' : 'Attivi'} onPress={() => setShowInactive(!showInactive)} active={showInactive} testID="dishes-show-inactive-button" />
             <HeaderButton icon="pricetag-outline" label="Categorie" tone="secondary" onPress={openCreateCategoryModal} testID="dishes-categories-button" />
-            <HeaderButton icon="layers-outline" label="Gruppi" tone="success" onPress={() => setShowGroupsModal(true)} testID="dishes-option-groups-button" />
+            <HeaderButton icon="layers-outline" label="Liste di scelta" tone="success" onPress={() => setShowGroupsModal(true)} testID="dishes-option-groups-button" />
             <HeaderButton icon="add" label="Nuovo piatto" tone="primary" onPress={openCreateDishModal} testID="dishes-new-button" />
           </>
         }
@@ -465,14 +496,16 @@ export default function DishesScreen() {
                     <View style={styles.composableBadge} testID={`dish-composable-badge-${dish.id}`}>
                       <Ionicons name="layers" size={14} color="#0E9F80" />
                       <Text style={styles.composableBadgeText}>
-                        Componibile · {groupsForDish(dish, optionGroups).map(g => g.name).join(' + ') || 'nessun gruppo'}
+                        {isPreset(dish)
+                          ? `Già composto · ${selectionNames(groupsForDish(dish, optionGroups), presetOf(dish))}`
+                          : `Componibile · ${groupsForDish(dish, optionGroups).map(g => g.name).join(' + ') || 'nessuna lista'}`}
                       </Text>
                     </View>
                   )}
                   
                   <View style={styles.dishPriceRow}>
                     <Text style={styles.dishPrice}>
-                      {dish.isComposable ? `da ${euro(fromPrice(dish.basePrice, groupsForDish(dish, optionGroups)))}` : `${dish.basePrice.toFixed(2)} €`}
+                      {priceText(dish.basePrice, dish, groupsForDish(dish, optionGroups))}
                     </Text>
                     {dish.isFavorite && (
                       <Text style={styles.favoriteText}>Auto Menu</Text>
@@ -605,7 +638,7 @@ export default function DishesScreen() {
                 multiline
               />
 
-              <Text style={styles.inputLabel}>{isComposable ? 'Prezzo di partenza (€) · 0 se lo danno le scelte' : 'Prezzo Base (€) *'}</Text>
+              <Text style={styles.inputLabel}>{isComposable && presetOn ? 'Prezzo del piatto (€) · ingredienti compresi *' : isComposable ? 'Prezzo di partenza (€) · 0 se lo danno le scelte' : 'Prezzo Base (€) *'}</Text>
               <TextInput
                 style={styles.textInput}
                 value={basePrice}
@@ -643,6 +676,15 @@ export default function DishesScreen() {
                 onToggle={() => setIsComposable(!isComposable)}
                 onChangeGroups={setOptionGroupIds}
               />
+              {isComposable && formGroups.length > 0 && (
+                <PresetDishFields
+                  enabled={presetOn}
+                  groups={formGroups}
+                  value={presetSel}
+                  onToggle={() => setPresetOn(!presetOn)}
+                  onChange={setPresetSel}
+                />
+              )}
 
               <DishLabelsPicker
                 tags={tags}

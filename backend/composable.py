@@ -1,4 +1,4 @@
-"""Piatti componibili: gruppi di scelta (es. Base, Proteine) e composizione dei piatti negli ordini."""
+"""Piatti componibili: liste di scelta (es. Base, Proteine) e composizione dei piatti negli ordini."""
 from datetime import datetime, timezone
 from typing import List, Optional
 
@@ -33,6 +33,11 @@ class OptionGroup(OptionGroupIn):
 class Selection(BaseModel):
     optionId: str
     quantity: int = Field(1, ge=1, le=50)
+
+
+class PresetChanges(BaseModel):
+    removed: List[str] = []  # ingredienti tolti dalla ricetta del piatto già composto
+    added: List[str] = []    # ingredienti aggiunti (con supplemento)
 
 
 class CompositionEntry(BaseModel):
@@ -91,7 +96,7 @@ async def update_group(group_id: str, body: OptionGroupIn, request: Request):
     db = _db(request)
     result = await db.option_groups.update_one({"_id": ObjectId(group_id), **ACTIVE}, {"$set": _clean(body)})
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Gruppo non trovato")
+        raise HTTPException(status_code=404, detail="Lista non trovata")
     return _out(await db.option_groups.find_one({"_id": ObjectId(group_id)}))
 
 
@@ -102,12 +107,12 @@ async def delete_group(group_id: str, request: Request):
     users = await db.dishes.find({"isComposable": True, "optionGroupIds": group_id}, {"name": 1}).to_list(20)
     if users:
         names = ", ".join(d["name"] for d in users)
-        raise HTTPException(status_code=409, detail=f"Gruppo usato da: {names}. Scollegalo prima dal piatto.")
+        raise HTTPException(status_code=409, detail=f"Lista usata da: {names}. Scollegala prima dal piatto.")
     # Archiviazione (non cancellazione): gli ordini passati conservano comunque i nomi scelti
     result = await db.option_groups.update_one({"_id": ObjectId(group_id), **ACTIVE}, {"$set": {"archived": True}})
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Gruppo non trovato")
-    return {"message": "Gruppo eliminato"}
+        raise HTTPException(status_code=404, detail="Lista non trovata")
+    return {"message": "Lista eliminata"}
 
 
 async def load_groups(db, group_ids: List[str]) -> List[dict]:
@@ -120,7 +125,7 @@ async def load_groups(db, group_ids: List[str]) -> List[dict]:
 async def validate_group_ids(db, group_ids: List[str]) -> List[str]:
     found = await load_groups(db, group_ids)
     if len(found) != len(set(group_ids)):
-        raise HTTPException(status_code=400, detail="Gruppo di scelta non trovato")
+        raise HTTPException(status_code=400, detail="Lista di scelta non trovata")
     return [str(g["_id"]) for g in found]
 
 
@@ -156,6 +161,39 @@ def build_composition(groups: List[dict], selections: List[Selection], unavailab
     if set(wanted) - used:
         raise HTTPException(status_code=400, detail="Ingrediente non valido per questo piatto")
     return composition, round(extra, 2)
+
+
+def _label(name: str, qty: int) -> str:
+    return name if qty == 1 else f"{name} ×{qty}"
+
+
+def preset_changes(groups: List[dict], preset: List[dict], composition: List[dict]) -> Optional[dict]:
+    """Piatto già composto: cosa è stato tolto o aggiunto rispetto alla ricetta (None se non è già composto)."""
+    if not preset:
+        return None
+    want = {p["optionId"]: p["quantity"] for p in preset}
+    got = {c["optionId"]: c["quantity"] for c in composition}
+    removed, added = [], []
+    for g in groups:
+        for o in g.get("options", []):
+            diff = got.get(o["id"], 0) - want.get(o["id"], 0)
+            if diff:
+                (added if diff > 0 else removed).append(_label(o["name"], abs(diff)))
+    return {"removed": removed, "added": added}
+
+
+def preset_summary(groups: List[dict], preset: List[dict]) -> tuple:
+    """Per il sito: (ingredienti della ricetta, loro prezzo, loro allergeni)."""
+    want = {p["optionId"]: p["quantity"] for p in preset}
+    names, extra, allergens = [], 0.0, []
+    for g in groups:
+        for o in g.get("options", []):
+            qty = want.get(o["id"], 0)
+            if qty:
+                names.append(_label(o["name"], qty))
+                extra += o["price"] * qty
+                allergens += [a for a in o.get("allergens", []) if a not in allergens]
+    return names, round(extra, 2), allergens
 
 
 def composition_extra(composition: List[dict]) -> float:
