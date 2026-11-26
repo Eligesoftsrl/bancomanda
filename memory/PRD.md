@@ -321,6 +321,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Dettaglio ordine: Info Ordine a riquadri (Intestatario azzurro, Tipologia viola, Ora consegna gialla, Note grigio neutro); Stato Ordine con riquadro tinto dello stato + icona; pulsanti Cambia stato con icona e larghezze uguali; Pagamento e Scontrino come riquadri
 - Fix web: RefreshControl di RN-web duplica margin/padding dello style dello ScrollView → usare un View contenitore o contentContainerStyle
 
+## Menu a due colonne, Report del giorno stile Analytics, menu laterale riducibile, schede tinte Piatti/Clienti — 2026-11-26 ✅ (iteration_25: backend 11/11, frontend 85% → fix applicati e verificati)
+- Menu laterale: pulsante "Riduci menu" (side-nav-toggle) → binario di sole icone 80px con iniziale del locale; scelta salvata (localStorage bancomanda.sidebarCollapsed); useWideLayout usa la larghezza attuale del menu
+- Menu: su schermi larghi (contenuto ≥ 1000px) due colonne "Menu di oggi" (riquadri tenui, 2 per riga) + "Catalogo piatti" (categorie chiuse, si aprono al tocco; la ricerca apre tutto); su telefono/tablet verticale schede menu-tab-menu / menu-tab-catalog
+- Report giornaliero: barra con interruttore Giornaliero/Periodo a sinistra e data a destra; "Resoconto del giorno" (confronto % con ieri) + grafico "Incasso per ora" oggi vs ieri (GET /api/reports/hourly-revenue?date=, ora italiana di arrivo, annullati esclusi); sezioni sotto in due colonne; periodo: preset e date a destra, impilati a tutta larghezza su telefono
+- Piatti: tinta per categoria (stabile per nome); Clienti: privato azzurro, società viola, fermo da 6 mesi giallo, archiviato grigio
+
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
 - P2: lint globale (setState in useEffect preesistenti)

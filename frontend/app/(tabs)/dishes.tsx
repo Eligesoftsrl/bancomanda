@@ -42,6 +42,10 @@ const CATEGORY_TINTS = [
   { bg: C.errorSoft, fg: C.errorFg },
 ];
 
+// Sempre lo stesso colore per la stessa categoria, qualunque filtro sia attivo
+const tintFor = (name: string) =>
+  CATEGORY_TINTS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % CATEGORY_TINTS.length];
+
 export default function DishesScreen() {
   const { contentWidth } = useWideLayout();
   const cols = contentWidth >= 1180 ? 3 : contentWidth >= 700 ? 2 : 1;
@@ -423,9 +427,9 @@ export default function DishesScreen() {
             <Text style={styles.emptyStateSubtext}>Crea il tuo primo piatto</Text>
           </View>
         ) : (
-          sortedCategoryNames.map((categoryName, catIdx) => {
+          sortedCategoryNames.map((categoryName) => {
             const categoryDishes = groupedDishes[categoryName];
-            const tint = CATEGORY_TINTS[catIdx % CATEGORY_TINTS.length];
+            const tint = tintFor(categoryName);
             return (
             <View key={categoryName} style={styles.categorySection}>
               <View style={styles.categorySectionHead}>

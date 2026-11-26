@@ -1,0 +1,50 @@
+{
+  "summary": "Backend + frontend test of batch: hourly-revenue API, collapsible side nav, daily report overview (summary + hourly compare chart), period toolbar, Menu two-columns/tabs, tinted Piatti/Clienti cards. Pizzeria Napoli, viewports 1366x900, 1180x820, 820x1180, 390x844. Backend 11/11 pytest pass. Side nav collapse/expand/persist/avatar/rail badge all OK. Daily overview, tooltip, delta pill, menu add/edit/remove, catalog collapse/search, dish deactivate/reactivate, customer archive/restore all work. Found 1 HIGH layout bug (period presets cut off on phone), 1 overlap bug in menu tiles and a few design gaps at tablet widths.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/reports/hourly-revenue", "issue": "'annullato' exclusion cannot be exercised: PUT /orders/{id}/status only accepts in_attesa/in_preparazione/pronto/sospeso/consegnato and no 'annullato' order exists in the DB. The filter matches the other report endpoints, so the behavior is consistent, but this was verified only by reading the code."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Report > Periodo toolbar (390x844 phone)", "issue": "The preset chip row overflows off the LEFT edge: '7 giorni' (preset-7days) sits at x=-46 and is partly off screen. There is no horizontal scroll (scrollWidth=390), so the user cannot reach it. The date range button (open-calendar-button) is also not full width (x=56, w=320), but the spec says stacked full width on phone. RCA: rangeDateSelector is flexDirection row + justifyContent flex-end. The presetRow child takes its content width (about 420px > 362), so it overflows to the left. rangeDateSelectorCompact only sets alignItems. Fix: in compact mode use flexDirection 'column' / width '100%' on rangeDateSelector and presetRow, and alignSelf 'stretch' + minWidth 0 on dateRangeButton (or make the presets a horizontal ScrollView).", "selector": "[data-testid=preset-7days]", "priority": "HIGH"},
+      {"component": "Menu > Menu di oggi tile (menu-item-{dishId})", "issue": "For dishes with a category, the category badge in menuItemNameRow overflows under the edit/remove buttons. TEST_Pizza_88510a showed 'TEST_Cat_8…' hidden behind menu-item-edit at 1366 collapsed (tile 339px). RCA: menuItemNameRow is a non-wrapping row and menuItemInfo (flex:1) has no minWidth:0, so the badge pushes past the info column. Fix: flexWrap 'wrap' on menuItemNameRow plus minWidth 0 on menuItemInfo (or move the category badge to its own line).", "selector": "[data-testid^=menu-item-]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Report > Periodo toolbar at 1180x820 (sidebar open) and 820x1180", "issues": ["The toolbar wraps. The switch is alone on row 1, and the presets + date button wrap onto row 2 aligned LEFT (preset-7days x=272 at 1180). This is the user's 'everything is on the left' complaint again at tablet widths. Fix: marginLeft 'auto' / alignSelf flex-end on rangeDateSelector when it wraps, or put the presets in their own right-aligned row. At 1366 it is correct (switch left, presets + date right)."]},
+      {"screen": "Report > Periodo toolbar at 1366", "issues": ["The preset chips (h44, presetRow marginBottom 10) are not vertically centred with the calendar button (h49) or the switch. Their tops align at y=72, but the switch is centred at y=99. Remove the marginBottom on presetRow in wide mode."]},
+      {"screen": "Report > Giornaliero at 1180x820 with sidebar open and 820x1180", "issues": ["Content width is below 1000 (twoCols false), so daily-summary-card is stretched to the full 900/788px width. Its content only fills about 200px on the left, which leaves a large empty card. The hourly chart is then pushed below. The summary(340)+chart layout would fit side by side from about 760px of content. Consider a lower threshold for DailyOverview 'wide' (for example contentWidth >= 760) than for the sections grid."]},
+      {"screen": "Piatti tint (dish-card-{id})", "issues": ["The tint is chosen by the category's index in the currently displayed list (catIdx), so it is not stable. TEST_Cat_88510a was blue with the 'Attivi' filter and yellow with 'Tutti'. Tint by a hash of the category id/name, or by the category's position in the full category list, so the colour stays the same per category."]},
+      {"screen": "Menu tabs (phone/tablet)", "issues": ["The tab is labelled 'Aggiungi piatti', but the section title is 'Catalogo piatti'. The naming is inconsistent (the spec says 'Catalogo')."]},
+      {"screen": "Menu > catalog search (web)", "issues": ["Focusing available-search-input shows the browser's default black focus outline inside the rounded pill (visible at 1366). Add outlineStyle 'none' on web."]},
+      {"screen": "Report > Periodo stat cards at 390", "issues": ["'Incasso periodo' is cut off as 'Incasso peri…' in report-stat-revenue (the half-width card)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_hourly_revenue.py", "/app/test_reports/pytest/hourly.xml"],
+  "action_items": [
+    "HIGH: fix the Periodo toolbar on phone. Presets overflow off screen to the left (preset-7days unreachable). Stack the presets and the date button full width in compact mode.",
+    "Fix the overlap in the menu tile between the category badge and the edit/remove buttons (menuItemNameRow wrap + minWidth 0).",
+    "Right-align the presets + date range when the Periodo toolbar wraps at 1180/820, and vertically centre the preset chips with the calendar button.",
+    "Lower the DailyOverview side-by-side threshold so summary + chart sit next to each other at 1180 (sidebar open) and 820 instead of a stretched, mostly empty summary card.",
+    "Make the Piatti category tint stable per category, independent of the Attivi/Tutti filter.",
+    "Minor: tab label 'Aggiungi piatti' vs 'Catalogo piatti'; web focus outline on the catalog search; truncated 'Incasso periodo' at 390.",
+    "Optional code: add a stale-response guard to the hourly-revenue fetch in reports.tsx (line ~204). Quickly clicking prev/next can make an older response overwrite a newer one."
+  ],
+  "critical_code_review_comments": [
+    "reports.tsx:204 getHourlyRevenue(selectedDate).then(setHourly) has no request id/abort guard, so it can race when the date changes quickly.",
+    "HourlyCompareChart slot hit areas overlap: slot 0 has left=0, width=step, so the second slot covers half of it. Behaviour is acceptable for users (the nearest point wins), but slot 0's visible zone is only step/2. Playwright hover on the slot-11 centre is intercepted by slot-12.",
+    "Pre-existing: editing portions above the initial value shows '12/7 porz.' because initialPortions is not updated on edit (menu tile label uses item.initialPortions).",
+    "Add-dish modal inputs in menu.tsx (portions/price/notes, 'Aggiungi al Menu' button) and the confirm dialog buttons have no testIDs.",
+    "Files are very large: index.tsx 5043, reports.tsx 2314, menu.tsx 2214, dishes.tsx 1320 lines. They should be split.",
+    "The DB has many leftover TEST_Cat_* categories and TEST_Piatto_Lungo_* inactive dishes in Pizzeria Napoli from earlier iterations, which clutter the filter chips."
+  ],
+  "updated_files": ["/app/backend/tests/test_hourly_revenue.py"],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "~85% (all flows functional; 1 HIGH + 1 MEDIUM layout bug, several design gaps)"},
+  "test_credentials": "titolare@pizzeria-napoli.it / Password123! ; Giorgio Bistrot used read-only for the tenant-isolation GET",
+  "seed_data_creation": "None persisted. Temporary changes, all reverted: TEST_Pizza_88510a added to the 25 Nov menu, edited, then removed; the same dish deactivated, then reactivated; TEST_Toast Cliente archived, then restored; TEST_Cliente sec and TEST_Quick Restyle set to 'societa' via API, then reverted to 'persona' (partitaIva set to '', the original was empty). The kitchen badge was tested with a Playwright route mock (no data created).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Preview 'today' = 2026-11-26. Napoli 25 Nov: 1 order 17 EUR at 12h (in_attesa); 24 Nov: 3 orders 44.50 (36 at 12h, 8.50 at 18h). Expected daily-delta '-62% di incasso rispetto a ieri'. Sidebar state key: localStorage 'bancomanda.sidebarCollapsed' ('1'/'0'). wideMenu/twoCols threshold = contentWidth >= 1000 (1366 open = 1118 two columns; 1180 open = 932 tabs; 1180 collapsed = 1100 two columns). Retest: period toolbar at 390/820/1180, menu tile badge overlap, daily overview at 1180 open."
+}

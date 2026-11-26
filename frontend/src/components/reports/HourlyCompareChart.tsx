@@ -83,7 +83,7 @@ export const HourlyCompareChart = ({ hours, width, trigger }: { hours: HourPoint
             {pts.map((p, i) => (
               <Pressable key={p.hour} onPress={() => setSel(i)} onHoverIn={() => setSel(i)} testID={`hourly-slot-${p.hour}`}
                 accessibilityLabel={`Ore ${p.hour}: oggi ${euro(p.revenue)}, ieri ${euro(p.prevRevenue)}`}
-                style={[styles.slot, { left: Math.max(0, x(i) - step / 2), width: step }]} />
+                style={[styles.slot, { left: Math.max(0, x(i) - step / 2), width: Math.min(plotW, x(i) + step / 2) - Math.max(0, x(i) - step / 2) }]} />
             ))}
           </View>
           {s && (

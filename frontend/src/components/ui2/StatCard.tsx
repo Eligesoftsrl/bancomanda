@@ -27,7 +27,7 @@ export const StatCard = ({ icon, value, label, tone, index = 0, testID }: Props)
       </View>
       <View style={styles.texts}>
         <FlipText value={String(value)} style={[styles.value, sm && styles.valueSm, { color: t.fg }]} testID={testID ? `${testID}-value` : undefined} />
-        <Text style={styles.label} numberOfLines={1}>{label}</Text>
+        <Text style={styles.label} numberOfLines={2}>{label}</Text>
       </View>
     </Appear>
   );

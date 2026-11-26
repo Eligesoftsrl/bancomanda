@@ -1,5 +1,5 @@
 import { compositionText } from '../../src/utils/composition';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -91,6 +91,7 @@ export default function ReportsScreen() {
 
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenuePoint[]>([]);
   const [hourly, setHourly] = useState<HourPoint[]>([]);
+  const hourlyFor = useRef('');
   const { contentWidth } = useWideLayout();
   const twoCols = contentWidth >= 1000;
 
@@ -201,7 +202,11 @@ export default function ReportsScreen() {
   const loadDailyData = async () => {
     try {
       setIsLoading(true);
-      reportsApi.getHourlyRevenue(selectedDate).then((r) => setHourly(r.hours)).catch(() => setHourly([]));
+      // Ignora risposte arrivate in ritardo per una data già cambiata
+      hourlyFor.current = selectedDate;
+      reportsApi.getHourlyRevenue(selectedDate)
+        .then((r) => { if (hourlyFor.current === r.date) setHourly(r.hours); })
+        .catch(() => { if (hourlyFor.current === selectedDate) setHourly([]); });
       const [summaryData, missedData, topData] = await Promise.all([
         reportsApi.getDailySummary(selectedDate),
         missedSalesApi.getAll(selectedDate),
@@ -650,7 +655,7 @@ export default function ReportsScreen() {
 
             {/* Clickable date range that opens the calendar */}
             <TouchableOpacity
-              style={styles.dateRangeButton}
+              style={[styles.dateRangeButton, isCompactR && styles.dateRangeButtonCompact]}
               onPress={() => {
                 setCalendarStart(startDate);
                 setCalendarEnd(endDate);
@@ -686,7 +691,7 @@ export default function ReportsScreen() {
             totalRevenue={summary?.totalRevenue || 0}
             missed={totalMissedQuantity}
             hours={hourly}
-            wide={twoCols}
+            wide={contentWidth >= 760}
           />
         )}
 
@@ -1582,8 +1587,15 @@ const styles = StyleSheet.create({
   dateSelectorCompact: {
     alignSelf: 'stretch',
   },
+  dateRangeButtonCompact: {
+    alignSelf: 'stretch',
+    minWidth: 0,
+  },
   rangeDateSelectorCompact: {
+    flexDirection: 'column',
     alignItems: 'stretch',
+    marginLeft: 0,
+    width: '100%',
   },
   sectionsGrid: {
     gap: 0,
@@ -1632,6 +1644,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 10,
     flexShrink: 1,
+    marginLeft: 'auto',
   },
   dateRangeRow: {
     flexDirection: 'row',
@@ -2020,7 +2033,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 10,
     justifyContent: 'flex-start',
   },
   presetChip: {

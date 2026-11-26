@@ -884,7 +884,7 @@ export default function MenuScreen() {
                           item.portions > 0 && item.portions <= 3 && styles.portionsBadgeLow,
                         ]}>
                           <Text style={styles.portionsText}>
-                            {item.portions}/{item.initialPortions || item.portions} porz.
+                            {item.portions}/{Math.max(item.initialPortions || 0, item.portions)} porz.
                           </Text>
                         </View>
                       </View>
@@ -1032,7 +1032,7 @@ export default function MenuScreen() {
   ) : (
     <>
       <View style={styles.menuTabs} testID="menu-mobile-tabs">
-        {([['menu', 'Menu di oggi', currentMenu.items.length], ['catalog', 'Aggiungi piatti', availableDishes.length]] as const).map(([key, label, n]) => (
+        {([['menu', 'Menu di oggi', currentMenu.items.length], ['catalog', 'Catalogo piatti', availableDishes.length]] as const).map(([key, label, n]) => (
           <TouchableOpacity key={key} style={[styles.menuTab, mobileMenuTab === key && styles.menuTabActive]} onPress={() => setMobileMenuTab(key)} testID={`menu-tab-${key}`}>
             <Text style={[styles.menuTabText, mobileMenuTab === key && styles.menuTabTextActive]}>{label}</Text>
             <View style={[styles.menuTabCount, mobileMenuTab === key && styles.menuTabCountActive]}>
@@ -1232,7 +1232,7 @@ export default function MenuScreen() {
                   multiline
                 />
 
-                <TouchableOpacity style={styles.primaryButton} onPress={handleAddDish}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleAddDish} testID="menu-add-dish-confirm">
                   <Text style={styles.primaryButtonText}>Aggiungi al Menu</Text>
                 </TouchableOpacity>
               </>
@@ -1629,6 +1629,7 @@ const styles = StyleSheet.create({
     color: '#2A3547',
     fontSize: 14,
     paddingVertical: 10,
+    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : null),
   },
   menuItemCard: {
     flex: 1,
@@ -1643,6 +1644,7 @@ const styles = StyleSheet.create({
   },
   menuItemInfo: {
     flex: 1,
+    minWidth: 0,
   },
   menuItemName: {
     fontFamily: FONT,
@@ -1967,6 +1969,7 @@ const styles = StyleSheet.create({
   },
   menuItemNameRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
     marginBottom: 4,
