@@ -158,9 +158,9 @@ export const ordersApi = {
     return response.data;
   },
   
-  // Report di periodo: ordini dal giorno più recente, a pagine
-  getByRange: async (dateFrom: string, dateTo: string, skip = 0, limit = 50): Promise<Order[]> => {
-    const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo, skip: String(skip), limit: String(limit) });
+  // Report di periodo: ordini dal giorno più recente, a pagine, con i filtri dell'elenco
+  getByRange: async (dateFrom: string, dateTo: string, skip = 0, limit = 50, f: PeriodFilters = {}): Promise<Order[]> => {
+    const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo, skip: String(skip), limit: String(limit), ...periodParams(f) });
     const response = await api.get(`/orders?${params.toString()}`);
     return response.data;
   },
@@ -317,6 +317,15 @@ export const customersApi = {
   },
 };
 
+// Filtri dell'elenco ordini del Report di periodo
+export type PeriodFilters = { customer?: string; status?: string; unpaidOnly?: boolean };
+export type DayTotal = { date: string; totalOrders: number; totalRevenue: number };
+const periodParams = (f: PeriodFilters): Record<string, string> => ({
+  ...(f.customer?.trim() ? { customer: f.customer.trim() } : {}),
+  ...(f.status ? { status: f.status } : {}),
+  ...(f.unpaidOnly ? { unpaid_only: 'true' } : {}),
+});
+
 // Reports API
 export const reportsApi = {
   getDailySummary: async (date: string): Promise<DailySummary> => {
@@ -333,6 +342,11 @@ export const reportsApi = {
     return response.data;
   },
   
+  getOrdersByDay: async (startDate: string, endDate: string, f: PeriodFilters = {}): Promise<DayTotal[]> => {
+    const params = new URLSearchParams({ start_date: startDate, end_date: endDate, ...periodParams(f) });
+    const response = await api.get(`/reports/orders-by-day?${params.toString()}`);
+    return response.data;
+  },
   getRangeSummary: async (startDate: string, endDate: string): Promise<{ totalOrders: number; totalRevenue: number }> => {
     const response = await api.get(`/reports/range-summary?start_date=${startDate}&end_date=${endDate}`);
     return response.data;

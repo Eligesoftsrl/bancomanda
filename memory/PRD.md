@@ -365,6 +365,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Tocco su una riga → si apre la stessa scheda ordine di Ordini (`/?openOrder=id`), con tutte le operazioni; alla chiusura si torna al Report e Ordini torna al giorno di prima; lista, totali e non pagati si aggiornano
 - testID: `period-orders-section`, `period-orders-count`, `period-order-row-{id}`, `period-order-paid-{id}`, `period-order-total-{id}`, `period-orders-load-more`
 
+## Report di periodo: filtri e totali per giorno — 2026-11-27 ✅ (verificato con screenshot desktop + 390px)
+- `PeriodOrderFilters`: ricerca cliente (parte del nome, attesa 350 ms), stato (Tutti/Attesa/Preparazione/Pronto/Sospeso/Consegnato), "Solo da pagare"
+- Backend: `GET /api/orders` accetta `customer` (regex escapata, maiuscole indifferenti); nuovo `GET /api/reports/orders-by-day?start_date&end_date&customer&status&unpaid_only` → [{date, totalOrders, totalRevenue}] (annullati esclusi se non si filtra per stato)
+- Intestazione elenco: "N ordini · X €" con i filtri; ogni giorno: "N ordini · X €" (calcolati sul server, non solo sulle righe caricate)
+- testID: `period-orders-filters`, `period-orders-search`, `period-orders-search-clear`, `period-orders-status-{stato|all}`, `period-orders-unpaid-toggle`, `period-orders-day-total-{data}`, `period-orders-empty`
+
 
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli

@@ -874,6 +874,12 @@ async def create_order(order: OrderCreate, menu_date: str):
     order_dict["id"] = str(result.inserted_id)
     return Order(**order_dict)
 
+def _customer_filter(customer: Optional[str]) -> dict:
+    """Ricerca per nome cliente (parte del nome, maiuscole indifferenti)."""
+    name = (customer or "").strip()
+    return {"customerName": {"$regex": re.escape(name), "$options": "i"}} if name else {}
+
+
 @api_router.get("/orders", response_model=List[Order])
 async def get_orders(
     menu_date: Optional[str] = None,
@@ -883,8 +889,9 @@ async def get_orders(
     date_to: Optional[str] = None,
     unpaid_only: bool = False,
     skip: int = 0,
+    customer: Optional[str] = None,
 ):
-    query = {}
+    query = _customer_filter(customer)
     if menu_date:
         query["menuDate"] = menu_date
     elif date_from or date_to:
@@ -1944,6 +1951,22 @@ async def get_daily_revenue(start_date: str, end_date: str):
         days.append({"date": key, "totalOrders": r["orders"] if r else 0, "totalRevenue": round(r["revenue"], 2) if r else 0})
         d += timedelta(days=1)
     return days
+
+@api_router.get("/reports/orders-by-day")
+async def get_orders_by_day(start_date: str, end_date: str, customer: Optional[str] = None,
+                            status: Optional[str] = None, unpaid_only: bool = False):
+    """Elenco ordini del Report: numero ordini e incasso di ogni giorno, con gli stessi filtri dell'elenco"""
+    query = {**_customer_filter(customer), "menuDate": {"$gte": start_date, "$lte": end_date}}
+    query["status"] = status if status else {"$ne": "annullato"}
+    if unpaid_only:
+        query["isPaid"] = {"$ne": True}
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": "$menuDate", "orders": {"$sum": 1}, "revenue": {"$sum": "$total"}}},
+        {"$sort": {"_id": -1}},
+    ]
+    return [{"date": r["_id"], "totalOrders": r["orders"], "totalRevenue": round(r["revenue"] or 0, 2)}
+            async for r in db.orders.aggregate(pipeline)]
 
 @api_router.get("/reports/hourly-revenue")
 async def get_hourly_revenue(date: str):
