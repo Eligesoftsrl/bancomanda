@@ -1,5 +1,6 @@
 import { itemCompositionText } from '../../src/utils/composition';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -30,6 +31,7 @@ import { DatePill } from '../../src/components/ui2/DatePill';
 import { StatCard } from '../../src/components/ui2/StatCard';
 import { RevenueChart } from '../../src/components/reports/RevenueChart';
 import { DailyOverview } from '../../src/components/reports/DailyOverview';
+import { PeriodOrdersList } from '../../src/components/reports/PeriodOrdersList';
 import { HourPoint } from '../../src/components/reports/HourlyCompareChart';
 import { useWideLayout } from '../../src/theme/layout';
 
@@ -168,6 +170,23 @@ export default function ReportsScreen() {
     setExpandedPorzGroups(prev => ({ ...prev, [dishName]: !prev[dishName] }));
   };
   
+  // Ordini del periodo: si aprono in Ordini; al ritorno si aggiornano lista e totali
+  const router = useRouter();
+  const [ordersRefresh, setOrdersRefresh] = useState(0);
+  const openedOrder = useRef(false);
+  const openPeriodOrder = (order: Order) => {
+    openedOrder.current = true;
+    router.push({ pathname: '/', params: { openOrder: order.id, openDate: order.menuDate } } as any);
+  };
+  useFocusEffect(useCallback(() => {
+    if (!openedOrder.current) return;
+    openedOrder.current = false;
+    setOrdersRefresh((n) => n + 1);
+    loadRangeData();
+    loadUnpaidOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate, endDate, reportMode]));
+
   // Calendar picker for range mode
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarStart, setCalendarStart] = useState<string | null>(null);
@@ -726,6 +745,9 @@ export default function ReportsScreen() {
         )}
 
         {reportMode === 'range' && <RevenueChart data={dailyRevenue} loading={isLoading} />}
+        {reportMode === 'range' && (
+          <PeriodOrdersList startDate={startDate} endDate={endDate} refreshKey={ordersRefresh} wide={contentWidth >= 760} onOpen={openPeriodOrder} />
+        )}
 
         <View style={[styles.sectionsGrid, twoCols && styles.sectionsGridWide]} testID="report-sections-grid">
         <View style={[styles.sectionsCol, twoCols && styles.sectionsColMain]}>
@@ -1157,7 +1179,7 @@ export default function ReportsScreen() {
             <Text style={styles.calendarTitle}>
               {!calendarStart || (calendarStart && calendarEnd)
                 ? 'Seleziona data iniziale'
-                : 'Seleziona data finale'}
+                : 'Seleziona data finale (o Applica per un solo giorno)'}
             </Text>
             <Text style={styles.calendarSubtitle}>
               {calendarStart && !calendarEnd
@@ -1235,12 +1257,13 @@ export default function ReportsScreen() {
                 <Text style={styles.calendarCancelBtnText}>Annulla</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.calendarApplyBtn, (!calendarStart || !calendarEnd) && styles.disabledButton]}
-                disabled={!calendarStart || !calendarEnd}
+                style={[styles.calendarApplyBtn, !calendarStart && styles.disabledButton]}
+                disabled={!calendarStart}
                 onPress={() => {
-                  if (calendarStart && calendarEnd) {
+                  // Un solo tocco = un solo giorno (es. dal 14 al 14)
+                  if (calendarStart) {
                     setStartDate(calendarStart);
-                    setEndDate(calendarEnd);
+                    setEndDate(calendarEnd || calendarStart);
                     setShowCalendar(false);
                   }
                 }}

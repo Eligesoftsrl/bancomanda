@@ -28,6 +28,7 @@ SOURCES = {
     "missed_sales": "missed-sales?limit=1000000",
 }
 DATE_FIELDS = ("createdAt", "publishedAt")
+RETIRED_CATEGORIES = {"Base Fit", "Proteine Fit"}  # tolte dopo la conversione Fit: il sync non le ricrea
 LEGACY = {"tenant_id": None}
 
 
@@ -65,6 +66,8 @@ def find_target_db(client, name):
 
 def sync(db, docs, existing, dry_run):
     for col, items in docs.items():
+        if col == "categories":
+            items = [d for d in items if d.get("name") not in RETIRED_CATEGORIES]
         current = {d["_id"]: d for d in existing[col]}
         new = sum(1 for d in items if d["_id"] not in current)
         only_target = len(set(current) - {d["_id"] for d in items})
@@ -72,7 +75,7 @@ def sync(db, docs, existing, dry_run):
         if dry_run or not items:
             continue
         # i piatti trasformati in ingredienti restano disattivati anche se la vecchia app li ha attivi
-        keep = lambda d, k: k == "_id" or (k in ("active", "isFavorite") and "convertedTo" in current.get(d["_id"], {}))
+        keep = lambda d, k: k == "_id" or (k in ("active", "isFavorite", "categoryId", "categoryName") and "convertedTo" in current.get(d["_id"], {}))
         ops = [UpdateOne({"_id": d["_id"]}, {"$set": {k: v for k, v in d.items() if not keep(d, k)}}, upsert=True) for d in items]
         r = db[col].bulk_write(ops, ordered=False)
         print(f"[SYNC] {col}: inseriti {r.upserted_count}, aggiornati {r.modified_count}")

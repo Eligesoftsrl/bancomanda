@@ -882,6 +882,7 @@ async def get_orders(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     unpaid_only: bool = False,
+    skip: int = 0,
 ):
     query = {}
     if menu_date:
@@ -898,7 +899,9 @@ async def get_orders(
     if unpaid_only:
         query["isPaid"] = {"$ne": True}
     
-    orders = await db.orders.find(query).sort("createdAt", -1).limit(limit).to_list(limit)
+    # Periodo (Report): dal giorno più recente, a pagine
+    sort = [("menuDate", -1), ("createdAt", -1)] if (date_from or date_to) and not menu_date else [("createdAt", -1)]
+    orders = await db.orders.find(query).sort(sort).skip(max(skip, 0)).limit(limit).to_list(limit)
     return [Order(id=str(o["_id"]), **{k: v for k, v in o.items() if k != "_id"}) for o in orders]
 
 @api_router.get("/orders/{order_id}", response_model=Order)

@@ -158,6 +158,13 @@ export const ordersApi = {
     return response.data;
   },
   
+  // Report di periodo: ordini dal giorno più recente, a pagine
+  getByRange: async (dateFrom: string, dateTo: string, skip = 0, limit = 50): Promise<Order[]> => {
+    const params = new URLSearchParams({ date_from: dateFrom, date_to: dateTo, skip: String(skip), limit: String(limit) });
+    const response = await api.get(`/orders?${params.toString()}`);
+    return response.data;
+  },
+
   getById: async (id: string): Promise<Order> => {
     const response = await api.get(`/orders/${id}`);
     return response.data;

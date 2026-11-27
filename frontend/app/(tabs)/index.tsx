@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useFocusEffect } from 'expo-router';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   View,
   Text,
@@ -71,6 +71,9 @@ export default function OrdersScreen() {
   const isSmallScreen = width < 768;
   const { wide, contentWidth } = useWideLayout();
   const router = useRouter();
+  // Ordine aperto dal Report di periodo: a chiusura si torna al Report e al giorno di prima
+  const openParams = useLocalSearchParams<{ openOrder?: string; openDate?: string }>();
+  const returnToDate = useRef<string | null>(null);
   
   const { selectedDate, setSelectedDate, currentMenu, setCurrentMenu, orders, setOrders, customers, setCustomers } = useAppStore();
   const activeCustomers = useMemo(() => customers.filter(c => !c.archived), [customers]);
@@ -233,15 +236,38 @@ export default function OrdersScreen() {
     }
   };
 
+  const closeOrderModal = () => {
+    setShowAddItemModal(false);
+    setSelectedOrder(null);
+    setSelectedMenuItem(null);
+    if (returnToDate.current === null) return;
+    setSelectedDate(returnToDate.current);
+    returnToDate.current = null;
+    router.navigate('/reports' as any);
+  };
+
+  useEffect(() => {
+    const id = openParams.openOrder;
+    if (!id) return;
+    router.setParams({ openOrder: undefined, openDate: undefined } as any);
+    ordersApi.getById(id).then((order) => {
+      returnToDate.current = selectedDate;
+      if (order.menuDate !== selectedDate) setSelectedDate(order.menuDate);
+      setSelectedOrder(order);
+      setShowAddItemModal(true);
+      loadCatalog();
+    }).catch(() => showToast('Ordine non trovato', 'error'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openParams.openOrder]);
+
   const handleDeleteOrder = async () => {
     if (!selectedOrder) return;
     
     try {
       await ordersApi.deleteOrder(selectedOrder.id);
       setOrders(orders.filter(o => o.id !== selectedOrder.id));
-      setSelectedOrder(null);
-      setShowAddItemModal(false);
       setShowDeleteConfirm(false);
+      closeOrderModal();
       // Refresh menu to get updated portions
       const menu = await menusApi.getByDate(selectedDate);
       setCurrentMenu(menu);
@@ -1459,7 +1485,7 @@ export default function OrdersScreen() {
       </Modal>
 
       {/* Add Item Modal */}
-      <Modal visible={showAddItemModal} onRequestClose={() => { setShowAddItemModal(false); setSelectedOrder(null); setSelectedMenuItem(null); }} animationType="slide" transparent={false}>
+      <Modal visible={showAddItemModal} onRequestClose={closeOrderModal} animationType="slide" transparent={false}>
         <SafeAreaView style={styles.fullScreenModal}>
           <View style={styles.fullScreenModalContent}>
             <View style={styles.modalHeader}>
@@ -1506,12 +1532,7 @@ export default function OrdersScreen() {
                 <TouchableOpacity 
                   style={styles.closeButton}
                   testID="order-detail-close-btn"
-                  onPress={() => {
-                    setShowAddItemModal(false);
-                    setSelectedOrder(null);
-                    setSelectedMenuItem(null);
-                    // The unpaid orders view is already showing underneath
-                  }}
+                  onPress={closeOrderModal}
                 >
                   <Ionicons name="close" size={28} color="#fff" />
                 </TouchableOpacity>

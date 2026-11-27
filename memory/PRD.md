@@ -353,6 +353,18 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Tenuti: Piatto Fit, categoria Fit, liste La Base / La Proteina (conversione; l'utente può chiederne la rimozione)
 - Sync: +130 ordini (25/11: 11, 26/11: 64, 27/11: 55), 8 aggiornati, +7 piatti, +2 menu (26 e 27/11); menu 27/11 con Piatto Fit (16 porzioni). Parità: 6.545 ordini, 262 clienti, 161 menu, 452 piatti (451 + Piatto Fit), tutti validi. Ultimo ordine 27/11 11:15 UTC (#55 Alfano Russo)
 
+## Allineamento finale Giorgio + categorie Fit — 2026-11-27 ~15:45 UTC ✅
+- `/root/final_sync.py` (copia `/root/backups/final_sync_backup_20261127_154450.json`): cancellati 7 ordini di prova (#65, #66 del 25/11; #56–#60 del 27/11) e il piatto di prova "Fit"; #6 Carolina concilio torna "non pagato" (scelta utente)
+- Tenuti (risposta ambigua dell'utente, chiedere): "Fit Generico" e "Super Cous Cous" (già composto)
+- I 10 piatti convertiti (inattivi) spostati nella categoria "Fit"; tolte le categorie "Base Fit" e "Proteine Fit". `migrate_legacy.py`: `RETIRED_CATEGORIES` non le ricrea e il sync mantiene categoria/attivo/preferito dei piatti convertiti
+- Parità: 6.547 ordini = vecchia app, 0 differenze; ultimo ordine #57 del 27/11 11:25 UTC
+
+## Report di periodo: giorno singolo + elenco ordini — 2026-11-27 ✅ (verificato con screenshot)
+- Calendario: "Applica" dopo un solo tocco = dal giorno al giorno stesso (es. 14 → 14)
+- `PeriodOrdersList` / `PeriodOrderRow` (src/components/reports): ordini del periodo raggruppati per giorno, a pagine di 50 (`GET /api/orders?date_from&date_to&skip&limit`, ordinati per giorno e ora decrescenti). Riga: n°, ora, cliente, tipologia, piatti, stato, pagato, totale
+- Tocco su una riga → si apre la stessa scheda ordine di Ordini (`/?openOrder=id`), con tutte le operazioni; alla chiusura si torna al Report e Ordini torna al giorno di prima; lista, totali e non pagati si aggiornano
+- testID: `period-orders-section`, `period-orders-count`, `period-order-row-{id}`, `period-order-paid-{id}`, `period-order-total-{id}`, `period-orders-load-more`
+
 
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
