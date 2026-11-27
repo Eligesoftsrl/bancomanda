@@ -347,6 +347,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - Campi invariati: `price`, `priceFrom`, `ingredients`, `customizable`, `notes`, `allergens`; chiave `optionGroups` invariata nonostante la rinomina "Liste di scelta"
 - Prompt per il sito (Claude) consegnato all'utente nel riepilogo
 
+## Settimo --sync Giorgio + pulizia test — 2026-11-27 ~11:30 UTC ✅
+- Script `/root/sync_cleanup.py` (controllo a vuoto `--dry-run`, verifiche sugli elenchi attesi, copia in `/root/backups/sync_cleanup_backup_*.json`)
+- Cancellati su richiesta (solo nella nuova app): 6 ordini di prova del 25/11 (#53–#58), 5 piatti di prova (Focaccia Pugliese, Insalata Tonno , Noci e permigiano, Il mio Piatto Fit, Piatto FIT2, Insalate Personalizzate), liste Focaccia Pugliese, PROVA Fit, PROVA Base
+- Tenuti: Piatto Fit, categoria Fit, liste La Base / La Proteina (conversione; l'utente può chiederne la rimozione)
+- Sync: +130 ordini (25/11: 11, 26/11: 64, 27/11: 55), 8 aggiornati, +7 piatti, +2 menu (26 e 27/11); menu 27/11 con Piatto Fit (16 porzioni). Parità: 6.545 ordini, 262 clienti, 161 menu, 452 piatti (451 + Piatto Fit), tutti validi. Ultimo ordine 27/11 11:15 UTC (#55 Alfano Russo)
+
 
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
