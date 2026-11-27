@@ -182,18 +182,23 @@ def preset_changes(groups: List[dict], preset: List[dict], composition: List[dic
     return {"removed": removed, "added": added}
 
 
-def preset_summary(groups: List[dict], preset: List[dict]) -> tuple:
-    """Per il sito: (ingredienti della ricetta, loro prezzo, loro allergeni)."""
+def preset_summary(groups: List[dict], preset: List[dict], unavailable: List[str] = ()) -> tuple:
+    """Per il sito: (ingredienti della ricetta disponibili oggi, loro prezzo, loro allergeni, ingredienti mancanti oggi).
+    Come nell'app: un ingrediente esaurito o disattivato esce dalla ricetta e dal prezzo."""
     want = {p["optionId"]: p["quantity"] for p in preset}
-    names, extra, allergens = [], 0.0, []
+    names, extra, allergens, missing = [], 0.0, [], []
     for g in groups:
         for o in g.get("options", []):
             qty = want.get(o["id"], 0)
-            if qty:
-                names.append(_label(o["name"], qty))
-                extra += o["price"] * qty
-                allergens += [a for a in o.get("allergens", []) if a not in allergens]
-    return names, round(extra, 2), allergens
+            if not qty:
+                continue
+            if not o.get("active", True) or o["id"] in unavailable:
+                missing.append(o["name"])
+                continue
+            names.append(_label(o["name"], qty))
+            extra += o["price"] * qty
+            allergens += [a for a in o.get("allergens", []) if a not in allergens]
+    return names, round(extra, 2), allergens, missing
 
 
 def composition_extra(composition: List[dict]) -> float:
@@ -204,8 +209,9 @@ def _euro(v: float) -> str:
     return f"{v:.2f}".replace(".", ",") + " €"
 
 
-def public_options(groups: List[dict], unavailable: List[str]) -> tuple:
-    """Per il sito: (supplemento minimo obbligatorio, gruppi pubblici, testo descrittivo)."""
+def public_options(groups: List[dict], unavailable: List[str], recipe: Optional[dict] = None) -> tuple:
+    """Per il sito: (supplemento minimo obbligatorio, liste pubbliche, testo descrittivo).
+    recipe (optionId -> quantità) marca con inRecipe gli ingredienti del piatto già composto."""
     base, public, parts = 0.0, [], []
     for g in groups:
         opts = [o for o in g.get("options", []) if o.get("active", True) and o["id"] not in unavailable]
@@ -216,7 +222,8 @@ def public_options(groups: List[dict], unavailable: List[str]) -> tuple:
         base += floor * mn
         public.append({"name": g["name"], "required": mn > 0, "min": mn, "max": g.get("maxSelect"),
                        "allowRepeat": bool(g.get("allowRepeat")),
-                       "options": [{"name": o["name"], "price": o["price"], "allergens": o.get("allergens", [])} for o in opts]})
+                       "options": [{"name": o["name"], "price": o["price"], "allergens": o.get("allergens", []),
+                                    **({"inRecipe": recipe.get(o["id"], 0)} if recipe is not None else {})} for o in opts]})
         labels = [o["name"] + (f" +{_euro(o['price'] - floor)}" if o["price"] - floor > 0 else "") for o in opts]
         parts.append(f"{g['name']}: {', '.join(labels)}")
     return round(base, 2), public, " · ".join(parts)

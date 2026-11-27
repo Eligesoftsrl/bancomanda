@@ -678,13 +678,16 @@ def _rome_today_iso() -> str:
 async def _add_public_composition(entry: dict, dish: dict, unavailable: List[str]) -> None:
     """Piatto componibile: prezzo "da", elenco delle scelte disponibili oggi e allergeni possibili."""
     groups = await load_groups(db, dish.get("optionGroupIds", []))
-    floor, public_groups, text = public_options(groups, unavailable)
+    preset = dish.get("presetSelections") or []
+    recipe = {p["optionId"]: p["quantity"] for p in preset} if preset else None
+    floor, public_groups, text = public_options(groups, unavailable, recipe)
     entry["optionGroups"] = public_groups
-    if dish.get("presetSelections"):
+    entry["basePrice"] = entry["price"]  # prezzo senza scelte: totale = basePrice + somma(prezzo × quantità scelte)
+    if preset:
         # Piatto già composto: prezzo fisso della ricetta, personalizzabile togliendo o aggiungendo
-        names, extra, allergens = preset_summary(groups, dish["presetSelections"])
+        names, extra, allergens, missing = preset_summary(groups, preset, unavailable)
         entry.update(price=round(entry["price"] + extra, 2), priceFrom=False, ingredients=names, customizable=True,
-                     notes=" · ".join(x for x in (", ".join(names), entry["notes"]) if x))
+                     missingToday=missing, notes=" · ".join(x for x in (", ".join(names), entry["notes"]) if x))
         entry["allergens"] += [a for a in allergens if a not in entry["allergens"]]
         return
     entry["price"] = round(entry["price"] + floor, 2)

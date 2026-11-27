@@ -55,7 +55,8 @@ def test_unit_helpers():
         {"id": "b", "name": "Cheddar", "price": 1.0, "allergens": ["latte"]},
         {"id": "c", "name": "Bacon", "price": 1.5, "allergens": []}]}]
     preset = [{"optionId": "a", "quantity": 1}, {"optionId": "b", "quantity": 1}]
-    assert preset_summary(groups, preset) == (["Hamburger", "Cheddar"], 4.0, ["latte"])
+    assert preset_summary(groups, preset) == (["Hamburger", "Cheddar"], 4.0, ["latte"], [])
+    assert preset_summary(groups, preset, ["b"]) == (["Hamburger"], 3.0, [], ["Cheddar"])
     comp = [{"optionId": "a", "quantity": 2}, {"optionId": "c", "quantity": 1}]
     assert preset_changes(groups, preset, comp) == {"removed": ["Cheddar"], "added": ["Hamburger", "Bacon"]}
     assert preset_changes(groups, [], comp) is None

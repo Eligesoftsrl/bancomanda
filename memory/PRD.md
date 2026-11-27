@@ -341,6 +341,12 @@ Layout finale validato dall'utente per stampante a rotolo adesivo 62mm:
 - testID: `dishes-filter-all`, `dishes-filter-chip-{id}`
 - Produzione: serve "Save to Github" per avere i fix su Vercel/Railway
 
+## JSON sito: piatti già composti più chiari — 2026-11-27 ✅ (backend 27/27, anteprima voci con /root/preview_public_entries.py)
+- Ogni piatto componibile ha `basePrice` (totale = basePrice + Σ prezzo×quantità scelte, vale per componibili e già composti)
+- Già composti: in `optionGroups[].options[]` campo `inRecipe` (quantità nella ricetta, 0 = non incluso); `missingToday` = ingredienti della ricetta esauriti/disattivati oggi (esclusi da `ingredients`, prezzo e allergeni, come nell'app)
+- Campi invariati: `price`, `priceFrom`, `ingredients`, `customizable`, `notes`, `allergens`; chiave `optionGroups` invariata nonostante la rinomina "Liste di scelta"
+- Prompt per il sito (Claude) consegnato all'utente nel riepilogo
+
 
 ## Backlog aperto
 - P2: dividere index.tsx (~4.900 righe) e reports.tsx (~2.200 righe) in moduli
